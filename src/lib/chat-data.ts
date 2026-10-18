@@ -1,0 +1,62 @@
+import { queryOptions } from "@tanstack/react-query";
+import type { UIMessage } from "ai";
+import { supabase } from "@/integrations/supabase/client";
+
+export type Thread = { id: string; title: string; updated_at: string };
+
+export const threadsQuery = () =>
+  queryOptions({
+    queryKey: ["threads"],
+    queryFn: async (): Promise<Thread[]> => {
+      const { data, error } = await supabase
+        .from("threads")
+        .select("id, title, updated_at")
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const messagesQuery = (threadId: string) =>
+  queryOptions({
+    queryKey: ["messages", threadId],
+    staleTime: Infinity,
+    gcTime: 0,
+    queryFn: async (): Promise<{ exists: boolean; messages: UIMessage[] }> => {
+      const { data: thread, error: tErr } = await supabase
+        .from("threads")
+        .select("id")
+        .eq("id", threadId)
+        .maybeSingle();
+      if (tErr) throw tErr;
+      if (!thread) return { exists: false, messages: [] };
+      const { data, error } = await supabase
+        .from("messages")
+        .select("ui_id, role, parts")
+        .eq("thread_id", threadId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return {
+        exists: true,
+        messages: (data ?? []).map((m) => ({
+          id: m.ui_id,
+          role: m.role as UIMessage["role"],
+          parts: (m.parts ?? []) as UIMessage["parts"],
+        })),
+      };
+    },
+  });
+
+export async function createThread(): Promise<string> {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user) throw new Error("未登录");
+  const { data, error } = await supabase
+    .from("threads")
+    .insert({ user_id: u.user.id })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export const pendingKey = (id: string) => `nova:pending:${id}`;
