@@ -18,8 +18,8 @@ function json(status: number, message: string) {
 }
 
 function userClient(token: string) {
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
+  const url = process.env["SUPABASE_URL"]!;
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
   return createClient<Database>(url, key, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
     global: {
@@ -34,7 +34,7 @@ function userClient(token: string) {
 }
 
 export async function handleChat(request: Request): Promise<Response> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) return json(500, "AI 服务未配置");
 
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
@@ -64,7 +64,7 @@ export async function handleChat(request: Request): Promise<Response> {
   if (!thread) return json(404, "会话不存在");
 
   const last = messages[messages.length - 1];
-  if (last.role === "user") {
+  if (last && last.role === "user") {
     const { error } = await supabase
       .from("messages")
       .upsert(

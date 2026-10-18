@@ -56,7 +56,7 @@ export function Composer({
         </PromptInputTools>
         <PromptInputSubmit
           status={status}
-          onStop={onStop}
+          {...(onStop ? { onStop } : {})}
           disabled={!busy && !text.trim()}
           className="rounded-full"
         />

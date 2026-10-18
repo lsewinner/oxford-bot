@@ -48,7 +48,10 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("threads").delete().eq("id", id);
-    if (error) return toast.error("删除失败");
+    if (error) {
+      toast.error("删除失败");
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ["threads"] });
     if (params.threadId === id) navigate({ to: "/chat" });
   };
