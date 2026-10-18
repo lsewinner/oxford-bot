@@ -75,6 +75,13 @@ export async function handleChat(request: Request): Promise<Response> {
       console.error("save user message failed", error);
       return json(500, "保存消息失败");
     }
+    const keepIds = messages.map((m) => m.id);
+    const { error: pruneErr } = await supabase
+      .from("messages")
+      .delete()
+      .eq("thread_id", threadId)
+      .not("ui_id", "in", `(${keepIds.map((id) => `"${id.replace(/"/g, "")}"`).join(",")})`);
+    if (pruneErr) console.error("prune messages failed", pruneErr);
     const firstText = last.parts.find((p) => p.type === "text");
     const updates: { updated_at: string; title?: string } = { updated_at: new Date().toISOString() };
     if (thread.title === "新对话" && firstText && "text" in firstText) {
