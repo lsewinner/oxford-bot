@@ -1,8 +1,34 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { botStorageKey } from "@/lib/bot-presence";
 import { BotPresenceProvider, useBotPresence } from "@/components/chat/bot-presence";
 
 describe("per-thread Bot presence", () => {
+  beforeEach(() => localStorage.clear());
+  it("restores independent Bot names and breeds after remount", () => {
+    const first = renderHook(() => useBotPresence(), { wrapper: BotPresenceProvider });
+    act(() => first.result.current.register([
+      { id: "guest:mail", threadId: "guest", messageId: "mail", bot: { name: "邮件 Bot", kind: "mail" } },
+      { id: "guest:website", threadId: "guest", messageId: "website", bot: { name: "建站 Bot", kind: "code" } },
+    ]));
+    act(() => first.result.current.update("guest:website", { name: "建站猫", kind: "code", breed: "document" }));
+    first.unmount();
+    const second = renderHook(() => useBotPresence(), { wrapper: BotPresenceProvider });
+    expect(second.result.current.entries.map((entry) => entry.bot.name)).toEqual(["邮件 Bot", "建站猫"]);
+    expect(second.result.current.entries[1]?.bot.breed).toBe("document");
+  });
+  it("isolates persisted Bots by account", () => {
+    localStorage.setItem(botStorageKey("another-account"), JSON.stringify([{ id: "private:a", threadId: "private", messageId: "a", bot: { name: "私人 Bot", kind: "mail" } }]));
+    const guest = renderHook(() => useBotPresence(), { wrapper: BotPresenceProvider });
+    expect(guest.result.current.entries).toEqual([]);
+  });
+  it("removes associated Bots when their conversation is deleted", () => {
+    const { result } = renderHook(() => useBotPresence(), { wrapper: BotPresenceProvider });
+    act(() => result.current.register([{ id: "thread:a", threadId: "thread", messageId: "a", bot: { name: "邮件 Bot", kind: "mail" } }]));
+    act(() => result.current.removeThread("thread"));
+    expect(result.current.entries).toEqual([]);
+    expect(JSON.parse(localStorage.getItem(botStorageKey("guest")) ?? "[]")).toEqual([]);
+  });
   it("keeps each Bot's name and selected breed independent across registration updates", () => {
     const { result } = renderHook(() => useBotPresence(), { wrapper: BotPresenceProvider });
     const entries = [

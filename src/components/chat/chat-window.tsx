@@ -69,7 +69,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     messages: initialMessages,
     transport,
     onError: (e) => toast.error(errorText(e)),
-    onFinish: () => queryClient.invalidateQueries({ queryKey: ["threads"] }),
+    onFinish: () => { queryClient.invalidateQueries({ queryKey: ["threads"] }); queryClient.invalidateQueries({ queryKey: ["bot-history"] }); },
   });
 
   const sentPending = useRef(false);
@@ -93,8 +93,13 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   const { report, settle, entries, register } = useBotPresence();
   const requests = useMemo(() => botsFromMessages(threadId, messages), [threadId, messages]);
   useEffect(() => register(requests), [register, requests]);
+  useEffect(() => {
+    if (threadId !== "guest") return;
+    try { localStorage.setItem("oxford:guest-messages:v1", JSON.stringify(messages)); }
+    catch { /* Bot provider reports local storage restrictions. */ }
+  }, [threadId, messages]);
   const lastRequest = requests.at(-1);
-  const bot = entries.find((entry) => entry.id === lastRequest?.id)?.bot ?? lastRequest?.bot ?? null;
+  const bot = entries.find((entry) => entry.id === lastRequest?.id)?.bot ?? lastRequest?.bot ?? entries.filter((entry) => entry.threadId === threadId).at(-1)?.bot ?? null;
   useEffect(() => {
     report(threadId, { bot, status });
   }, [threadId, bot, status, report]);
@@ -108,13 +113,14 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     <div className="flex h-full min-h-0 flex-col">
       <Conversation className="min-h-0 flex-1">
         <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 pb-10 pt-6">
+          {entries.filter((entry) => entry.threadId === threadId && entry.messageId.startsWith("manual-")).map((entry) => <div key={entry.id} id={`message-${entry.messageId}`} className="flex items-center gap-3"><BotAvatar bot={entry.bot} /><div><p className="text-sm font-medium">{entry.bot.name}</p><p className="text-sm text-muted-foreground">已创建并同步到「我的 Bots」。你需要我为你做什么？</p></div></div>)}
           {messages.map((m, idx) => (
             <div key={m.id} id={`message-${m.id}`}>
             <ChatMessage
               message={m}
               bot={(() => {
                 const preceding = botsFromMessages(threadId, messages.slice(0, idx + 1)).at(-1);
-                return entries.find((entry) => entry.id === preceding?.id)?.bot ?? preceding?.bot ?? null;
+                return entries.find((entry) => entry.id === preceding?.id)?.bot ?? preceding?.bot ?? entries.find((entry) => entry.threadId === threadId && entry.messageId.startsWith("manual-"))?.bot ?? null;
               })()}
               streaming={busy && idx === messages.length - 1}
               canRegenerate={!busy && idx === messages.length - 1 && m.role === "assistant"}

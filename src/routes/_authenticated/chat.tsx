@@ -1,17 +1,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
 import { LogOutIcon, MenuIcon, PenSquareIcon, Trash2Icon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { ModeProvider } from "@/components/chat/mode-context";
 import { WebSearchProvider } from "@/components/chat/web-search-context";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
-import { threadsQuery, type Thread } from "@/lib/chat-data";
+import { threadsQuery, botHistoryQuery, createThread, type Thread } from "@/lib/chat-data";
 import { cn } from "@/lib/utils";
-import { BotPresenceLabel, BotPresenceProvider, BotSettings, useBotPresence } from "@/components/chat/bot-presence";
-import { botFromRequest, type BotActivity, type BotEntry, type BotIdentity } from "@/lib/bot-presence";
+import { BotPresenceLabel, BotPresenceProvider, BotSettings, NewBot, useBotPresence } from "@/components/chat/bot-presence";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/chat")({
@@ -44,15 +43,22 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = Route.useRouteContext();
-  const { activities, entries } = useBotPresence();
-  const bots = threads.flatMap<{ thread: Thread; entry: BotEntry | null; bot: BotIdentity; status: BotActivity["status"] }>((thread) => {
-    const registered = entries.filter((entry) => entry.threadId === thread.id);
-    if (registered.length) return registered.map((entry, index) => ({ thread, entry, bot: entry.bot, status: index === registered.length - 1 ? activities[thread.id]?.status ?? "ready" as const : "ready" as const }));
-    const bot = activities[thread.id]?.bot ?? botFromRequest(thread.title);
-    return bot ? [{ thread, entry: null, bot, status: activities[thread.id]?.status ?? "ready" as const }] : [];
-  });
+  const { activities, entries, register, removeThread } = useBotPresence();
+  const { data: history } = useQuery(botHistoryQuery(user.id));
+  useEffect(() => { if (history) register(history); }, [history, register]);
+  const bots = entries;
+  const createBot = async (bot: (typeof entries)[number]["bot"]) => {
+    const threadId = await createThread();
+    const { error } = await supabase.from("threads").update({ title: bot.name }).eq("id", threadId);
+    if (error) throw error;
+    const messageId = `manual-${crypto.randomUUID()}`;
+    register([{ id: `${threadId}:${messageId}`, threadId, messageId, bot }]);
+    await queryClient.invalidateQueries({ queryKey: ["threads"] });
+    navigate({ to: "/chat/$threadId", params: { threadId } });
+    onNavigate?.();
+  };
 
-  const groups = threads.filter((t) => !bots.some((b) => b.thread.id === t.id)).reduce<Record<string, Thread[]>>((acc, t) => {
+  const groups = threads.filter((t) => !bots.some((b) => b.threadId === t.id)).reduce<Record<string, Thread[]>>((acc, t) => {
     (acc[groupLabel(t.updated_at)] ??= []).push(t);
     return acc;
   }, {});
@@ -63,6 +69,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       toast.error("删除失败");
       return;
     }
+    removeThread(id);
     queryClient.invalidateQueries({ queryKey: ["threads"] });
     if (params.threadId === id) navigate({ to: "/chat" });
   };
@@ -90,16 +97,16 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </Link>
       </div>
       <nav className="mt-4 flex-1 overflow-y-auto px-2 pb-4">
-        {bots.length > 0 && <section aria-label="我的 Bots" className="mb-5">
-          <div className="px-3 pb-2 text-[11px] font-medium text-muted-foreground">我的 Bots</div>
-          {bots.map(({ thread, entry, bot, status }) => <div key={entry?.id ?? thread.id} className={cn("group flex items-center rounded-lg hover:bg-sidebar-accent", params.threadId === thread.id && "bg-sidebar-accent")}>
-            <Link to="/chat/$threadId" params={{ threadId: thread.id }} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2" aria-label={`打开 ${bot.name}`}>
-              <BotPresenceLabel bot={bot} status={status} />
+        <section aria-label="我的 Bots" className="mb-5">
+          <div className="flex items-center justify-between px-3 pb-2"><span className="text-[11px] font-medium text-muted-foreground">我的 Bots</span><NewBot onCreate={createBot} /></div>
+          {bots.map((entry) => <div key={entry.id} className={cn("group flex items-center rounded-lg hover:bg-sidebar-accent", params.threadId === entry.threadId && "bg-sidebar-accent")}>
+            <Link to="/chat/$threadId" params={{ threadId: entry.threadId }} onClick={() => { onNavigate?.(); setTimeout(() => document.getElementById(`message-${entry.messageId}`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 250); }} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2" aria-label={`打开 ${entry.bot.name}`}>
+              <BotPresenceLabel bot={entry.bot} status={entries.filter((item) => item.threadId === entry.threadId).at(-1)?.id === entry.id ? activities[entry.threadId]?.status ?? "ready" : "ready"} />
             </Link>
-            {entry && <BotSettings entry={entry} />}
-            <Button variant="ghost" size="icon-sm" aria-label={`删除 ${bot.name} 会话`} onClick={() => remove(thread.id)} className="mr-1 shrink-0 text-muted-foreground hover:text-destructive md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>
+            <BotSettings entry={entry} />
+            <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => remove(entry.threadId)} className="mr-1 shrink-0 text-muted-foreground hover:text-destructive md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>
           </div>)}
-        </section>}
+        </section>
         {threads.length === 0 && <p className="px-3 text-xs text-muted-foreground">还没有对话</p>}
         {["今天", "昨天", "过去 7 天", "更早"].map(
           (g) =>
@@ -155,10 +162,11 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
 function ChatLayout() {
   const [open, setOpen] = useState(false);
+  const { user } = Route.useRouteContext();
   return (
     <ModeProvider>
       <WebSearchProvider>
-      <BotPresenceProvider>
+      <BotPresenceProvider key={user.id} scope={user.id}>
       <div className="flex h-dvh overflow-hidden bg-background">
         <aside className="hidden w-64 shrink-0 border-r border-sidebar-border md:block">
           <Sidebar />
