@@ -37,7 +37,15 @@ export function ProProvider({ children }: { children: ReactNode }) {
     }).subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [userId, queryClient]);
-  const isPro = subscriptionActive(subscription);
+  const { data: granted = false } = useQuery({
+    queryKey: ["pro-grant", userId],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      const { data } = await supabase.from("account_controls").select("pro_granted,pro_until").eq("user_id", userId!).maybeSingle();
+      return Boolean(data?.pro_granted && (!data.pro_until || new Date(data.pro_until).getTime() > Date.now()));
+    },
+  });
+  const isPro = granted || subscriptionActive(subscription);
   const openUpgrade = useCallback((f: ProFeature = "general") => setFeature(f), []);
   const requirePro = useCallback((f: ProFeature) => { if (isPro) return true; setFeature(f); return false; }, [isPro]);
   return <ProCtx.Provider value={{ isPro, loading: isLoading, userId, subscription, openUpgrade, requirePro }}>

@@ -1,4 +1,7 @@
 import { botListRowClass } from "@/components/chat/bot-list-label";
+import { useServerFn } from "@tanstack/react-start";
+import { ShieldCheckIcon } from "lucide-react";
+import { checkAdmin } from "@/lib/admin.functions";
 import { MainBotLabel } from "@/components/chat/main-bot";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
@@ -186,6 +189,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             ),
         )}
       </nav>
+      <AdminEntry />
       <UpgradeEntry />
       <div className="px-3 pb-1"><DesktopInstallButton sidebar /></div>
       <AccountProfile user={user} onSignOut={signOut} />
@@ -233,5 +237,18 @@ function ChatLayout() {
       </BotPresenceProvider>
       </WebSearchProvider>
     </ModeProvider>
+  );
+}
+
+function AdminEntry() {
+  const check = useServerFn(checkAdmin);
+  const { data } = useQuery({ queryKey: ["admin-check"], queryFn: () => check(), staleTime: 300_000 });
+  if (!data?.isAdmin) return null;
+  return (
+    <div className="px-3 pb-1">
+      <Link to="/admin" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground">
+        <ShieldCheckIcon className="size-4" />管理后台
+      </Link>
+    </div>
   );
 }
