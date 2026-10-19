@@ -4,6 +4,7 @@ import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LegalLinks } from "@/components/legal/legal-page";
+import { DesktopInstallButton } from "@/components/desktop-install";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,7 +29,11 @@ function Index() {
   }, [navigate]);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-background bg-glow px-6 text-center">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center bg-background bg-glow px-6 pb-8 pt-24 text-center">
+      <header className="absolute inset-x-0 top-0 flex items-center justify-between gap-3 px-6 py-4 md:px-10">
+        <Link to="/" className="flex items-center gap-2 text-sm font-semibold"><img src={logo} alt="" width={28} height={28} />Oxford Bot</Link>
+        <nav aria-label="主导航"><DesktopInstallButton /></nav>
+      </header>
       <img src={logo} alt="Oxford Bot" width={88} height={88} className="size-22 rounded-3xl" />
       <h1 className="mt-8 text-4xl font-semibold tracking-tight md:text-6xl">Oxford Bot</h1>
       <p className="mt-4 max-w-md text-muted-foreground">
