@@ -67,6 +67,14 @@ export async function handleChat(request: Request): Promise<Response> {
   if (!Array.isArray(messages) || messages.length === 0 || !threadId) return json(400, "缺少消息或会话");
   try { validateAttachments(messages); } catch (error) { return json(400, error instanceof Error ? error.message : "附件无效"); }
   if (threadId !== "guest" && (!supabase || !userId)) return json(401, "请先登录");
+  if (threadId !== "guest" && supabase && messages[messages.length - 1]?.role === "user") {
+    const { serverPaymentsEnv } = await import('@/lib/stripe.server');
+    const { FREE_DAILY_MESSAGES, PRO_DAILY_MESSAGES, quotaDeniedMessage } = await import('@/lib/quota');
+    const { data: quota, error: quotaErr } = await supabase.rpc("consume_daily_message" as never, { check_env: serverPaymentsEnv() ?? 'live', free_limit: FREE_DAILY_MESSAGES, pro_limit: PRO_DAILY_MESSAGES } as never);
+    if (quotaErr) { console.error("quota check failed", quotaErr); return json(500, "额度检查失败，请稍后重试"); }
+    const q = quota as unknown as import('@/lib/quota').QuotaResult;
+    if (!q?.allowed) return json(q?.reason === "banned" ? 403 : 429, quotaDeniedMessage(q));
+  }
 
   if (threadId !== "guest" && supabase && userId) {
   const { data: thread, error: threadErr } = await supabase
