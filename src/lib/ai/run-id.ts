@@ -63,41 +63,14 @@ export async function withLovableAiGatewayRunIdHeader(
   gateway: { getRunId: () => string | undefined; waitForRunId: () => Promise<string | undefined> },
   init?: HeadersInit,
 ) {
-  if (!response.body) {
-    const runId = gateway.getRunId();
-    const headers = getLovableAiGatewayResponseHeaders(undefined, response.headers);
-    new Headers(init).forEach((v, n) => headers.set(n, v));
-    if (runId) headers.set(LOVABLE_AIG_RUN_ID_HEADER, runId);
-    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
-  }
-  const reader = response.body.getReader();
-  const firstChunk = reader.read();
-  const runId = await gateway.waitForRunId();
+  // Diagnostics must not delay headers or acquire the stream reader. The
+  // gateway fetch still captures and reuses its run ID for subsequent steps.
+  const runId = gateway.getRunId();
   const headers = getLovableAiGatewayResponseHeaders(undefined, response.headers);
   new Headers(init).forEach((v, n) => headers.set(n, v));
   if (runId) headers.set(LOVABLE_AIG_RUN_ID_HEADER, runId);
 
-  const body = new ReadableStream({
-    async start(controller) {
-      try {
-        const first = await firstChunk;
-        if (first.done) return controller.close();
-        controller.enqueue(first.value);
-        while (true) {
-          const chunk = await reader.read();
-          if (chunk.done) break;
-          controller.enqueue(chunk.value);
-        }
-        controller.close();
-      } catch (error) {
-        controller.error(error);
-      }
-    },
-    cancel(reason?: unknown) {
-      return reader.cancel(reason);
-    },
-  });
-  return new Response(body, {
+  return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers: getLovableAiGatewayResponseHeaders(undefined, headers),

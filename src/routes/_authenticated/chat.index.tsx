@@ -8,6 +8,14 @@ import { useMode } from "@/components/chat/mode-context";
 import { createThread, pendingKey } from "@/lib/chat-data";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
+  head: () => ({ meta: [
+    { title: "新对话 · Oxford Bot" },
+    { name: "description", content: "开始与 Oxford Bot 的新对话，选择 Fun 或 Normal 模式。" },
+    { property: "og:title", content: "新对话 · Oxford Bot" },
+    { property: "og:description", content: "开始与 Oxford Bot 的新对话，选择 Fun 或 Normal 模式。" },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: NewChat,
 });
 
