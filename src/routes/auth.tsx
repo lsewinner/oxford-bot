@@ -11,10 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "登录 · Nova AI" },
-      { name: "description", content: "登录 Nova AI，在手机和电脑间同步你的对话。" },
-      { property: "og:title", content: "登录 · Nova AI" },
-      { property: "og:description", content: "登录 Nova AI，在手机和电脑间同步你的对话。" },
+      { title: "登录 · Oxford Bot" },
+      { name: "description", content: "登录 Oxford Bot，在手机和电脑间同步你的对话。" },
+      { property: "og:title", content: "登录 · Oxford Bot" },
+      { property: "og:description", content: "登录 Oxford Bot，在手机和电脑间同步你的对话。" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -67,7 +67,7 @@ function AuthPage() {
     <div className="flex min-h-dvh items-center justify-center bg-background bg-glow px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <img src={logo} alt="Nova" width={56} height={56} className="size-14 rounded-2xl" />
+          <img src={logo} alt="Oxford Bot" width={56} height={56} className="size-14 rounded-2xl" />
           <h1 className="text-2xl font-semibold tracking-tight">{mode === "signin" ? "欢迎回来" : "创建账号"}</h1>
           <p className="text-sm text-muted-foreground">对话会保存在云端，多设备同步</p>
         </div>

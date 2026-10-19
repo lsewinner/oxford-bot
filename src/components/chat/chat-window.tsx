@@ -69,9 +69,13 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     const pending = sessionStorage.getItem(key);
     if (pending && initialMessages.length === 0) {
       sessionStorage.removeItem(key);
-      sendMessage({ text: pending });
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
+      // Defer to the next macrotask. Sending synchronously from this effect is
+      // dropped by the chat store before it dispatches, losing the first question.
+      setTimeout(() => sendMessage({ text: pending }), 0);
+      const refresh = setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
+      return () => clearTimeout(refresh);
     }
+    return undefined;
   }, [threadId, initialMessages.length, sendMessage, queryClient]);
 
   const busy = status === "submitted" || status === "streaming";

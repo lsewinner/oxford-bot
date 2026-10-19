@@ -13,10 +13,10 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
     meta: [
-      { title: "Nova AI · 对话" },
-      { name: "description", content: "与 Nova AI 对话，支持 Fun / Normal 模式与代码高亮。" },
-      { property: "og:title", content: "Nova AI · 对话" },
-      { property: "og:description", content: "与 Nova AI 对话，支持 Fun / Normal 模式与代码高亮。" },
+      { title: "Oxford Bot · 对话" },
+      { name: "description", content: "与 Oxford Bot 对话，支持 Fun / Normal 模式与代码高亮。" },
+      { property: "og:title", content: "Oxford Bot · 对话" },
+      { property: "og:description", content: "与 Oxford Bot 对话，支持 Fun / Normal 模式与代码高亮。" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -66,8 +66,8 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex items-center gap-2.5 px-4 pb-3 pt-4">
-        <img src={logo} alt="Nova" width={28} height={28} className="size-7 rounded-md" />
-        <span className="text-[15px] font-semibold tracking-tight">Nova</span>
+        <img src={logo} alt="Oxford Bot" width={28} height={28} className="size-7 rounded-md" />
+        <span className="text-[15px] font-semibold tracking-tight">Oxford Bot</span>
       </div>
       <div className="px-3">
         <Link
@@ -156,7 +156,7 @@ function ChatLayout() {
             >
               <MenuIcon className="size-5" />
             </button>
-            <span className="text-sm font-semibold">Nova</span>
+            <span className="text-sm font-semibold">Oxford Bot</span>
             <Link to="/chat" aria-label="新建对话" className="ml-auto rounded-lg p-2 text-muted-foreground hover:text-foreground">
               <PenSquareIcon className="size-5" />
             </Link>

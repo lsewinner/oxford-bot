@@ -21,7 +21,6 @@ export const messagesQuery = (threadId: string) =>
   queryOptions({
     queryKey: ["messages", threadId],
     staleTime: Infinity,
-    gcTime: 0,
     queryFn: async (): Promise<{ exists: boolean; messages: UIMessage[] }> => {
       const { data: thread, error: tErr } = await supabase
         .from("threads")
@@ -59,4 +58,4 @@ export async function createThread(): Promise<string> {
   return data.id;
 }
 
-export const pendingKey = (id: string) => `nova:pending:${id}`;
+export const pendingKey = (id: string) => `oxford:pending:${id}`;
