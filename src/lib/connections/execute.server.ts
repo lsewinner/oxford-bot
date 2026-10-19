@@ -9,11 +9,12 @@ const enc=encodeURIComponent;
 const b64=(s:string)=>Buffer.from(s,'utf8').toString('base64');
 export async function executeOperation(userId:string,id:ProviderId,input:OperationInput,confirmed=false):Promise<ToolResult> {
  validateOperation(id,input);const provider=PROVIDERS[id].name;
- const row=await getConnection(userId,id);
+ const row=input.account?await getConnection(userId,id,input.account):await getConnection(userId,id);
+ if(input.account && !row) return {provider,status:'error',summary:`未找到已连接的账户 ${input.account}`};
  if(!row || !row.enabled) return {provider,status:'error',summary:'请先在工具与连接中心授权并启用此服务'};
  if(row.reconnect_required)return {provider,status:'reconnect_required',summary:'授权需要更新，请重新连接'};
  if(isWrite(input.operation) && !confirmed){
- const {data,error}=await supabaseAdmin.from('tool_actions').insert({user_id:userId,connector_id:id,operation:input.operation,payload:input}).select('id').single();
+ const {data,error}=await supabaseAdmin.from('tool_actions').insert({user_id:userId,connector_id:id,operation:input.operation,payload:row.account_key && !input.account?{...input,account:row.account_key}:input}).select('id').single();
  if(error || !data)throw new Error('无法保存待确认操作');
  return {provider,status:'confirmation_required',actionId:data.id,summary:`${provider} · ${input.operation} · ${input.to ?? input.repo ?? input.id ?? input.title ?? ''}`,...(input.text?{text:input.text}:{})};
  }

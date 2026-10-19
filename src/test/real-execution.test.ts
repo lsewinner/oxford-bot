@@ -13,6 +13,12 @@ describe('personal provider execution',()=>{
  const result=await executeOperation('owner-a','google_mail',input);
  expect(result.status).toBe('confirmation_required');expect(mocks.call).not.toHaveBeenCalled();
  expect(mocks.get).toHaveBeenCalledWith('owner-a','google_mail');
+ });
+ it('a named account is looked up and kept on the proposal',async()=>{
+  const input={operation:'send',account:'b@example.com',to:'r@example.com',title:'t',text:'x'};
+  await executeOperation('owner-a','google_mail',input);
+  expect(mocks.get).toHaveBeenCalledWith('owner-a','google_mail','b@example.com');
+  expect(mocks.insert).toHaveBeenCalledWith({user_id:'owner-a',connector_id:'google_mail',operation:'send',payload:input});
  expect(mocks.insert).toHaveBeenCalledWith({user_id:'owner-a',connector_id:'google_mail',operation:'send',payload:input});
  });
  it('disabled connections cannot run even a confirmed write',async()=>{mocks.get.mockResolvedValue({enabled:false});const result=await executeOperation('owner-a','slack',{operation:'send',id:'channel',text:'hello'},true);expect(result.status).toBe('error');expect(mocks.call).not.toHaveBeenCalled();});
