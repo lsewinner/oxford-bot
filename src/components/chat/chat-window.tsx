@@ -30,6 +30,8 @@ import { botsFromMessages, type BotIdentity } from "@/lib/bot-presence";
 import { guestMessagesKey, isGuestConversation } from "@/lib/guest-conversations";
 import { parsePendingInput } from "@/lib/chat-attachments";
 import { FileAttachment, GeneratedImage } from "./media-card";
+import { RealToolResult } from './real-tool-result';
+import type { ToolResult } from '@/lib/connections/catalog';
 
 function errorText(err: Error) {
   try {
@@ -339,6 +341,12 @@ function ChatMessage({
               <p className="mt-2">{step.errorText ?? step.output?.summary ?? "正在准备模拟结果…"}</p>
               {step.output?.sample && <p className="mt-2">{step.output.sample}</p>}
             </details>;
+          }
+          if (part.type.startsWith('tool-service_')) {
+            const step = part as { state?: string; output?: ToolResult; errorText?: string };
+            if (step.state === 'output-error') return <p key={i} role="alert" className="text-sm text-destructive">{step.errorText ?? '执行失败'}</p>;
+            if (step.output) return <RealToolResult key={i} output={step.output} />;
+            return <Shimmer key={i}>正在调用 {part.type.replace('tool-service_', '')}…</Shimmer>;
           }
           if (part.type === "text") {
             return message.role === "user" ? (
