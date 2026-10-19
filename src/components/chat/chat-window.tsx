@@ -181,7 +181,7 @@ function SourceCards({ sources }: { sources: { url: string; title?: string | und
     <div className="mt-3 flex flex-col gap-1.5">
       <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">来源</div>
       <div className="grid gap-1.5 sm:grid-cols-2">
-        {sources.map((s, i) => (
+        {unique.map((s, i) => (
           <a
             key={i}
             href={s.url}
