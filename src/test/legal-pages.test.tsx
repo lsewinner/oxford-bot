@@ -1,37 +1,30 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  RouterProvider,
-} from "@tanstack/react-router";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { LEGAL_COMPANY, LEGAL_CONTACT } from "@/components/legal/legal-page";
-import { Route as PrivacyRoute } from "@/routes/privacy";
-import { Route as RefundRoute } from "@/routes/refund";
-import { Route as TermsRoute } from "@/routes/terms";
+// The policy pages only use Link for their footer nav, so stub it and render the
+// page component directly instead of booting a full router in jsdom.
+vi.mock("@tanstack/react-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-router")>();
+  return {
+    ...actual,
+    Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+      <a href={to}>{children}</a>
+    ),
+  };
+});
+
+const { LEGAL_COMPANY, LEGAL_CONTACT } = await import("@/components/legal/legal-page");
+const { Route: PrivacyRoute } = await import("@/routes/privacy");
+const { Route: RefundRoute } = await import("@/routes/refund");
+const { Route: TermsRoute } = await import("@/routes/terms");
 
 // Stripe's live review needs the registered entity and support address on every
 // policy page, so each page must render them verbatim.
-const root = createRootRoute();
-const routeTree = root.addChildren([
-  createRoute({ getParentRoute: () => root, path: "/", component: () => null }),
-  createRoute({ getParentRoute: () => root, path: "/terms", component: TermsRoute.options.component! }),
-  createRoute({ getParentRoute: () => root, path: "/privacy", component: PrivacyRoute.options.component! }),
-  createRoute({ getParentRoute: () => root, path: "/refund", component: RefundRoute.options.component! }),
-]);
-
-async function renderPage(path: string) {
-  cleanup();
-  const router = createRouter({
-    routeTree,
-    history: createMemoryHistory({ initialEntries: [path] }),
-  });
-  await router.start();
-  render(<RouterProvider router={router} />);
-}
+const pages = [
+  ["服务条款", TermsRoute.options.component!],
+  ["隐私政策", PrivacyRoute.options.component!],
+  ["退款政策", RefundRoute.options.component!],
+] as const;
 
 describe("Legal pages company registration", () => {
   it("uses the company support address everywhere", () => {
@@ -39,9 +32,11 @@ describe("Legal pages company registration", () => {
     expect(LEGAL_COMPANY.email).toBe("info@oxfordintelligence.co.uk");
   });
 
-  it("registers the company entity on every policy page", async () => {
-    for (const path of ["/terms", "/privacy", "/refund"]) {
-      await renderPage(path);
+  it("registers the company entity on every policy page", () => {
+    for (const [title, Page] of pages) {
+      cleanup();
+      render(<Page />);
+      expect(screen.getByRole("heading", { name: title })).toBeTruthy();
       expect(screen.getAllByText(LEGAL_CONTACT).length).toBeGreaterThan(0);
       expect(screen.getAllByText(LEGAL_COMPANY.name).length).toBeGreaterThan(0);
       expect(screen.getAllByText(LEGAL_COMPANY.number).length).toBeGreaterThan(0);
