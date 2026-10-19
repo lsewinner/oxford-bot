@@ -52,6 +52,8 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
   webSearchRef.current = webSearch;
   const queryClient = useQueryClient();
   const { enabled: demoTools } = useTools();
+  const botRef = useRef(activeBot);
+  botRef.current = activeBot;
   const toolsRef = useRef(demoTools);
   toolsRef.current = demoTools;
 
@@ -64,7 +66,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, webSearch: webSearchRef.current, demoTools: toolsRef.current }),
+        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, webSearch: webSearchRef.current, demoTools: toolsRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind } : null }),
       }),
     [threadId],
   );
@@ -346,7 +348,7 @@ function ChatMessage({
             const step = part as { state?: string; output?: ToolResult; errorText?: string };
             if (step.state === 'output-error') return <p key={i} role="alert" className="text-sm text-destructive">{step.errorText ?? '执行失败'}</p>;
             if (step.output) return <RealToolResult key={i} output={step.output} />;
-            return <Shimmer key={i}>正在调用 {part.type.replace('tool-service_', '')}…</Shimmer>;
+            return <Shimmer key={i}>{`正在调用 ${part.type.replace('tool-service_', '')}…`}</Shimmer>;
           }
           if (part.type === "text") {
             return message.role === "user" ? (
