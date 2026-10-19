@@ -13,6 +13,7 @@ import { WebSearchToggle } from "./web-search-toggle";
 import { ToolsCenter } from "./tools-center";
 import { toast } from "sonner";
 import { AttachmentButton, AttachmentPreviews, AttachmentSubmit } from "./composer-attachments";
+import { VoiceInputButton } from "./voice-controls";
 import { ATTACHMENT_ACCEPT, MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES, prepareAttachments, type ChatInput } from "@/lib/chat-attachments";
 
 export function Composer({
@@ -65,6 +66,14 @@ export function Composer({
       <PromptInputFooter className="px-3 pb-3">
         <PromptInputTools>
           <AttachmentButton disabled={busy} />
+          <VoiceInputButton
+            disabled={busy}
+            onTranscript={(spoken, autoSend) => {
+              if (autoSend) { void onSend(spoken); return; }
+              setText((prev) => (prev.trim() ? `${prev.trimEnd()} ${spoken}` : spoken));
+              ref.current?.focus();
+            }}
+          />
           <ModeToggle />
           <WebSearchToggle />
           <ToolsCenter />

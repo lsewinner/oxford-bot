@@ -29,6 +29,7 @@ import { botsFromMessages, type BotIdentity } from "@/lib/bot-presence";
 import { guestMessagesKey, isGuestConversation } from "@/lib/guest-conversations";
 import { parsePendingInput } from "@/lib/chat-attachments";
 import { FileAttachment, GeneratedImage } from "./media-card";
+import { SpeakControls } from "./voice-controls";
 import { RealToolResult } from './real-tool-result';
 import type { ToolResult } from '@/lib/connections/catalog';
 
@@ -399,6 +400,7 @@ function ChatMessage({
           >
             {copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
           </MessageAction>
+          <SpeakControls text={text} />
           {canRegenerate && (
             <MessageAction tooltip="重新生成" label="重新生成" onClick={onRegenerate}>
               <RefreshCcwIcon className="size-3.5" />
