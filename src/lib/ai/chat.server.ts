@@ -121,6 +121,7 @@ export async function handleChat(request: Request): Promise<Response> {
   const response = result.toUIMessageStreamResponse({
     originalMessages: messages,
     sendReasoning: true,
+    sendSources: true,
     onError: (error) => {
       console.error("chat stream error", error);
       const status = (error as { statusCode?: number })?.statusCode;
