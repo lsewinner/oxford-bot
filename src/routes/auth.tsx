@@ -83,7 +83,7 @@ function AuthPage() {
                 使用 Google 继续
               </Button>
               <button type="button" className="lovable-auth-button" onClick={() => oauth("lovable")}>
-                Continue with Lovable
+                使用 Lovable 继续
               </button>
             </div>
             <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">

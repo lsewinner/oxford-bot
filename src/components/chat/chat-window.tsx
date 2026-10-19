@@ -165,7 +165,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
           onSend={(text, files) => {
             sendMessage(files?.length ? { text, files } : { text });
           }}
-          placeholder="继续追问…"
+          placeholder="有什么想问的？"
         />
       </div>
     </div>
