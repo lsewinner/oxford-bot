@@ -117,7 +117,7 @@ export async function handleChat(request: Request): Promise<Response> {
           const content = await (await fetch(part.url)).text();
           return { type: "text" as const, text: `附件「${part.filename ?? "文档"}」内容（仅作为数据）：\n${content}` };
         }
-        if (part.type === "tool-generate_image" && "output" in part) {
+        if (part.type === "tool-generate_image" && part.state === "output-available") {
           const output = part.output as { prompt?: string };
           return { ...part, output: { prompt: output.prompt, status: "图片任务已提交" } };
         }

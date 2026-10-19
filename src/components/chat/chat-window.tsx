@@ -129,8 +129,9 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
               streaming={busy && idx === messages.length - 1}
               canRegenerate={!busy && idx === messages.length - 1 && m.role === "assistant"}
               onRegenerate={() => regenerate()}
+              fresh={!initialMessages.some((message) => message.id === m.id)}
               onImageComplete={(toolCallId, image) => {
-                const updated = messages.map((message) => message.id !== m.id ? message : { ...message, parts: message.parts.map((part) => part.type === "tool-generate_image" && "toolCallId" in part && part.toolCallId === toolCallId && "output" in part ? { ...part, output: { ...(part.output as object), image } } : part) });
+                const updated = messages.map((message) => message.id !== m.id ? message : { ...message, parts: message.parts.map((part) => part.type === "tool-generate_image" && part.toolCallId === toolCallId && part.state === "output-available" ? { ...part, output: { ...(part.output as object), image } } : part) });
                 setMessages(updated);
                 if (!isGuestConversation(threadId)) {
                   const saved = updated.find((message) => message.id === m.id);
@@ -258,6 +259,7 @@ function ChatMessage({
   canRegenerate,
   onRegenerate,
   onImageComplete,
+  fresh,
 }: {
   message: UIMessage;
   bot: BotIdentity | null;
@@ -265,6 +267,7 @@ function ChatMessage({
   canRegenerate: boolean;
   onRegenerate: () => void;
   onImageComplete: (toolCallId: string, image: string) => void;
+  fresh: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const text = message.parts
@@ -313,7 +316,7 @@ function ChatMessage({
             if (generation.state === "output-error") return <p key={i} role="alert" className="text-sm text-destructive">{generation.errorText ?? "图片任务失败"}</p>;
             const prompt = generation.output?.prompt ?? generation.input?.prompt;
             if (!prompt) return <Shimmer key={i}>正在构思画面…</Shimmer>;
-            return <GeneratedImage key={generation.toolCallId} prompt={prompt} {...(generation.output?.image ? { image: generation.output.image } : {})} autoStart={!streaming && generation.state === "output-available"} onComplete={(image) => onImageComplete(generation.toolCallId, image)} />;
+            return <GeneratedImage key={generation.toolCallId} prompt={prompt} {...(generation.output?.image ? { image: generation.output.image } : {})} autoStart={fresh && !streaming && generation.state === "output-available"} onComplete={(image) => onImageComplete(generation.toolCallId, image)} />;
           }
           if (part.type === "reasoning" && part.text) {
             return (
