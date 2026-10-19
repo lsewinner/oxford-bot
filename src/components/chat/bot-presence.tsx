@@ -1,5 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { BotIcon, FileTextIcon, MailIcon, CodeXmlIcon, MessagesSquareIcon } from "lucide-react";
+import british from "@/assets/cat-british.webp";
+import ragdoll from "@/assets/cat-ragdoll.webp";
+import bengal from "@/assets/cat-bengal.webp";
+import tuxedo from "@/assets/cat-tuxedo.webp";
+import maineCoon from "@/assets/cat-maine-coon.webp";
 import { botIsWorking, type BotActivity, type BotIdentity } from "@/lib/bot-presence";
 import { cn } from "@/lib/utils";
 
@@ -24,15 +28,23 @@ export function BotPresenceProvider({ children }: { children: ReactNode }) {
 
 export const useBotPresence = () => useContext(Context);
 
-const icons = { mail: MailIcon, document: FileTextIcon, code: CodeXmlIcon, team: MessagesSquareIcon, general: BotIcon };
+const cats = {
+  mail: { src: british, breed: "英国短毛猫" },
+  document: { src: ragdoll, breed: "布偶猫" },
+  code: { src: bengal, breed: "孟加拉猫" },
+  team: { src: tuxedo, breed: "黑白猫" },
+  general: { src: maineCoon, breed: "缅因猫" },
+};
+
+export function BotAvatar({ bot, working = false }: { bot: BotIdentity; working?: boolean }) {
+  const cat = cats[bot.kind];
+  return <img src={cat.src} alt={`${bot.name} · ${cat.breed}`} title={cat.breed} width={36} height={36} loading="lazy" className={cn("size-9 shrink-0 rounded-full object-cover ring-1 ring-sidebar-border", working && "bot-working")} />;
+}
 
 export function BotPresenceLabel({ bot, status = "ready" }: { bot: BotIdentity; status?: BotActivity["status"] }) {
-  const Icon = icons[bot.kind];
   const working = botIsWorking(status);
   return <>
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar-accent">
-      <Icon aria-hidden="true" className={cn("size-4 text-sidebar-foreground", working && "bot-working")} />
-    </span>
+    <BotAvatar bot={bot} working={working} />
     <span className="min-w-0 flex-1">
       <span className="block truncate text-sm font-medium">{bot.name}</span>
       <span role="status" className="block truncate text-[11px] text-muted-foreground">
