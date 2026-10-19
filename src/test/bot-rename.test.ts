@@ -18,11 +18,13 @@ describe("Bot name and associated cloud title", () => {
     expect(db.eq).toHaveBeenCalledWith("id", "dedicated");
   });
   it("renames the source thread when no dedicated conversation exists", async () => {
-    await renameBotThread({ ...entry, conversationId: undefined }, "邮件猫");
+    const { conversationId, ...unlinked } = entry;
+    await renameBotThread(unlinked, "邮件猫");
     expect(db.eq).toHaveBeenCalledWith("id", "source");
   });
   it("does not write guest conversations to cloud threads", async () => {
-    await renameBotThread({ ...entry, threadId: "guest", conversationId: undefined }, "游客猫");
+    const { conversationId, ...unlinked } = entry;
+    await renameBotThread({ ...unlinked, threadId: "guest" }, "游客猫");
     expect(db.from).not.toHaveBeenCalled();
   });
   it("reports failed title writes instead of pretending synchronization succeeded", async () => {

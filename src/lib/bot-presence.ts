@@ -62,7 +62,8 @@ export function parseBotEntries(raw: string | null): BotEntry[] {
       .map((entry) => {
         const overrides = entry.overrides && typeof entry.overrides.name === "string" && (entry.overrides.breed === undefined || isCatBreed(entry.overrides.breed))
           ? { name: normalizeBotName(entry.overrides.name), ...(entry.overrides.breed ? { breed: entry.overrides.breed } : {}) } : undefined;
-        return { ...entry, overrides, bot: { ...entry.bot, name: normalizeBotName(entry.bot.name), ...overrides } };
+        const { overrides: ignored, ...base } = entry;
+        return { ...base, ...(overrides ? { overrides } : {}), bot: { ...entry.bot, name: normalizeBotName(entry.bot.name), ...overrides } };
       });
   } catch { return []; }
 }
