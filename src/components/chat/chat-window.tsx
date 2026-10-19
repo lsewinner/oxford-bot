@@ -168,7 +168,7 @@ function SearchSteps({ part, streaming }: { part: UIMessage["parts"][number]; st
   );
 }
 
-function SourceCards({ sources }: { sources: { url: string; title?: string }[] }) {
+function SourceCards({ sources }: { sources: { url: string; title?: string | undefined }[] }) {
   if (sources.length === 0) return null;
   return (
     <div className="mt-3 flex flex-col gap-1.5">
