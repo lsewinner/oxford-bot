@@ -101,7 +101,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           <div className="flex items-center justify-between px-3 pb-2"><span className="text-[11px] font-medium text-muted-foreground">我的 Bots</span><NewBot onCreate={createBot} /></div>
           {bots.map((entry) => <div key={entry.id} className={cn("group flex items-center rounded-lg hover:bg-sidebar-accent", params.threadId === entry.threadId && "bg-sidebar-accent")}>
             <Link to="/chat/$threadId" params={{ threadId: entry.threadId }} onClick={() => { onNavigate?.(); setTimeout(() => document.getElementById(`message-${entry.messageId}`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 250); }} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2" aria-label={`打开 ${entry.bot.name}`}>
-              <BotPresenceLabel bot={entry.bot} status={entries.filter((item) => item.threadId === entry.threadId).at(-1)?.id === entry.id ? activities[entry.threadId]?.status : "ready"} />
+              <BotPresenceLabel bot={entry.bot} status={entries.filter((item) => item.threadId === entry.threadId).at(-1)?.id === entry.id ? activities[entry.threadId]?.status ?? "ready" : "ready"} />
             </Link>
             <BotSettings entry={entry} />
             <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => remove(entry.threadId)} className="mr-1 shrink-0 text-muted-foreground hover:text-destructive md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>
