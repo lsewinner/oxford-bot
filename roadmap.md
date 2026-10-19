@@ -34,3 +34,5 @@
 - [x] 更新 Favicon 与 PWA Manifest 图标
 - [x] Main Bot pinned in 我的 Bots, named Oxonian
 - 侧栏微信样式：最近消息摘要 + 右侧最近消息时间（已完成：游客端已浏览器验证，登录端走同一组件）
+
+- [ ] 对话导出（Markdown/文本/复制）、可撤销公开快照分享、修改提示词重绘及验证
