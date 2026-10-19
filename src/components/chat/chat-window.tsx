@@ -67,11 +67,16 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     sentPending.current = true;
     const key = pendingKey(threadId);
     const pending = sessionStorage.getItem(key);
-    console.warn("[pending-debug]", JSON.stringify({ threadId, key, pending, len: initialMessages.length }));
     if (pending && initialMessages.length === 0) {
       sessionStorage.removeItem(key);
-      sendMessage({ text: pending });
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
+      // Defer past the commit: sending synchronously from this effect gets the
+      // request aborted before it is issued (the chat is torn down and remounted).
+      const send = setTimeout(() => sendMessage({ text: pending }), 0);
+      const refresh = setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
+      return () => {
+        clearTimeout(send);
+        clearTimeout(refresh);
+      };
     }
   }, [threadId, initialMessages.length, sendMessage, queryClient]);
 
