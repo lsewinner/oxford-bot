@@ -1,3 +1,4 @@
+import { MainBotLabel } from "@/components/chat/main-bot";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
 import { LogOutIcon, MenuIcon, PenSquareIcon, Trash2Icon } from "lucide-react";
