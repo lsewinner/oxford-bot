@@ -25,3 +25,21 @@ describe('Cloudflare personal API token', () => {
   expect(()=>validateOperation('cloudflare',{operation:'purge_cache'})).toThrow('不支持');
  });
 });
+
+import { cloudflareAccountIdentity } from '@/lib/connections/personal-token.server';
+test('two Cloudflare tokens for different accounts get different account keys', async () => {
+  const a = await cloudflareAccountIdentity('tok-a', { result: [{ account: { id: 'acc1', name: 'Work' } }] });
+  const b = await cloudflareAccountIdentity('tok-b', { result: [{ account: { id: 'acc2', name: 'Home' } }] });
+  expect(a).toEqual({ account: 'cf-acc1', label: 'Work' });
+  expect(b.account).not.toBe(a.account);
+  const noZones1 = await cloudflareAccountIdentity('tok-c', { result: [] });
+  const noZones2 = await cloudflareAccountIdentity('tok-d', { result: [] });
+  expect(noZones1.account).not.toBe(noZones2.account);
+});
+import { personalTokenIdentity } from '@/lib/connections/personal-token.server';
+test('two GitHub tokens for different users get different account keys', async () => {
+  const a = await personalTokenIdentity('github', 'x', { id: 1, login: 'alice' });
+  const b = await personalTokenIdentity('github', 'y', { id: 2, login: 'bob' });
+  expect(a).toEqual({ account: 'gh-1', label: 'alice' });
+  expect(b.account).toBe('gh-2');
+});

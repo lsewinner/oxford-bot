@@ -38,4 +38,19 @@ export async function validatePersonalToken(id: PersonalTokenProvider, token: st
   if (!response.ok) throw new Error(personalTokenError(id, response.status));
   const body = await response.json().catch(() => null);
   if (!body || (id === 'github' ? !body.id : id === 'cloudflare' ? body.success !== true : body.ok !== true)) throw new Error(personalTokenError(id, response.status, body?.error));
+  return body as Record<string, unknown>;
+}
+/** Identify which Cloudflare account a token belongs to, so several tokens can be stored side by side. */
+export async function personalTokenIdentity(id: PersonalTokenProvider, token: string, body: Record<string, unknown> | null) {
+  if (id === 'cloudflare') return cloudflareAccountIdentity(token, body);
+  if (id === 'github' && body && (typeof body["id"] === 'number' || typeof body["id"] === 'string')) return { account: `gh-${body["id"]}`, label: typeof body["login"] === 'string' ? body["login"] : '' };
+  return { account: '', label: '' };
+}
+export async function cloudflareAccountIdentity(token: string, body: Record<string, unknown> | null) {
+  const zone = Array.isArray(body?.["result"]) ? (body!["result"] as Array<{ account?: { id?: string; name?: string } }>)[0] : undefined;
+  const accountId = typeof zone?.account?.id === 'string' ? zone.account.id : '';
+  const accountName = typeof zone?.account?.name === 'string' ? zone.account.name : '';
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  const tokenKey = 'token-' + Array.from(new Uint8Array(digest).slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return { account: accountId ? `cf-${accountId}` : tokenKey, label: accountName };
 }

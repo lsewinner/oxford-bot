@@ -5,11 +5,12 @@ import { z } from 'zod';
 import { providerId,PROVIDERS,operationInput,type ToolResult } from './connections/catalog';
 const BASE='https://connector-gateway.lovable.dev';
 const selection=z.object({id:providerId});
-export const connectPersonalToken=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['github','slack','cloudflare']),token:z.string().trim().min(1).max(4096).regex(/^[\x21-\x7E]+$/)}).strict().parse(v)).handler(async({data,context})=>{
- const {validatePersonalToken}=await import('./connections/personal-token.server');
+export const connectPersonalToken=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['github','slack','cloudflare']),token:z.string().trim().min(1).max(4096).regex(/^[\x21-\x7E]+$/),label:z.string().trim().max(60).optional()}).strict().parse(v)).handler(async({data,context})=>{
+ const {validatePersonalToken,personalTokenIdentity}=await import('./connections/personal-token.server');
  const {saveConnection}=await import('./connections/storage.server');
- await validatePersonalToken(data.id,data.token);
- await saveConnection(context.userId,data.id,data.token,'personal_token');
+ const body=await validatePersonalToken(data.id,data.token);
+ const who=await personalTokenIdentity(data.id,data.token,body??null);
+ await saveConnection(context.userId,data.id,data.token,'personal_token',who.account,data.label||who.label);
  return {ok:true};
 });
 export const connectionStatus=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).handler(async({context})=>{
