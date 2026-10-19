@@ -12,6 +12,9 @@ async function requireAdmin(context: Ctx) {
   return supabaseAdmin as any;
 }
 
+export type AdminUserRow = { id: string; email: string; nickname: string; createdAt: string; lastSignIn: string | null; paidPro: boolean; grantedPro: boolean; proUntil: string | null; isPro: boolean; banned: boolean; dailyLimitOverride: number | null; dailyLimit: number; usedToday: number };
+export type AdminAuditRow = { id: string; action: string; details: Record<string, unknown> | null; createdAt: string; target: string | null; admin: string };
+
 const today = () => new Date().toISOString().slice(0, 10);
 
 export const checkAdmin = createServerFn({ method: "GET" })
@@ -41,7 +44,7 @@ export const loadAdminData = createServerFn({ method: "GET" })
       return (["active", "trialing", "past_due"].includes(s.status) && (end === null || end > now)) || (s.status === "canceled" && end !== null && end > now);
     }).map((s: any) => s.user_id));
     const emails = new Map<string, string>();
-    const users = list.users.map((u: any) => {
+    const users: AdminUserRow[] = list.users.map((u: any): AdminUserRow => {
       const c: any = ctl.get(u.id);
       const granted = Boolean(c?.pro_granted && (!c.pro_until || Date.parse(c.pro_until) > now));
       const isPro = paid.has(u.id) || granted;
@@ -71,7 +74,7 @@ export const loadAdminData = createServerFn({ method: "GET" })
         messagesToday: users.reduce((s: number, u: any) => s + u.usedToday, 0),
         activeToday: users.filter((u: any) => u.usedToday > 0).length,
       },
-      audit: (audit ?? []).map((a: any) => ({ id: a.id, action: a.action as string, details: a.details, createdAt: a.created_at as string, target: a.target_user_id ? emails.get(a.target_user_id) ?? a.target_user_id : null, admin: emails.get(a.admin_id) ?? a.admin_id })),
+      audit: (audit ?? []).map((a: any): AdminAuditRow => ({ id: a.id, action: a.action as string, details: a.details, createdAt: a.created_at as string, target: a.target_user_id ? emails.get(a.target_user_id) ?? a.target_user_id : null, admin: emails.get(a.admin_id) ?? a.admin_id })),
     };
   });
 
