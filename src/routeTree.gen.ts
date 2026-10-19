@@ -18,6 +18,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as ApiSpeechRouteImport } from './routes/api/speech'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
@@ -70,6 +71,11 @@ const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   path: '/api/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShareTokenRoute = ShareTokenRouteImport.update({
   id: '/share/$token',
   path: '/share/$token',
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/share/$token': typeof ShareTokenRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/share/$token': typeof ShareTokenRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat': typeof AuthenticatedChatIndexRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/speech'
     | '/api/transcribe'
+    | '/checkout/return'
     | '/share/$token'
     | '/chat/$threadId'
     | '/chat/'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/speech'
     | '/api/transcribe'
+    | '/checkout/return'
     | '/share/$token'
     | '/chat/$threadId'
     | '/chat'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/speech'
     | '/api/transcribe'
+    | '/checkout/return'
     | '/share/$token'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/chat/'
@@ -224,6 +236,7 @@ export interface RootRouteChildren {
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
   ApiSpeechRoute: typeof ApiSpeechRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
+  CheckoutReturnRoute: typeof CheckoutReturnRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ApiOauthGoogleCallbackRoute: typeof ApiOauthGoogleCallbackRoute
   ApiOauthMicrosoftCallbackRoute: typeof ApiOauthMicrosoftCallbackRoute
@@ -294,6 +307,13 @@ declare module '@tanstack/react-router' {
       path: '/api/transcribe'
       fullPath: '/api/transcribe'
       preLoaderRoute: typeof ApiTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/share/$token': {
@@ -381,6 +401,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGenerateImageRoute: ApiGenerateImageRoute,
   ApiSpeechRoute: ApiSpeechRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
+  CheckoutReturnRoute: CheckoutReturnRoute,
   ShareTokenRoute: ShareTokenRoute,
   ApiOauthGoogleCallbackRoute: ApiOauthGoogleCallbackRoute,
   ApiOauthMicrosoftCallbackRoute: ApiOauthMicrosoftCallbackRoute,

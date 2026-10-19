@@ -15,6 +15,7 @@ import type { BotEntry } from "@/lib/bot-presence";
 import { guestConversationId, guestLastActivity, guestMessagesKey, parseGuestMessages } from "@/lib/guest-conversations";
 import { cn } from "@/lib/utils";
 import { TrendsDrawer } from '@/components/chat/trends-drawer';
+import { UpgradeEntry } from '@/components/pro/upgrade-dialog';
 
 export const Route = createFileRoute("/guest")({
   head: () => ({ meta: [
@@ -44,6 +45,7 @@ function GuestBots({ activeId, onSelect }: { activeId: string; onSelect: (entry:
 
   return <div className="h-full overflow-y-auto bg-sidebar px-2 py-5 text-sidebar-foreground">
     <div className="mb-6 flex items-center gap-2 px-2"><img src={logo} width={28} height={28} alt="Oxford Bot" /><span className="text-sm font-semibold">Oxford Bot</span></div>
+    <div className="-mx-3 mb-3"><UpgradeEntry /></div>
     <TrendsDrawer />
     <div className="flex items-center justify-between px-2 pb-2"><span className="text-[11px] text-muted-foreground">我的 Bots</span><NewBot onCreate={(bot) => { const messageId = `manual-${crypto.randomUUID()}`; const entry = { id: `guest:${messageId}`, threadId: "guest", messageId, bot }; register([entry]); onSelect(entry); }} /></div>
     <Button variant="ghost" aria-label="打开主 Bot Oxonian" onClick={() => onSelect(null)} className={cn(botListRowClass, "justify-start hover:bg-sidebar-accent", !entries.some((e) => activeId === guestConversationId(e.id)) && "bg-sidebar-accent")}><MainBotLabel active={!entries.some((e) => activeId === guestConversationId(e.id))} preview={previews["guest"]?.preview} time={previews["guest"]?.time} /></Button>
