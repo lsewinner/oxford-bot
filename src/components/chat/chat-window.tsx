@@ -74,11 +74,13 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     const pending = sessionStorage.getItem(key);
     if (pending && initialMessages.length === 0) {
       sessionStorage.removeItem(key);
-      console.warn("[pd] send", self);
-      sendMessage({ text: pending });
+      const t = setTimeout(() => {
+        console.warn("[pd] send", self);
+        sendMessage({ text: pending });
+      }, 0);
       const refresh = setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
       return () => {
-        console.warn("[pd] cleanup", self);
+        console.warn("[pd] cleanup", self, "timer", !!t);
         clearTimeout(refresh);
       };
     }
