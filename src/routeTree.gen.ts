@@ -18,6 +18,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as ApiSpeechRouteImport } from './routes/api/speech'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
+import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oauth/return'
@@ -66,6 +67,11 @@ const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   path: '/api/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShareTokenRoute = ShareTokenRouteImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/share/$token': typeof ShareTokenRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/share/$token': typeof ShareTokenRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/share/$token': typeof ShareTokenRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/speech'
     | '/api/transcribe'
+    | '/share/$token'
     | '/chat/$threadId'
     | '/chat/'
     | '/api/public/oauth/return'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/speech'
     | '/api/transcribe'
+    | '/share/$token'
     | '/chat/$threadId'
     | '/chat'
     | '/api/public/oauth/return'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/speech'
     | '/api/transcribe'
+    | '/share/$token'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/chat/'
     | '/api/public/oauth/return'
@@ -174,6 +186,7 @@ export interface RootRouteChildren {
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
   ApiSpeechRoute: typeof ApiSpeechRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
+  ShareTokenRoute: typeof ShareTokenRoute
   ApiPublicOauthReturnRoute: typeof ApiPublicOauthReturnRoute
 }
 
@@ -242,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/share/$token': {
+      id: '/share/$token'
+      path: '/share/$token'
+      fullPath: '/share/$token'
+      preLoaderRoute: typeof ShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/chat/': {
       id: '/_authenticated/chat/'
       path: '/'
@@ -299,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGenerateImageRoute: ApiGenerateImageRoute,
   ApiSpeechRoute: ApiSpeechRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
+  ShareTokenRoute: ShareTokenRoute,
   ApiPublicOauthReturnRoute: ApiPublicOauthReturnRoute,
 }
 export const routeTree = rootRouteImport
