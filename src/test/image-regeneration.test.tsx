@@ -5,7 +5,7 @@ vi.mock('@/lib/stream-image', () => ({ streamImage: mocks.stream }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { auth: { getSession: async () => ({ data: { session: null } }) } } }));
 import { GeneratedImage } from '@/components/chat/media-card';
 describe('image prompt regeneration', () => {
-  beforeEach(() => mocks.stream.mockReset());
+  beforeEach(() => { mocks.stream.mockReset(); });
   it('sends the modified prompt and saves it with the completed image', async () => {
     const complete = vi.fn();
     mocks.stream.mockImplementation(async (_endpoint, _input, frame) => frame('data:image/png;base64,new', true));
