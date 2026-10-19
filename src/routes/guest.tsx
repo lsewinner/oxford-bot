@@ -32,7 +32,7 @@ function GuestChat() {
 function GuestBots({ activeId, onSelect }: { activeId: string; onSelect: (entry: BotEntry | null) => void }) {
   const { activities, entries, register } = useBotPresence();
   const previews = useMemo(() => {
-    const map: Record<string, { preview: string; time?: string }> = { guest: guestLastActivity("guest") };
+    const map: Record<string, { preview: string; time?: string | undefined }> = { guest: guestLastActivity("guest") };
     for (const entry of entries) map[guestConversationId(entry.id)] = guestLastActivity(guestConversationId(entry.id));
     return map;
     // activities changes when a stream settles, so previews refresh after each reply.
