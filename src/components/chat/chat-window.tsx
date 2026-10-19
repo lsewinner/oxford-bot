@@ -122,6 +122,80 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   );
 }
 
+type SearchAction =
+  | { type: "search"; query?: string; queries?: string[] }
+  | { type: "openPage"; url?: string | null }
+  | { type: "findInPage"; url?: string | null; pattern?: string };
+
+function domainOf(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+function SearchSteps({ part, streaming }: { part: UIMessage["parts"][number]; streaming: boolean }) {
+  const p = part as { state?: string; output?: { action?: SearchAction } };
+  const action = p.output?.action;
+  const done = p.state === "output-available" || !!p.output;
+  const steps: { icon: typeof SearchIcon; label: string; active: boolean }[] = [];
+  if (!action || action.type === "search") {
+    const q = action?.type === "search" ? (action.queries ?? (action.query ? [action.query] : [])) : [];
+    steps.push({
+      icon: SearchIcon,
+      label: q.length ? `正在检索：${q.join("、")}` : "正在检索关键词",
+      active: !done,
+    });
+  }
+  if (action?.type === "openPage" && action.url) {
+    steps.push({ icon: GlobeIcon, label: `正在阅读：${domainOf(action.url)}`, active: !done });
+  }
+  if (action?.type === "findInPage" && action.url) {
+    steps.push({ icon: FileTextIcon, label: `正在定位内容：${domainOf(action.url)}`, active: !done });
+  }
+  if (done) steps.push({ icon: FileTextIcon, label: "正在整理答案", active: streaming });
+  if (steps.length === 0) return null;
+  return (
+    <div className="mb-2 flex flex-col gap-1.5">
+      {steps.map((s, i) => (
+        <div key={i} className="flex items-center gap-2 text-[13px] text-muted-foreground">
+          <s.icon className="size-3.5 shrink-0" />
+          {s.active ? <Shimmer>{s.label}</Shimmer> : <span>{s.label.replace("正在", "已")}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SourceCards({ sources }: { sources: { url: string; title?: string }[] }) {
+  if (sources.length === 0) return null;
+  return (
+    <div className="mt-3 flex flex-col gap-1.5">
+      <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">来源</div>
+      <div className="grid gap-1.5 sm:grid-cols-2">
+        {sources.map((s, i) => (
+          <a
+            key={i}
+            href={s.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 text-xs transition-colors hover:bg-accent"
+          >
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-secondary text-[10px] font-semibold text-muted-foreground">
+              {i + 1}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-foreground">{s.title || domainOf(s.url)}</span>
+              <span className="block truncate text-muted-foreground">{domainOf(s.url)}</span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ChatMessage({
   message,
   streaming,
