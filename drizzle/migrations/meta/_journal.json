@@ -43,6 +43,13 @@
       "when": 1792398487106,
       "tag": "0005_personal_token_connection_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792400896911,
+      "tag": "0006_google_oauth_credential_kind",
+      "breakpoints": true
     }
   ]
 }

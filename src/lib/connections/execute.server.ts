@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { decryptConnectionKey,getConnection } from './storage.server';
 import { PROVIDERS,validateOperation,isWrite,type ProviderId,type OperationInput,type ToolResult } from './catalog';
 import { callWithPersonalToken,supportsPersonalToken,personalTokenError } from './personal-token.server';
+import { callWithGoogleToken,isGoogleProvider } from './google-oauth.server';
 const BASE='https://connector-gateway.lovable.dev';
 const enc=encodeURIComponent;
 const b64=(s:string)=>Buffer.from(s,'utf8').toString('base64');
@@ -19,8 +20,14 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  const request=async(path:string,method='GET',body?:unknown,raw=false)=>{
  const init={method,headers:{Accept:id==='github'?'application/vnd.github+json':'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})};
  const personal=row.credential_kind==='personal_token';
+ const google=row.credential_kind==='google_oauth';
  if(personal && !supportsPersonalToken(id))throw new Error('不支持此服务的个人 Token');
- const r=personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});
+ if(google && !isGoogleProvider(id))throw new Error('此服务不支持 Google 授权');
+ const r=personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):google && isGoogleProvider(id)?await callWithGoogleToken(id,decryptConnectionKey(row.connection_key_ciphertext),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});
+ if(google && isGoogleProvider(id)){
+   if(!r.ok){if(r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new Error('授权需要更新，请重新连接');}throw new Error(`${provider} (${r.status})`);}
+   const b=raw?await r.text():r.status===204?{}:await r.json();return b;
+  }
  if(personal && supportsPersonalToken(id)){
    if(!r.ok)throw new Error(personalTokenError(id,r.status));
    const b=await r.json().catch(()=>null);
@@ -52,7 +59,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  } else if(id==='google_drive'){
  if(o==='search'){const q=`trashed = false${input.query?" and name contains '"+input.query.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'":''}`;const b=await request(`/drive/v3/files?pageSize=20&fields=files(id,name,mimeType,webViewLink)&q=${enc(q)}`);items=(b.files ?? []).map((v:any)=>({title:v.name,id:v.id,url:v.webViewLink,detail:v.mimeType}));}
  if(o==='read'){const file=enc(input.id ?? '');const b=await request(`/drive/v3/files/${file}?fields=id,name,mimeType,size`);if(Number(b.size)>1000000)throw new Error('文件过大，请上传附件进行分析');if(b.mimeType==='application/vnd.google-apps.document')text=await request(`/drive/v3/files/${file}/export?mimeType=text/plain`,'GET',undefined,true);else if(b.mimeType.startsWith('text/') || b.mimeType==='application/json')text=await request(`/drive/v3/files/${file}?alt=media`,'GET',undefined,true);else throw new Error('此类型请下载后上传至对话分析');text=text?.slice(0,30000);items=[{title:b.name,id:b.id}];}
- if(o==='create_file'){const b=await request('/drive/v3/files','POST',{name:input.title,mimeType:'text/plain'});const upload=await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path:`/upload/drive/v3/files/${enc(b.id)}?uploadType=media`,requiredScopes:PROVIDERS[id].scopes,init:{method:'PATCH',headers:{'Content-Type':'text/plain; charset=utf-8'},body:input.text ?? ''}});if(!upload.ok)throw new Error(`Drive 文件内容上传失败 (${upload.status}): ${(await upload.text()).slice(0,1200)}`);items=[{title:input.title ?? '',id:b.id}];}
+ if(o==='create_file'){const b=await request('/drive/v3/files','POST',{name:input.title,mimeType:'text/plain'});const uploadInit={method:'PATCH',headers:{'Content-Type':'text/plain; charset=utf-8'},body:input.text ?? ''};const upload=row.credential_kind==='google_oauth'?await callWithGoogleToken('google_drive',decryptConnectionKey(row.connection_key_ciphertext),`/upload/drive/v3/files/${enc(b.id)}?uploadType=media`,uploadInit):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path:`/upload/drive/v3/files/${enc(b.id)}?uploadType=media`,requiredScopes:PROVIDERS[id].scopes,init:uploadInit});if(!upload.ok)throw new Error(`Drive 文件内容上传失败 (${upload.status}): ${(await upload.text()).slice(0,1200)}`);items=[{title:input.title ?? '',id:b.id}];}
  } else {
  if(o==='channels'){const b=await request('/api/conversations.list?limit=50&exclude_archived=true');items=(b.channels ?? []).map((v:any)=>({title:v.name,id:v.id}));if(b.response_metadata?.next_cursor)text='仅显示前 50 个频道';}
  if(o==='history'){const b=await request(`/api/conversations.history?limit=20&channel=${enc(input.id ?? '')}`);const users=new Map<string,string>();for(const v of b.messages ?? []){if(v.user && !users.has(v.user)){try{const u=await request(`/api/users.info?user=${enc(v.user)}`);users.set(v.user,u.user?.profile?.display_name || u.user?.real_name || u.user?.name || '未知成员');}catch{users.set(v.user,'未知成员');}}}items=(b.messages ?? []).map((v:any)=>({title:users.get(v.user) ?? '系统消息',detail:(v.text ?? '').slice(0,3000)}));}
