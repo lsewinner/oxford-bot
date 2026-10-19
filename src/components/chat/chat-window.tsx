@@ -24,12 +24,13 @@ import { pendingKey } from "@/lib/chat-data";
 import { Composer } from "./composer";
 import { useMode } from "./mode-context";
 import { useWebSearch } from "./web-search-context";
-import { useTools } from "./use-tools";
 import { BotAvatar, useBotPresence } from "./bot-presence";
 import { botsFromMessages, type BotIdentity } from "@/lib/bot-presence";
 import { guestMessagesKey, isGuestConversation } from "@/lib/guest-conversations";
 import { parsePendingInput } from "@/lib/chat-attachments";
 import { FileAttachment, GeneratedImage } from "./media-card";
+import { RealToolResult } from './real-tool-result';
+import type { ToolResult } from '@/lib/connections/catalog';
 
 function errorText(err: Error) {
   try {
@@ -49,9 +50,8 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
   const webSearchRef = useRef(webSearch);
   webSearchRef.current = webSearch;
   const queryClient = useQueryClient();
-  const { enabled: demoTools } = useTools();
-  const toolsRef = useRef(demoTools);
-  toolsRef.current = demoTools;
+  const botRef = useRef(activeBot);
+  botRef.current = activeBot;
 
   const transport = useMemo(
     () =>
@@ -62,7 +62,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, webSearch: webSearchRef.current, demoTools: toolsRef.current }),
+        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind } : null }),
       }),
     [threadId],
   );
@@ -339,6 +339,12 @@ function ChatMessage({
               <p className="mt-2">{step.errorText ?? step.output?.summary ?? "正在准备模拟结果…"}</p>
               {step.output?.sample && <p className="mt-2">{step.output.sample}</p>}
             </details>;
+          }
+          if (part.type.startsWith('tool-service_')) {
+            const step = part as { state?: string; output?: ToolResult; errorText?: string };
+            if (step.state === 'output-error') return <p key={i} role="alert" className="text-sm text-destructive">{step.errorText ?? '执行失败'}</p>;
+            if (step.output) return <RealToolResult key={i} output={step.output} />;
+            return <Shimmer key={i}>{`正在调用 ${part.type.replace('tool-service_', '')}…`}</Shimmer>;
           }
           if (part.type === "text") {
             return message.role === "user" ? (

@@ -1,0 +1,5 @@
+import { createFileRoute } from '@tanstack/react-router';
+export const Route=createFileRoute('/api/public/oauth/return')({server:{handlers:{GET:({request})=>{
+ const u=new URL(request.url);const success=u.searchParams.get('success')==='true';const result={type:success?'appUserConnectorOAuthComplete':'appUserConnectorOAuthFailed',connectorId:u.searchParams.get('connector_id'),code:success && u.searchParams.get('offline_access_allowed')!=='false'?u.searchParams.get('code'):null};
+ const safe=JSON.stringify(result).replace(/</g,'\\u003c');return new Response(`<!doctype html><html lang="zh"><head><title>连接授权 · Oxford Bot</title></head><body><p>${success?'授权返回，正在保存连接…':'授权未完成，请返回重试'}</p><script>history.replaceState(null,'',location.pathname);if(window.opener){window.opener.postMessage(${safe},location.origin);window.close();}</script></body></html>`,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; script-src 'unsafe-inline'"}});
+}}}});

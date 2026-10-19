@@ -1,64 +1,41 @@
-import { CheckIcon, CloudIcon, FlaskConicalIcon, FolderIcon, MailIcon, MessageSquareIcon, PlugIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { TOOL_CATALOG, simulateTool, type ToolId } from "@/lib/tool-catalog";
-import { useTools } from "./use-tools";
-
-const icons = { "邮件助手": MailIcon, "云盘与文档": FolderIcon, "开发与运维": CloudIcon, "即时协作": MessageSquareIcon };
-export function ToolsCenter() {
-  const { enabled, toggle } = useTools();
-  const [setup, setSetup] = useState<string | null>(null);
-  const [run, setRun] = useState<{ id: ToolId; phase: number } | null>(null);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
-  useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
-  const simulate = (id: ToolId) => {
-    if (timer.current) clearInterval(timer.current);
-    setRun({ id, phase: 0 });
-    timer.current = setInterval(() => {
-      setRun((current) => {
-        if (!current || current.phase >= 2) {
-          if (timer.current) clearInterval(timer.current);
-          return current;
-        }
-        return { ...current, phase: current.phase + 1 };
-      });
-    }, 600);
-  };
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button type="button" variant="ghost" size="sm" aria-label="工具与连接" title="工具与连接" className="gap-1.5 px-2 text-muted-foreground">
-          <PlugIcon /><span className="hidden sm:inline">工具</span>{enabled.length > 0 && <span className="font-mono text-xs">{enabled.length}</span>}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[85dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-lg">
-        <DialogHeader>
-          <DialogTitle>工具与连接</DialogTitle>
-          <DialogDescription>真实连接 0 · 已启用模拟 {enabled.length}</DialogDescription>
-        </DialogHeader>
-        {setup && <div role="status" className="border-l-2 border-border pl-3 text-sm text-muted-foreground">{setup} 尚未配置授权。需由工作区管理员在「App User Connectors」设置授权应用，才能连接个人账户。Cloudflare 需单独配置账户访问权限。</div>}
-        {Object.entries(icons).map(([category, Icon]) => (
-          <section key={category} className="border-t border-border pt-4">
-            <h2 className="mb-2 flex items-center gap-2 text-sm font-medium"><Icon className="size-4" />{category}</h2>
-            {TOOL_CATALOG.filter((tool) => tool.category === category).map((tool) => (
-              <div key={tool.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                <div className="min-w-0"><p className="text-sm font-medium">{tool.name} <span className="ml-1 text-xs font-normal text-muted-foreground">未连接</span></p><p className="mt-1 text-xs text-muted-foreground">{tool.detail}</p></div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setSetup(tool.name)}>连接</Button>
-                  <Button variant="ghost" size="icon-sm" aria-label={`模拟 ${tool.name}`} title={`模拟 ${tool.name}`} onClick={() => simulate(tool.id)}><FlaskConicalIcon /></Button>
-                  <Switch checked={enabled.includes(tool.id)} onCheckedChange={(checked) => toggle(tool.id, checked)} aria-label={`启用 ${tool.name} 模拟工具`} />
-                </div>
-              </div>
-            ))}
-          </section>
-        ))}
-        {run && <div role="status" className="border-t border-border pt-3 text-sm">
-          <p className="flex items-center gap-2">{run.phase === 2 ? <CheckIcon className="size-4" /> : <FlaskConicalIcon className="size-4 motion-safe:animate-pulse" />}模拟 · {TOOL_CATALOG.find((tool) => tool.id === run.id)?.name} · {["准备调用", "执行检索", "已完成"][run.phase]}</p>
-          {run.phase === 2 && <p className="mt-2 text-xs text-muted-foreground">{simulateTool(run.id, "测试连接").summary}</p>}
-        </div>}
-      </DialogContent>
-    </Dialog>
-  );
+import { CloudIcon,FolderIcon,MailIcon,MessageSquareIcon,PlugIcon,RefreshCcwIcon,UnplugIcon,LoaderCircleIcon } from 'lucide-react';
+import { useEffect,useState } from 'react';
+import { useServerFn } from '@tanstack/react-start';
+import { Link } from '@tanstack/react-router';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle,DialogTrigger } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/integrations/supabase/client';
+import { TOOL_CATALOG } from '@/lib/tool-catalog';
+import { PROVIDERS,providerId,type ProviderId,type ToolResult } from '@/lib/connections/catalog';
+import { connectionStatus,startConnection,completeConnection,updateConnection,runOperation } from '@/lib/connections.functions';
+import { waitForOAuth } from '@/lib/connections/oauth-client';
+import { RealToolResult } from './real-tool-result';
+const icons={'邮件助手':MailIcon,'云盘与文档':FolderIcon,'开发与运维':CloudIcon,'即时协作':MessageSquareIcon};
+type Connection=Awaited<ReturnType<typeof connectionStatus>>[number];
+export function ToolsCenter(){
+ const [open,setOpen]=useState(false),[signedIn,setSignedIn]=useState(false),[rows,setRows]=useState<Connection[]>([]),[busy,setBusy]=useState<string|null>(null),[error,setError]=useState(''),[selected,setSelected]=useState<ProviderId|null>(null),[query,setQuery]=useState(''),[result,setResult]=useState<ToolResult|null>(null);
+ const status=useServerFn(connectionStatus),start=useServerFn(startConnection),complete=useServerFn(completeConnection),update=useServerFn(updateConnection),run=useServerFn(runOperation);
+ const refresh=async()=>{setError('');try{const {data}=await supabase.auth.getSession();setSignedIn(Boolean(data.session));setRows(data.session?await status():[]);}catch(e){setError(e instanceof Error?e.message:'无法读取连接');}};
+ useEffect(()=>{if(open)void refresh();},[open]);
+ useEffect(()=>{const {data}=supabase.auth.onAuthStateChange(()=>{setRows([]);setSignedIn(false);setSelected(null);setResult(null);});return ()=>data.subscription.unsubscribe();},[]);
+ const connect=async(id:ProviderId)=>{const popup=window.open('','oxford-oauth','width=600,height=720');if(!popup){toast.error('请允许弹出授权窗口');return;}setBusy(id);try{const {authorizationUrl}=await start({data:{id}});const waiting=waitForOAuth(popup,id);popup.location.href=authorizationUrl;const code=await waiting;if(!code){toast.info('授权已完成，但管理员需开启持续访问后才能执行任务');return;}await complete({data:{id,code}});await refresh();toast.success(`已连接 ${PROVIDERS[id].name}`);}catch(e){popup.close();toast.error(e instanceof Error?e.message:'连接失败');}finally{setBusy(null);}};
+ const change=async(id:ProviderId,enabled?:boolean,disconnect=false)=>{setBusy(id);try{await update({data:{id,...(enabled===undefined?{}:{enabled}),disconnect}});await refresh();if(disconnect)toast.success('已断开连接');}catch(e){toast.error(e instanceof Error?e.message:'更新失败');}finally{setBusy(null);}};
+ const test=async()=>{if(!selected)return;setBusy(selected);setResult(null);try{const input=selected==='github'?{operation:'repos'}:selected==='slack'?{operation:'channels'}:{operation:'search',query};setResult(await run({data:{id:selected,input}}));await refresh();}catch(e){setError(e instanceof Error?e.message:'读取失败');}finally{setBusy(null);}};
+ const count=rows.filter(r=>r.connected && !r.reconnectRequired && !r.connectionError).length;
+ return <Dialog open={open} onOpenChange={setOpen}><DialogTrigger asChild><Button type="button" variant="ghost" size="sm" aria-label="工具与连接" title="工具与连接" className="gap-1.5 px-2 text-muted-foreground"><PlugIcon/><span className="hidden sm:inline">工具</span>{count>0 && <span className="font-mono text-xs">{count}</span>}</Button></DialogTrigger>
+ <DialogContent className="max-h-[85dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-lg"><DialogHeader><DialogTitle>工具与连接</DialogTitle><DialogDescription>个人账户 · 已连接 {count} · 已启用 {rows.filter(r=>r.enabled && !r.reconnectRequired).length}</DialogDescription></DialogHeader>
+ {!signedIn && <div className="flex items-center justify-between gap-3 border-t border-border pt-3 text-sm text-muted-foreground"><span>登录后连接你的个人账户</span><Button asChild size="sm"><Link to="/auth">登录</Link></Button></div>}
+ {error && <p role="alert" className="break-words text-sm text-destructive">{error}</p>}
+ <Button variant="ghost" size="sm" className="justify-start" disabled={Boolean(busy)} onClick={()=>refresh()}><RefreshCcwIcon/>刷新连接状态</Button>
+ {Object.entries(icons).map(([category,Icon])=><section key={category} className="border-t border-border pt-4"><h2 className="mb-2 flex items-center gap-2 text-sm font-medium"><Icon className="size-4"/>{category}</h2>{TOOL_CATALOG.filter(t=>t.category===category).map(tool=>{
+ const parsed=providerId.safeParse(tool.id),id=parsed.success?parsed.data:null,row=rows.find(r=>r.id===id);const configured=row?.configured;
+ return <div key={tool.id} className="py-3"><div className="flex flex-wrap items-center justify-between gap-3"><div className="min-w-0"><p className="text-sm font-medium">{tool.name} <span className="ml-1 text-xs font-normal text-muted-foreground">{!id?'尚未开放':!signedIn?'需登录':!configured?'需管理员配置':row?.reconnectRequired?'授权需更新':row?.connected?'已连接':'未连接'}</span></p><p className="mt-1 text-xs text-muted-foreground">{tool.detail}</p></div>{id && <div className="flex items-center gap-2">{busy===id && <LoaderCircleIcon className="size-4 animate-spin"/>}{configured && signedIn && <Button variant="outline" size="sm" disabled={Boolean(busy)} onClick={()=>connect(id)}>{row?.connected?'重新授权':'连接'}</Button>}{row?.connected && <><Button variant="ghost" size="icon-sm" title={`断开 ${tool.name}`} aria-label={`断开 ${tool.name}`} disabled={Boolean(busy)} onClick={()=>{if(window.confirm(`断开 ${tool.name}？Bot 将无法继续访问。`))void change(id,undefined,true);}}><UnplugIcon/></Button><Switch checked={row.enabled} disabled={Boolean(busy) || row.reconnectRequired} onCheckedChange={v=>change(id,v)} aria-label={`启用 ${tool.name}`}/><Button variant="ghost" size="sm" disabled={!row.enabled || row.reconnectRequired} onClick={()=>{setSelected(id);setResult(null);setQuery('');}}>测试读取</Button></>}</div>}</div>
+ {row?.connectionError && <p role="alert" className="mt-2 break-words text-xs text-destructive">{row.connectionError}</p>}
+ {id && signedIn && !configured && <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">授权配置指南</summary><p className="mt-2">工作区管理员：在 App User Connectors 中创建并关联 {tool.name} 授权应用，开启持续访问。关联失败请检查工作区设置，仍失败请联系支持。</p><a href={PROVIDERS[id].setup} target="_blank" rel="noreferrer" className="mt-2 block underline">打开 {tool.name} 授权应用设置</a><p className="mt-2">授权回调地址：</p><code className="block break-all">https://connector-gateway.lovable.dev/api/v1/app-users/oauth2/callback</code>{id.startsWith('google_') && <p className="mt-2">Google：将授权应用发布，或设为组织内部应用；测试模式授权七天后失效。回调域名属于 Lovable，不要改为本站地址。</p>}</details>}</div>;
+ })}</section>)}
+ {selected && <section className="border-t border-border pt-4"><p className="mb-2 text-sm font-medium">{PROVIDERS[selected].name} · 测试读取</p>{!['github','slack'].includes(selected) && <Input value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索邮件或文件"/>}<Button className="mt-3" size="sm" disabled={Boolean(busy)} onClick={test}>读取{selected==='github'?'代码库':selected==='slack'?'频道':'搜索结果'}</Button>{result && <RealToolResult output={result}/>}</section>}
+ </DialogContent></Dialog>;
 }
