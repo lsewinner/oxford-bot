@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { usePro } from "@/components/pro/pro-context";
 
 export const Route = createFileRoute("/checkout/return")({
-  validateSearch: (s: Record<string, unknown>): { session_id?: string } => ({ session_id: typeof s["session_id"] === "string" ? s["session_id"] : undefined }),
+  validateSearch: (s: Record<string, unknown>): { session_id?: string | undefined } => ({ session_id: typeof s["session_id"] === "string" ? s["session_id"] : undefined }),
   head: () => ({ meta: [
     { title: "Oxford Bot · 升级完成" },
     { name: "description", content: "Oxford Pro 订阅结果。" },

@@ -18,7 +18,7 @@ function Cell({ value }: { value: string | boolean }) {
 }
 
 export function PaymentTestModeBanner() {
-  const token = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
+  const token = import.meta.env['VITE_PAYMENTS_CLIENT_TOKEN'] as string | undefined;
   if (!token) return <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">正式付款尚未开通，请先完成 Stripe 上线设置。</div>;
   if (token.startsWith("pk_test_")) return <div className="rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">预览中的付款均为测试模式，可用卡号 4242 4242 4242 4242。<a className="underline" href="https://docs.lovable.dev/features/payments#test-and-live-environments" target="_blank" rel="noopener noreferrer">了解更多</a></div>;
   return null;

@@ -126,7 +126,7 @@ export async function verifyWebhook(req: Request, env: StripeEnv): Promise<{ typ
 
 /** Environment of this build, derived from the bundled client token (never from caller input). */
 export function serverPaymentsEnv(): StripeEnv | null {
-  const token = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
+  const token = import.meta.env['VITE_PAYMENTS_CLIENT_TOKEN'] as string | undefined;
   if (token?.startsWith('pk_test_')) return 'sandbox';
   if (token?.startsWith('pk_live_')) return 'live';
   return null;
