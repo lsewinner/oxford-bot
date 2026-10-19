@@ -3,7 +3,7 @@ import { isCatBreed, type BotKind, type CatBreed } from "./cat-breeds";
 export type { CatBreed, BotKind } from "./cat-breeds";
 
 export type BotIdentity = { name: string; kind: BotKind; breed?: CatBreed };
-export type BotEntry = { id: string; threadId: string; messageId: string; bot: BotIdentity; conversationId?: string };
+export type BotEntry = { id: string; threadId: string; messageId: string; bot: BotIdentity; conversationId?: string; overrides?: { name: string; breed?: CatBreed } };
 export type BotActivity = { bot: BotIdentity | null; status: "ready" | "submitted" | "streaming" | "error" };
 
 // Presentation only: recognizing a request does not create or connect an automation.
@@ -36,12 +36,15 @@ export function botsFromMessages(threadId: string, messages: UIMessage[]): BotEn
 }
 
 export function mergeBotEntries(previous: BotEntry[], incoming: BotEntry[]): BotEntry[] {
-  const known = new Set(previous.map((entry) => entry.id));
-  return [...previous, ...incoming.filter((entry) => {
-    if (known.has(entry.id)) return false;
-    known.add(entry.id);
-    return true;
-  })];
+  const merged = new Map(previous.map((entry) => [entry.id, entry]));
+  for (const entry of incoming) {
+    const existing = merged.get(entry.id);
+    const overrides = existing?.overrides ?? entry.overrides;
+    const conversationId = existing?.conversationId ?? entry.conversationId;
+    merged.set(entry.id, { ...entry, ...existing, bot: { ...(existing?.bot ?? entry.bot), ...overrides },
+      ...(overrides ? { overrides } : {}), ...(conversationId ? { conversationId } : {}) });
+  }
+  return [...merged.values()];
 }
 
 export const botStorageKey = (scope: string) => `oxford:bots:v1:${scope}`;
@@ -56,7 +59,12 @@ export function parseBotEntries(raw: string | null): BotEntry[] {
     if (!Array.isArray(parsed)) return [];
     const breeds = ["mail", "document", "code", "team", "general"];
     return parsed.filter((entry): entry is BotEntry => entry && typeof entry.id === "string" && typeof entry.threadId === "string" && typeof entry.messageId === "string" && typeof entry.bot?.name === "string" && breeds.includes(entry.bot.kind) && (entry.bot.breed === undefined || isCatBreed(entry.bot.breed)) && (entry.conversationId === undefined || typeof entry.conversationId === "string"))
-      .map((entry) => ({ ...entry, bot: { ...entry.bot, name: normalizeBotName(entry.bot.name) } }));
+      .map((entry) => {
+        const overrides = entry.overrides && typeof entry.overrides.name === "string" && (entry.overrides.breed === undefined || isCatBreed(entry.overrides.breed))
+          ? { name: normalizeBotName(entry.overrides.name), ...(entry.overrides.breed ? { breed: entry.overrides.breed } : {}) } : undefined;
+        const { overrides: ignored, ...base } = entry;
+        return { ...base, ...(overrides ? { overrides } : {}), bot: { ...entry.bot, name: normalizeBotName(entry.bot.name), ...overrides } };
+      });
   } catch { return []; }
 }
 

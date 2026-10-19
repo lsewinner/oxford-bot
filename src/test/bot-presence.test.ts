@@ -27,6 +27,15 @@ describe("Bot request identity and execution state", () => {
     expect(entries.map((entry) => entry.id)).toEqual(["guest:mail", "guest:github"]);
     expect(mergeBotEntries(entries, entries)).toHaveLength(2);
   });
+  it("merges explicit saved overrides and conversation links into an already registered history Bot", () => {
+    const initial = { id: "source:mail", threadId: "source", messageId: "mail", bot: { name: "邮件 Bot", kind: "mail" as const } };
+    const saved = { ...initial, conversationId: "dedicated", overrides: { name: "自定义猫", breed: "chartreux" as const } };
+    const merged = mergeBotEntries([initial], [saved]);
+    expect(merged[0]?.bot).toEqual({ name: "自定义猫", kind: "mail", breed: "chartreux" });
+    expect(merged[0]?.conversationId).toBe("dedicated");
+    expect(mergeBotEntries(merged, [initial])[0]?.bot.name).toBe("自定义猫");
+    expect(parseBotEntries(JSON.stringify(merged))[0]?.bot.breed).toBe("chartreux");
+  });
   it("recognizes a requested mail Bot without treating ordinary mail questions as creation", () => {
     expect(botFromRequest("我需要你帮我建立一个bot让它来看我的邮箱")?.kind).toBe("mail");
     expect(botFromRequest("帮我总结邮件")).toBeNull();

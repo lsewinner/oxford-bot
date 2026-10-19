@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { UIMessage } from "ai";
 import { supabase } from "@/integrations/supabase/client";
-import { botsFromMessages } from "@/lib/bot-presence";
+import { botsFromMessages, type BotEntry } from "@/lib/bot-presence";
 
 export type Thread = { id: string; title: string; updated_at: string };
 
@@ -87,3 +87,11 @@ export async function createThread(): Promise<string> {
 }
 
 export const pendingKey = (id: string) => `oxford:pending:${id}`;
+
+export async function renameBotThread(entry: BotEntry, name: string): Promise<void> {
+  const threadId = entry.conversationId ?? entry.threadId;
+  if (!threadId || threadId === "guest" || threadId.startsWith("guest:")) return;
+  // Owner-scoped thread policies enforce access through the authenticated browser client.
+  const { error } = await supabase.from("threads").update({ title: name.trim() }).eq("id", threadId).select("id").single();
+  if (error) throw error;
+}
