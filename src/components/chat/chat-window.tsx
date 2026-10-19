@@ -212,6 +212,12 @@ function ChatMessage({
     .filter((p) => p.type === "text")
     .map((p) => (p as { text: string }).text)
     .join("\n");
+  const sources = message.parts
+    .filter((p) => p.type === "source-url")
+    .map((p) => {
+      const s = p as { url: string; title?: string };
+      return { url: s.url, title: s.title };
+    });
 
   return (
     <Message from={message.role}>
@@ -231,6 +237,9 @@ function ChatMessage({
               </Reasoning>
             );
           }
+          if (part.type === "tool-web_search") {
+            return <SearchSteps key={i} part={part} streaming={streaming} />;
+          }
           if (part.type === "text") {
             return message.role === "user" ? (
               <p key={i} className="whitespace-pre-wrap">
@@ -244,6 +253,7 @@ function ChatMessage({
           }
           return null;
         })}
+        {message.role === "assistant" && <SourceCards sources={sources} />}
       </MessageContent>
       {message.role === "assistant" && text && !streaming && (
         <MessageActions className="-mt-2">
