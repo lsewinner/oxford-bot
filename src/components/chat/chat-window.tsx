@@ -26,7 +26,7 @@ import { useMode } from "./mode-context";
 import { useWebSearch } from "./web-search-context";
 import { useTools } from "./use-tools";
 import { BotAvatar, useBotPresence } from "./bot-presence";
-import { botFromMessages, type BotIdentity } from "@/lib/bot-presence";
+import { botsFromMessages, type BotIdentity } from "@/lib/bot-presence";
 
 function errorText(err: Error) {
   try {
@@ -90,8 +90,11 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   }, [threadId, initialMessages.length, sendMessage, queryClient]);
 
   const busy = status === "submitted" || status === "streaming";
-  const { report, settle } = useBotPresence();
-  const bot = useMemo(() => botFromMessages(messages), [messages]);
+  const { report, settle, entries, register } = useBotPresence();
+  const requests = useMemo(() => botsFromMessages(threadId, messages), [threadId, messages]);
+  useEffect(() => register(requests), [register, requests]);
+  const lastRequest = requests.at(-1);
+  const bot = entries.find((entry) => entry.id === lastRequest?.id)?.bot ?? lastRequest?.bot ?? null;
   useEffect(() => {
     report(threadId, { bot, status });
   }, [threadId, bot, status, report]);
@@ -106,14 +109,18 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
       <Conversation className="min-h-0 flex-1">
         <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 pb-10 pt-6">
           {messages.map((m, idx) => (
+            <div key={m.id} id={`message-${m.id}`}>
             <ChatMessage
-              key={m.id}
               message={m}
-              bot={bot}
+              bot={(() => {
+                const preceding = botsFromMessages(threadId, messages.slice(0, idx + 1)).at(-1);
+                return entries.find((entry) => entry.id === preceding?.id)?.bot ?? preceding?.bot ?? null;
+              })()}
               streaming={busy && idx === messages.length - 1}
               canRegenerate={!busy && idx === messages.length - 1 && m.role === "assistant"}
               onRegenerate={() => regenerate()}
             />
+            </div>
           ))}
           {busy && !lastAssistantHasText && (
             <div className="flex items-center gap-3 px-1 text-sm">
