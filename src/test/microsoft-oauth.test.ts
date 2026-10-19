@@ -4,8 +4,28 @@ const storage=vi.hoisted(()=>({from:vi.fn()}));
 vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{from:storage.from}}));
 
 describe('Microsoft direct OAuth',()=>{
- beforeEach(()=>{vi.stubEnv('APP_USER_CONNECTION_KEY_SECRET','test-encryption-key');vi.stubEnv('MICROSOFT_OAUTH_CLIENT_ID','test-client');vi.stubEnv('MICROSOFT_OAUTH_CLIENT_SECRET','test-secret');});
+ beforeEach(()=>{vi.stubEnv('APP_USER_CONNECTION_KEY_SECRET','test-encryption-key');vi.stubEnv('MICROSOFT_OAUTH_CLIENT_ID','11111111-2222-4333-8444-555555555555');vi.stubEnv('MICROSOFT_OAUTH_CLIENT_SECRET','test-secret');});
  afterEach(()=>{vi.unstubAllEnvs();vi.unstubAllGlobals();vi.useRealTimers();vi.clearAllMocks();});
+ it.each([undefined,'','  ','MICROSOFT_OAUTH_CLIENT_ID','${MICROSOFT_OAUTH_CLIENT_ID}','prefix-MICROSOFT_OAUTH_CLIENT_ID-suffix','not-a-uuid'])('falls back to the requested Client ID for invalid config %s',async(value)=>{
+  vi.stubEnv('MICROSOFT_OAUTH_CLIENT_ID',value);
+  const {startMicrosoftAuthorization,verifyMicrosoftState,exchangeMicrosoftCode}=await import('@/lib/connections/microsoft-oauth.server');
+  const url=new URL(startMicrosoftAuthorization(owner,'https://app.example/cb').authorizationUrl);
+  expect(url.searchParams.get('client_id')).toBe('dfb5197c-fa51-4233-9fbf-02bc4ff8eca2');
+  const fetcher=vi.fn().mockResolvedValue(Response.json({access_token:'test-access',refresh_token:'test-refresh'}));vi.stubGlobal('fetch',fetcher);
+  await exchangeMicrosoftCode('code',verifyMicrosoftState(url.searchParams.get('state') ?? ''));
+  expect((fetcher.mock.calls[0]?.[1].body as URLSearchParams).get('client_id')).toBe('dfb5197c-fa51-4233-9fbf-02bc4ff8eca2');
+ });
+ it('preserves a valid configured UUID instead of using the default',async()=>{
+  vi.stubEnv('MICROSOFT_OAUTH_CLIENT_ID','  11111111-2222-4333-8444-555555555555  ');
+  const {startMicrosoftAuthorization}=await import('@/lib/connections/microsoft-oauth.server');
+  expect(new URL(startMicrosoftAuthorization(owner,'https://app.example/cb').authorizationUrl).searchParams.get('client_id')).toBe('11111111-2222-4333-8444-555555555555');
+ });
+ it.each([undefined,'','  ','MICROSOFT_OAUTH_CLIENT_SECRET','${MICROSOFT_OAUTH_CLIENT_SECRET}','placeholder','your-client-secret','<client-secret>','xxx','replace-me'])('rejects empty or placeholder secrets %s before contacting Microsoft',async(value)=>{
+  vi.stubEnv('MICROSOFT_OAUTH_CLIENT_SECRET',value);const fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);
+  const {startMicrosoftAuthorization,callWithMicrosoftToken}=await import('@/lib/connections/microsoft-oauth.server');
+  expect(()=>startMicrosoftAuthorization(owner,'https://app.example/cb')).toThrow();
+  await expect(callWithMicrosoftToken('refresh','/me')).rejects.toThrow();expect(fetcher).not.toHaveBeenCalled();
+ });
  it('requests personal/work account selection and every required mail scope with S256 PKCE',async()=>{
   const {startMicrosoftAuthorization,verifyMicrosoftState}=await import('@/lib/connections/microsoft-oauth.server');
   const url=new URL(startMicrosoftAuthorization(owner,'https://app.example/api/oauth/microsoft/callback').authorizationUrl);

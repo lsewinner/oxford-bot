@@ -9,9 +9,14 @@ const stateSchema = z.object({ userId: z.string().uuid(), provider: z.literal('m
 export type MicrosoftState = z.infer<typeof stateSchema>;
 
 function config() {
-  const clientId = process.env['MICROSOFT_OAUTH_CLIENT_ID'];
-  const clientSecret = process.env['MICROSOFT_OAUTH_CLIENT_SECRET'];
-  if (!clientId || !clientSecret) throw new Error('微软授权应用尚未配置，请联系管理员');
+  const configuredId = process.env['MICROSOFT_OAUTH_CLIENT_ID']?.trim() ?? '';
+  const clientId = !/MICROSOFT_OAUTH_CLIENT_ID/i.test(configuredId) && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(configuredId)
+    ? configuredId
+    : 'dfb5197c-fa51-4233-9fbf-02bc4ff8eca2';
+  const clientSecret = process.env['MICROSOFT_OAUTH_CLIENT_SECRET']?.trim() ?? '';
+  const placeholder = /MICROSOFT_OAUTH_CLIENT_SECRET/i.test(clientSecret)
+    || /^(?:placeholder|undefined|null|secret|client[_ -]?secret|your[_ -]?(?:client[_ -]?)?secret(?:[_ -]?here)?|replace[_ -]?me|changeme|TODO|x{3,}|\.{3,}|<[^>]+>|\{\{[^}]+\}\})$/i.test(clientSecret);
+  if (!clientSecret || placeholder) throw new Error('微软客户端密码尚未正确配置，请填写与此授权应用匹配的客户端密码 Value（不是 Secret ID），然后重新连接');
   return { clientId, clientSecret };
 }
 
