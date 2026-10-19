@@ -24,7 +24,7 @@ export function MediaCard({ url, filename = "Oxford-image.png" }: { url: string;
 }
 
 export function FileAttachment({ url, mediaType, filename }: { url: string; mediaType: string; filename?: string }) {
-  if (mediaType.startsWith("image/")) return <MediaCard url={url} filename={filename} />;
+  if (mediaType.startsWith("image/")) return <MediaCard url={url} {...(filename ? { filename } : {})} />;
   return <a href={url} download={filename ?? "document"} className="my-2 flex max-w-sm items-center gap-3 rounded-lg border border-border bg-card px-3 py-3 text-foreground"><FileTextIcon className="size-6 shrink-0 text-muted-foreground" /><span className="min-w-0 truncate text-sm">{filename ?? "附件"}</span><DownloadIcon className="ml-auto size-4 shrink-0" /></a>;
 }
 

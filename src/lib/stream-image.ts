@@ -3,6 +3,12 @@ import { flushSync } from "react-dom";
 
 type ImagePayload = { type?: string; b64_json?: string; error?: { message?: string } };
 
+async function safeError(response: Response) {
+  const text = await response.text().catch(() => "");
+  try { const value = JSON.parse(text); return value.error?.message ?? value.error ?? value.message ?? `图片生成失败（${response.status}）`; }
+  catch { return text || `图片生成失败（${response.status}）`; }
+}
+
 export async function streamImage(
   endpoint: string,
   input: Record<string, unknown> | FormData,
@@ -31,7 +37,7 @@ export async function streamImage(
   };
   const res = await send(true);
   if (!res.ok || !res.body) {
-    throw new Error(`Image generation failed: ${res.status} ${await res.text().catch(() => "")}`);
+    throw new Error(await safeError(res));
   }
 
   let sawCompleted = false;
@@ -91,7 +97,7 @@ export async function streamImage(
   if (!sawAnyEvent) {
     const replay = await send(false);
     if (!replay.ok) {
-      throw new Error(`Image generation failed: ${replay.status} ${await replay.text().catch(() => "")}`);
+      throw new Error(await safeError(replay));
     }
     const json = (await replay.json()) as { data?: { b64_json?: string }[] };
     const b64 = json.data?.[0]?.b64_json;

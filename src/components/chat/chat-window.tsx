@@ -28,6 +28,8 @@ import { useTools } from "./use-tools";
 import { BotAvatar, useBotPresence } from "./bot-presence";
 import { botsFromMessages, type BotIdentity } from "@/lib/bot-presence";
 import { guestMessagesKey, isGuestConversation } from "@/lib/guest-conversations";
+import { parsePendingInput } from "@/lib/chat-attachments";
+import { FileAttachment, GeneratedImage } from "./media-card";
 
 function errorText(err: Error) {
   try {
@@ -65,7 +67,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
     [threadId],
   );
 
-  const { messages, sendMessage, status, stop, regenerate } = useChat({
+  const { messages, setMessages, sendMessage, status, stop, regenerate } = useChat({
     id: threadId,
     messages: initialMessages,
     transport,
@@ -83,7 +85,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
       sessionStorage.removeItem(key);
       // Defer to the next macrotask. Sending synchronously from this effect is
       // dropped by the chat store before it dispatches, losing the first question.
-      setTimeout(() => sendMessage({ text: pending }), 0);
+      setTimeout(() => sendMessage(parsePendingInput(pending)), 0);
       const refresh = setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
       return () => clearTimeout(refresh);
     }
@@ -127,6 +129,14 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
               streaming={busy && idx === messages.length - 1}
               canRegenerate={!busy && idx === messages.length - 1 && m.role === "assistant"}
               onRegenerate={() => regenerate()}
+              onImageComplete={(toolCallId, image) => {
+                const updated = messages.map((message) => message.id !== m.id ? message : { ...message, parts: message.parts.map((part) => part.type === "tool-generate_image" && "toolCallId" in part && part.toolCallId === toolCallId && "output" in part ? { ...part, output: { ...(part.output as object), image } } : part) });
+                setMessages(updated);
+                if (!isGuestConversation(threadId)) {
+                  const saved = updated.find((message) => message.id === m.id);
+                  if (saved) void supabase.from("messages").update({ parts: saved.parts as never }).eq("thread_id", threadId).eq("ui_id", m.id).then(({ error }) => { if (error) toast.error("图片保存失败，请先下载图片"); });
+                }
+              }}
             />
             </div>
           ))}
@@ -143,8 +153,8 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
         <Composer
           status={status}
           onStop={stop}
-          onSend={(text) => {
-            sendMessage({ text });
+          onSend={(text, files) => {
+            sendMessage(files?.length ? { text, files } : { text });
           }}
           placeholder="继续追问…"
         />
@@ -247,12 +257,14 @@ function ChatMessage({
   streaming,
   canRegenerate,
   onRegenerate,
+  onImageComplete,
 }: {
   message: UIMessage;
   bot: BotIdentity | null;
   streaming: boolean;
   canRegenerate: boolean;
   onRegenerate: () => void;
+  onImageComplete: (toolCallId: string, image: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
   const text = message.parts
@@ -295,6 +307,14 @@ function ChatMessage({
         }
       >
         {message.parts.map((part, i) => {
+          if (part.type === "file") return <FileAttachment key={i} url={part.url} mediaType={part.mediaType} {...(part.filename ? { filename: part.filename } : {})} />;
+          if (part.type === "tool-generate_image") {
+            const generation = part as { state?: string; toolCallId: string; input?: { prompt?: string }; output?: { prompt?: string; image?: string }; errorText?: string };
+            if (generation.state === "output-error") return <p key={i} role="alert" className="text-sm text-destructive">{generation.errorText ?? "图片任务失败"}</p>;
+            const prompt = generation.output?.prompt ?? generation.input?.prompt;
+            if (!prompt) return <Shimmer key={i}>正在构思画面…</Shimmer>;
+            return <GeneratedImage key={generation.toolCallId} prompt={prompt} {...(generation.output?.image ? { image: generation.output.image } : {})} autoStart={!streaming && generation.state === "output-available"} onComplete={(image) => onImageComplete(generation.toolCallId, image)} />;
+          }
           if (part.type === "reasoning" && part.text) {
             return (
               <Reasoning key={i} isStreaming={streaming && i === message.parts.length - 1} defaultOpen={false}>
