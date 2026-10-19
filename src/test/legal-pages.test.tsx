@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import {
   createMemoryHistory,
   createRootRoute,
@@ -15,26 +15,16 @@ import { Route as TermsRoute } from "@/routes/terms";
 
 // Stripe's live review needs the registered entity and support address on every
 // policy page, so each page must render them verbatim.
-const routeTree = createRootRoute().addChildren([
-  createRoute({ getParentRoute: () => createRootRoute(), path: "/", component: () => null }),
-  createRoute({
-    getParentRoute: () => createRootRoute(),
-    path: "/terms",
-    component: TermsRoute.component,
-  }),
-  createRoute({
-    getParentRoute: () => createRootRoute(),
-    path: "/privacy",
-    component: PrivacyRoute.component,
-  }),
-  createRoute({
-    getParentRoute: () => createRootRoute(),
-    path: "/refund",
-    component: RefundRoute.component,
-  }),
+const root = createRootRoute();
+const routeTree = root.addChildren([
+  createRoute({ getParentRoute: () => root, path: "/", component: () => null }),
+  createRoute({ getParentRoute: () => root, path: "/terms", component: TermsRoute.options.component! }),
+  createRoute({ getParentRoute: () => root, path: "/privacy", component: PrivacyRoute.options.component! }),
+  createRoute({ getParentRoute: () => root, path: "/refund", component: RefundRoute.options.component! }),
 ]);
 
 function renderPage(path: string) {
+  cleanup();
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [path] }),
