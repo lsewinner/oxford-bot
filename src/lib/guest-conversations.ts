@@ -13,7 +13,7 @@ export function parseGuestMessages(raw: string | null): UIMessage[] {
 }
 
 /** Latest locally saved message preview + timestamp for a guest conversation (WeChat-style sidebar line). */
-export function guestLastActivity(conversationId: string): { preview: string; time?: string } {
+export function guestLastActivity(conversationId: string): { preview: string; time?: string | undefined } {
   if (typeof window === "undefined") return { preview: "" };
   const messages = parseGuestMessages(localStorage.getItem(guestMessagesKey(conversationId)));
   const createdAt = (messages[messages.length - 1] as { createdAt?: string } | undefined)?.createdAt;
