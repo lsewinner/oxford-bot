@@ -110,7 +110,7 @@ export async function handleChat(request: Request): Promise<Response> {
     fetch: runIdFetch.fetch,
   });
 
-  const botContext = botInstructions(body.bot) + (deepThink ? ' 本次为 Deep Think 深度分析：认真核实证据、比较可行方案，回答包含可公开的关键依据、假设、反例与不确定性、结论核查。仅提供简洁透明的推理摘要，不披露私有内部思维链。' : '');
+  const botContext = botInstructions(body.bot) + (deepThink ? ' 本次为 Deep Think 深度分析。最终回复开头必须用 <public_summary>...</public_summary> 包含面向用户的公开论证摘要：关键依据、假设、方案取舍、风险和结论核查；随后给出正常答案。这个摘要是对答案的解释而非内部思维推导，不披露私有内部思维链。' : '');
   const realTools = threadId !== 'guest' ? await createRealTools(userId) : {};
   const actionResults = new Map<string, unknown>();
   if (userId && threadId !== 'guest') {

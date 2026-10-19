@@ -2,8 +2,8 @@ import { z } from 'zod';
 export const profileSchema=z.object({nickname:z.string().trim().min(1,'请输入昵称').max(40,'昵称不能超过 40 个字符'),avatar:z.string().max(30000).refine(v=>v===''||/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(v)||/^https:\/\//.test(v),'头像格式无效')});
 export type Profile=z.infer<typeof profileSchema>;
 export function accountProfile(metadata:Record<string,unknown>={}):Profile {
- const name=[metadata.oxford_nickname,metadata.full_name,metadata.name].find(v=>typeof v==='string'&&v.trim()&&!v.includes('@'));
- const avatar=typeof metadata.oxford_avatar==='string'?metadata.oxford_avatar:typeof metadata.avatar_url==='string'?metadata.avatar_url:'';
+ const name=[metadata['oxford_nickname'],metadata['full_name'],metadata['name']].find(v=>typeof v==='string'&&v.trim()&&!v.includes('@'));
+ const avatar=typeof metadata['oxford_avatar']==='string'?metadata['oxford_avatar']:typeof metadata['avatar_url']==='string'?metadata['avatar_url']:'';
  return {nickname:typeof name==='string'?name.trim().slice(0,40):'我的账户',avatar:profileSchema.shape.avatar.safeParse(avatar).success?avatar:''};
 }
 export function profileMetadata(profile:Profile){const v=profileSchema.parse(profile);return {oxford_nickname:v.nickname,oxford_avatar:v.avatar};}
