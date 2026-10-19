@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { botIsWorking, botStorageKey, parseBotEntries, mergeBotEntries, type BotEntry, type CatBreed, type BotActivity, type BotIdentity, type BotKind } from "@/lib/bot-presence";
 import { catBreeds } from "@/lib/cat-breeds";
-import { formatChatTime } from "@/lib/chat-time";
+import { BotListLabel } from "@/components/chat/bot-list-label";
 import { cn } from "@/lib/utils";
 
 type PresenceContext = { entries: BotEntry[]; register: (entries: BotEntry[]) => void; update: (id: string, bot: BotIdentity) => void; removeThread: (id: string) => void; linkConversation: (id: string, conversationId: string) => void; activities: Record<string, BotActivity>; report: (id: string, activity: BotActivity) => void; settle: (id: string) => void };
@@ -86,7 +86,7 @@ export function NewBot({ onCreate }: { onCreate: (bot: BotIdentity) => Promise<v
 
 export function BotAvatar({ bot, working = false }: { bot: BotIdentity; working?: boolean }) {
   const cat = catBreeds.find((item) => item.id === (bot.breed ?? bot.kind)) ?? catBreeds[0];
-  return <img src={images[`/src/assets/cat-${cat.asset}.webp`]} alt={`${bot.name} · ${cat.name}`} title={cat.name} width={36} height={36} loading="lazy" className={cn("size-9 shrink-0 rounded-full object-cover ring-1 ring-sidebar-border", working && "bot-working")} />;
+  return <img src={images[`/src/assets/cat-${cat.asset}.webp`]} alt={`${bot.name} · ${cat.name}`} title={cat.name} width={32} height={32} loading="lazy" className={cn("size-8 shrink-0 rounded-full object-cover ring-1 ring-sidebar-border", working && "bot-working")} />;
 }
 
 export function BotSettings({ entry }: { entry: BotEntry }) {
@@ -95,7 +95,7 @@ export function BotSettings({ entry }: { entry: BotEntry }) {
   const [name, setName] = useState(entry.bot.name);
   const [breed, setBreed] = useState<CatBreed>(entry.bot.breed ?? entry.bot.kind);
   return <>
-    <Button variant="ghost" size="icon-sm" title="修改名字和猫咪头像" aria-label={`设置 ${entry.bot.name}`} className="mr-1 shrink-0 text-muted-foreground" onClick={() => { setName(entry.bot.name); setBreed(entry.bot.breed ?? entry.bot.kind); setOpen(true); }}><Settings2Icon /></Button>
+    <Button variant="ghost" size="icon-sm" title="修改名字和猫咪头像" aria-label={`设置 ${entry.bot.name}`} className="size-6 shrink-0 text-muted-foreground [&_svg]:size-3.5" onClick={() => { setName(entry.bot.name); setBreed(entry.bot.breed ?? entry.bot.kind); setOpen(true); }}><Settings2Icon /></Button>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>设置 Bot</DialogTitle></DialogHeader>
       <form onSubmit={(event) => { event.preventDefault(); if (!name.trim()) return; update(entry.id, { ...entry.bot, name: name.trim(), breed }); setOpen(false); }} className="space-y-5">
         <div className="space-y-2"><label htmlFor={`name-${entry.id}`} className="text-sm">名字</label><Input id={`name-${entry.id}`} value={name} maxLength={40} required onChange={(event) => setName(event.target.value)} /></div>
@@ -109,12 +109,5 @@ export function BotSettings({ entry }: { entry: BotEntry }) {
 export function BotPresenceLabel({ bot, status = "ready", preview, time }: { bot: BotIdentity; status?: BotActivity["status"] | undefined; preview?: string | undefined; time?: string | undefined }) {
   const working = botIsWorking(status);
   const line = status === "submitted" ? "正在思考…" : status === "streaming" ? "正在回复…" : status === "error" ? "回复中断" : preview || "还没有消息";
-  return <>
-    <BotAvatar bot={bot} working={working} />
-    <span className="min-w-0 flex-1">
-      <span className="block truncate text-sm font-medium">{bot.name}</span>
-      <span role="status" className="block truncate text-[11px] text-muted-foreground">{line}</span>
-    </span>
-    {time ? <span className="shrink-0 self-start text-[10px] text-muted-foreground/70">{formatChatTime(time)}</span> : null}
-  </>;
+  return <BotListLabel avatar={<BotAvatar bot={bot} working={working} />} name={bot.name} preview={line} time={time} />;
 }

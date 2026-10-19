@@ -1,3 +1,4 @@
+import { botListRowClass } from "@/components/chat/bot-list-label";
 import { MainBotLabel } from "@/components/chat/main-bot";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
@@ -125,15 +126,17 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="mt-4 flex-1 overflow-y-auto px-2 pb-4">
         <section aria-label="我的 Bots" className="mb-5">
           <div className="flex items-center justify-between px-3 pb-2"><span className="text-[11px] font-medium text-muted-foreground">我的 Bots</span><NewBot onCreate={createBot} /></div>
-          <Link to="/chat" onClick={onNavigate} aria-label="打开主 Bot Oxonian" className={cn("mb-1 flex rounded-lg px-3 py-2 transition-colors hover:bg-sidebar-accent", !params.threadId && "bg-sidebar-accent")}>
+          <Link to="/chat" onClick={onNavigate} aria-label="打开主 Bot Oxonian" className={cn(botListRowClass, !params.threadId && "bg-sidebar-accent")}>
             <MainBotLabel active={!params.threadId} preview={oxonianPreview} time={oxonianTime} />
           </Link>
-          {bots.map((entry) => <div key={entry.id} className={cn("group flex items-center rounded-lg hover:bg-sidebar-accent", params.threadId === entry.conversationId && "bg-sidebar-accent")}>
-            <Button variant="ghost" disabled={opening !== null} onClick={() => openBot(entry)} className="h-auto min-w-0 flex-1 justify-start gap-2.5 px-3 py-2 text-left" aria-label={`打开 ${entry.bot.name}`}>
+          {bots.map((entry) => <div key={entry.id} className="group relative">
+            <Button variant="ghost" disabled={opening !== null} onClick={() => openBot(entry)} className={cn(botListRowClass, "justify-start hover:bg-sidebar-accent", params.threadId === entry.conversationId && "bg-sidebar-accent")} aria-label={`打开 ${entry.bot.name}`}>
               <BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} preview={previews[entry.conversationId ?? entry.threadId]?.preview} time={previews[entry.conversationId ?? entry.threadId]?.updatedAt} />
             </Button>
+            <div className="absolute bottom-2 right-2 flex h-6 items-center gap-1">
             <BotSettings entry={entry} />
-            {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => remove(entry.conversationId ?? entry.threadId)} className="mr-1 shrink-0 text-muted-foreground hover:text-destructive md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}
+            {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => remove(entry.conversationId ?? entry.threadId)} className="size-6 shrink-0 text-muted-foreground hover:text-destructive [&_svg]:size-3.5 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}
+            </div>
           </div>)}
         </section>
         {threads.length === 0 && <p className="px-3 text-xs text-muted-foreground">还没有对话</p>}

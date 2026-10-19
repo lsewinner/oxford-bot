@@ -11,8 +11,8 @@
 
 - Chat streaming lives in `src/routes/api/chat.ts` → `src/lib/ai/chat.server.ts`; it verifies the caller's bearer token and thread ownership itself and persists messages server-side (why: API routes bypass the route auth gate).
 - Threads are DB-backed with per-thread URLs `/chat/$threadId` under `_authenticated`; messages store AI SDK ids in `ui_id`, never in uuid columns (why: SDK ids are not UUIDs).
-- PWA is manifest-only (no service worker) (why: installability without stale-cache risk in preview).
-- Let Vite resolve its supported Rolldown version instead of overriding it (why: forced incompatible bundler versions can break diagram dependency initialization).
+- PWA uses only a manifest (why: avoid stale preview caches).
+- Do not override Vite’s Rolldown version (why: incompatible versions break diagram initialization).
 - The first message from `/chat` is handed to the thread page through sessionStorage and must be sent from a macrotask (`setTimeout(..., 0)`) after mount, never synchronously inside the mount effect (why: the chat store drops a send issued before its first dispatch, silently losing the user's first question; `src/test/chat-first-message.test.tsx` guards this).
 - Web search citations: the model cites sources as markdown links; `ChatMessage` in `src/components/chat/chat-window.tsx` merges text-cited link domains with `source-url` parts into one deduped list and renders matching links as numbered superscript badges via a Streamdown `components.a` override (why: the model does not reliably emit literal [n] markers, and badges/cards must share one numbering).
 - Chat response headers must never wait for gateway run-ID discovery or acquire a replacement stream reader; forward the original body and attach diagnostics only when already available (why: diagnostic metadata must not block first output, errors, or cancellation).
@@ -28,3 +28,5 @@
 - Query options shared by route loaders and components live outside route modules (why: route code splitting must not depend on unexported shared declarations).
 - Conversation exports use the same safe snapshot serializer; image regeneration replaces both prompt and image only after completion and keeps the last successful image on failure (why: downloads stay predictable and failed redraws cannot destroy existing results).
 - Provider connections allow multiple accounts per service, unique on (user, connector, account_key); Microsoft keys use Graph IDs with separate display labels; model tools take an optional `account` and proposals persist the resolved account (why: confirmed writes must hit the chosen account even when its email changes).
+
+- Both Bot sidebars share BotListLabel and botListRowClass; actions sit outside label flow (why: keep names and times aligned).
