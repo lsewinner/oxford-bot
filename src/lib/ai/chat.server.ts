@@ -130,7 +130,7 @@ export async function handleChat(request: Request): Promise<Response> {
     messages: await convertToModelMessages(await Promise.all(messages.map(async (message) => ({
       ...message,
       parts: await Promise.all(message.parts.map(async (part) => {
-        if (part.type.startsWith('tool-service_')) {
+        if (part.type.startsWith('tool-service_') && 'state' in part && part.state === 'output-available') {
           const output = (part as { output?: { actionId?: string } }).output;
           const saved = output?.actionId ? actionResults.get(output.actionId) : undefined;
           if (saved) return { ...part, output: saved };
