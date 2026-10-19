@@ -44,7 +44,6 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
       new DefaultChatTransport({
         api: "/api/chat",
         headers: async (): Promise<Record<string, string>> => {
-          console.warn("[pd] headers");
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
@@ -68,19 +67,11 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     sentPending.current = true;
     const key = pendingKey(threadId);
     const pending = sessionStorage.getItem(key);
-    console.warn("[pd] schedule", JSON.stringify({ pending: !!pending, len: initialMessages.length }));
     if (pending && initialMessages.length === 0) {
       sessionStorage.removeItem(key);
-      const send = setTimeout(() => {
-        console.warn("[pd] fire");
-        sendMessage({ text: pending });
-      }, 0);
+      sendMessage({ text: pending });
       const refresh = setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
-      return () => {
-        console.warn("[pd] cleanup");
-        clearTimeout(send);
-        clearTimeout(refresh);
-      };
+      return () => clearTimeout(refresh);
     }
   }, [threadId, initialMessages.length, sendMessage, queryClient]);
 
