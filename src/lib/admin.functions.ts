@@ -62,7 +62,7 @@ export const loadAdminData = createServerFn({ method: "GET" })
         banned: Boolean(c?.banned),
         dailyLimitOverride: (c?.daily_limit ?? null) as number | null,
         dailyLimit: effectiveDailyLimit(c?.daily_limit, isPro),
-        usedToday: used.get(u.id) ?? 0,
+        usedToday: Number(used.get(u.id) ?? 0),
       };
     });
     return {
