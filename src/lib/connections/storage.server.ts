@@ -1,7 +1,7 @@
 import { createCipheriv,createDecipheriv,randomBytes,createHash } from 'node:crypto';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import type { ProviderId } from './catalog';
-function key(kind='oauth'){if(kind==='personal_token'){const raw=process.env['PERSONAL_TOKEN_ENCRYPTION_SECRET'];if(!raw)throw new Error('Token 加密尚未配置');return createHash('sha256').update(raw).digest();}const raw=process.env['APP_USER_CONNECTION_KEY_SECRET'];if(!raw)throw new Error('连接加密尚未配置');const k=Buffer.from(raw,'base64');if(k.length!==32)throw new Error('连接加密配置无效');return k;}
+function key(kind='oauth'){if(kind==='personal_token'){const raw=process.env['PERSONAL_TOKEN_ENCRYPTION_SECRET'];if(!raw)throw new Error('Token 加密尚未配置');return createHash('sha256').update(raw).digest();}const raw=process.env['APP_USER_CONNECTION_KEY_SECRET'];if(!raw)throw new Error('连接加密尚未配置');return createHash('sha256').update(raw).digest();}
 export function encryptConnectionKey(text:string,kind='oauth'){const iv=randomBytes(12),c=createCipheriv('aes-256-gcm',key(kind),iv);const ct=Buffer.concat([c.update(text,'utf8'),c.final()]);return Buffer.concat([iv,c.getAuthTag(),ct]).toString('base64');}
 export function decryptConnectionKey(text:string,kind='oauth'){const b=Buffer.from(text,'base64'),d=createDecipheriv('aes-256-gcm',key(kind),b.subarray(0,12));d.setAuthTag(b.subarray(12,28));return Buffer.concat([d.update(b.subarray(28)),d.final()]).toString('utf8');}
 export async function getConnection(userId:string,id:ProviderId){const {data,error}=await supabaseAdmin.from('app_user_connections').select('*').eq('user_id',userId).eq('connector_id',id).maybeSingle();if(error)throw new Error('读取连接失败');return data;}
