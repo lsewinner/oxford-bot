@@ -11,6 +11,9 @@ import {
 import { ModeToggle } from "./mode-toggle";
 import { WebSearchToggle } from "./web-search-toggle";
 import { ToolsCenter } from "./tools-center";
+import { toast } from "sonner";
+import { AttachmentButton, AttachmentPreviews, AttachmentSubmit } from "./composer-attachments";
+import { ATTACHMENT_ACCEPT, MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES, prepareAttachments, type ChatInput } from "@/lib/chat-attachments";
 
 export function Composer({
   onSend,
@@ -18,7 +21,7 @@ export function Composer({
   onStop,
   placeholder = "有什么想问的？",
 }: {
-  onSend: (text: string) => void;
+  onSend: (text: string, files?: ChatInput["files"]) => void | Promise<void>;
   status?: ChatStatus;
   onStop?: () => void;
   placeholder?: string;
@@ -31,10 +34,11 @@ export function Composer({
     if (!busy) ref.current?.focus();
   }, [busy]);
 
-  const handleSubmit = (msg: PromptInputMessage) => {
+  const handleSubmit = async (msg: PromptInputMessage) => {
     const t = (msg.text ?? text).trim();
-    if (!t || busy) return;
-    onSend(t);
+    if ((!t && !msg.files.length) || busy) return;
+    const files = await prepareAttachments(msg.files);
+    await onSend(t || "请分析这些附件。", files);
     setText("");
     ref.current?.focus();
   };
@@ -42,8 +46,14 @@ export function Composer({
   return (
     <PromptInput
       onSubmit={handleSubmit}
+      accept={ATTACHMENT_ACCEPT}
+      multiple
+      maxFiles={MAX_ATTACHMENTS}
+      maxFileSize={MAX_ATTACHMENT_BYTES}
+      onError={(error) => toast.error(error.code === "max_files" ? "每次最多上传 4 个附件" : error.code === "max_file_size" ? "单个附件不能超过 4 MB" : "请选择图片、文本或 PDF 文件")}
       className="rounded-3xl border-border bg-card shadow-[0_0_0_1px_var(--border),0_20px_60px_-20px_oklch(0_0_0/0.8)]"
     >
+      <AttachmentPreviews />
       <PromptInputTextarea
         ref={ref}
         autoFocus
@@ -54,16 +64,17 @@ export function Composer({
       />
       <PromptInputFooter className="px-3 pb-3">
         <PromptInputTools>
+          <AttachmentButton disabled={busy} />
           <ModeToggle />
           <WebSearchToggle />
           <ToolsCenter />
         </PromptInputTools>
-        <PromptInputSubmit
+        <AttachmentSubmit text={text} busy={busy}>{(disabled) => <PromptInputSubmit
           status={status}
           {...(onStop ? { onStop } : {})}
-          disabled={!busy && !text.trim()}
+          disabled={disabled}
           className="rounded-full"
-        />
+        />}</AttachmentSubmit>
       </PromptInputFooter>
     </PromptInput>
   );

@@ -6,6 +6,7 @@ import logo from "@/assets/logo.png";
 import { Composer } from "@/components/chat/composer";
 import { useMode } from "@/components/chat/mode-context";
 import { createThread, pendingKey } from "@/lib/chat-data";
+import type { ChatInput } from "@/lib/chat-attachments";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   head: () => ({ meta: [
@@ -27,12 +28,12 @@ function NewChat() {
   const { mode } = useMode();
   const [creating, setCreating] = useState(false);
 
-  const start = async (text: string) => {
+  const start = async (text: string, files: ChatInput["files"] = []) => {
     if (creating) return;
     setCreating(true);
     try {
       const id = await createThread();
-      sessionStorage.setItem(pendingKey(id), text);
+      sessionStorage.setItem(pendingKey(id), JSON.stringify({ text, files }));
       queryClient.invalidateQueries({ queryKey: ["threads"] });
       navigate({ to: "/chat/$threadId", params: { threadId: id } });
     } catch {
