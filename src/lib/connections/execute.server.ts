@@ -19,13 +19,14 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  const r=await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init:{method,headers:{Accept:id==='github'?'application/vnd.github+json':'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})}});
  if(await appUserReconnectRequired(r)){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new Error('授权需要更新，请重新连接');}
  if(!r.ok){const text=await r.text();console.error(`Provider ${id} failed [${r.status}]: ${text}`);throw new Error(`${provider} (${r.status}): ${text.slice(0,1200)}`);}
- const b=raw?await r.text():await r.json();if(!raw && b.ok===false)throw new Error(`${provider}: ${b.error}`);return b;
+ const b=raw?await r.text():r.status===204?{}:await r.json();if(!raw && b.ok===false)throw new Error(`${provider}: ${b.error}`);return b;
  };
  const o=input.operation;let items:NonNullable<ToolResult['items']>=[],text:string|undefined;
  if(id==='github'){
  const repo=(input.repo ?? '').split('/').map(enc).join('/');const path=(input.path ?? '').split('/').map(enc).join('/');
  if(o==='repos'){const b=await request('/user/repos?per_page=20&sort=updated');items=b.map((v:any)=>({title:v.full_name,id:v.full_name,url:v.html_url,detail:v.description ?? ''}));}
  if(o==='issues'){const b=await request(`/repos/${repo}/issues?state=open&per_page=20`);items=b.map((v:any)=>({title:v.title,id:String(v.number),url:v.html_url,detail:(v.body ?? '').slice(0,2000)}));}
+ if(o==='pulls'){const b=await request(`/repos/${repo}/pulls?state=open&per_page=20`);items=b.map((v:any)=>({title:v.title,id:String(v.number),url:v.html_url,detail:(v.body ?? '').slice(0,2000)}));}
  if(o==='read_file'){const b=await request(`/repos/${repo}/contents/${path}`);if(b.encoding!=='base64')throw new Error('请选择一个文本文件');text=Buffer.from(b.content,'base64').toString('utf8').slice(0,30000);items=[{title:b.path,id:b.sha,url:b.html_url}];}
  if(o==='create_issue'){const b=await request(`/repos/${repo}/issues`,'POST',{title:input.title,body:input.text});items=[{title:b.title,id:String(b.number),url:b.html_url}];}
  if(o==='write_file'){const b=await request(`/repos/${repo}/contents/${path}`,'PUT',{message:input.title,content:b64(input.text ?? ''),...(input.sha?{sha:input.sha}:{})});items=[{title:input.path ?? '',url:b.content?.html_url}];}
