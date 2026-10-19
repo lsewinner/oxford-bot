@@ -31,10 +31,12 @@ function GuestChat() {
 
 function GuestBots({ activeId, onSelect }: { activeId: string; onSelect: (entry: BotEntry | null) => void }) {
   const { activities, entries, register } = useBotPresence();
-  const previews = useMemo(() => {
+  // Local storage is read after mount only: the server render must match the first client render.
+  const [previews, setPreviews] = useState<Record<string, { preview: string; time?: string | undefined }>>({});
+  useEffect(() => {
     const map: Record<string, { preview: string; time?: string | undefined }> = { guest: guestLastActivity("guest") };
     for (const entry of entries) map[guestConversationId(entry.id)] = guestLastActivity(guestConversationId(entry.id));
-    return map;
+    setPreviews(map);
     // activities changes when a stream settles, so previews refresh after each reply.
   }, [entries, activities]);
 
