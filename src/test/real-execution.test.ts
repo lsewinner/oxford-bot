@@ -1,11 +1,13 @@
 import { beforeEach,describe,it,expect,vi } from 'vitest';
 const mocks=vi.hoisted(()=>({get:vi.fn(),call:vi.fn(),insert:vi.fn(),decrypt:vi.fn()}));
-vi.mock('@/lib/connections/storage.server',()=>({getConnection:mocks.get,decryptConnectionKey:mocks.decrypt}));
+vi.mock('@/lib/connections/storage.server',()=>({getConnection:mocks.get,decryptConnectionKey:mocks.decrypt,rotateMicrosoftCredential:vi.fn()}));
 vi.mock('@/integrations/lovable/appUserConnector',()=>({callAsAppUser:mocks.call,appUserReconnectRequired:async()=>false}));
 vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{from:()=>({insert:mocks.insert,update:()=>({eq:()=>({eq:async()=>({error:null})})})})}}));
 const googleMocks=vi.hoisted(()=>({call:vi.fn()}));
 vi.mock('@/lib/connections/google-oauth.server',()=>({callWithGoogleToken:googleMocks.call,isGoogleProvider:(id:string)=>id==='google_mail'||id==='google_drive'}));
 import { executeOperation } from '@/lib/connections/execute.server';
+const microsoftMocks=vi.hoisted(()=>({call:vi.fn()}));
+vi.mock('@/lib/connections/microsoft-oauth.server',()=>({callWithMicrosoftToken:microsoftMocks.call,MicrosoftReconnectError:class extends Error{}}));
 describe('personal provider execution',()=>{
  beforeEach(()=>{vi.clearAllMocks();mocks.get.mockResolvedValue({id:'row',enabled:true,reconnect_required:false,connection_key_ciphertext:'encrypted'});mocks.decrypt.mockReturnValue('private-test-handle');mocks.insert.mockReturnValue({select:()=>({single:async()=>({data:{id:'proposal'},error:null})})});});
  it('a model mail send stores a proposal for its authenticated owner, never sends',async()=>{
@@ -19,7 +21,6 @@ describe('personal provider execution',()=>{
   await executeOperation('owner-a','google_mail',input);
   expect(mocks.get).toHaveBeenCalledWith('owner-a','google_mail','b@example.com');
   expect(mocks.insert).toHaveBeenCalledWith({user_id:'owner-a',connector_id:'google_mail',operation:'send',payload:input});
- expect(mocks.insert).toHaveBeenCalledWith({user_id:'owner-a',connector_id:'google_mail',operation:'send',payload:input});
  });
  it('disabled connections cannot run even a confirmed write',async()=>{mocks.get.mockResolvedValue({enabled:false});const result=await executeOperation('owner-a','slack',{operation:'send',id:'channel',text:'hello'},true);expect(result.status).toBe('error');expect(mocks.call).not.toHaveBeenCalled();});
  it('expired grants require reconnect without calling the provider',async()=>{mocks.get.mockResolvedValue({enabled:true,reconnect_required:true});expect((await executeOperation('owner-a','github',{operation:'repos'})).status).toBe('reconnect_required');expect(mocks.call).not.toHaveBeenCalled();});
@@ -64,5 +65,23 @@ describe('personal provider execution',()=>{
   mocks.get.mockResolvedValue({id:'row',enabled:true,reconnect_required:false,credential_kind:'google_oauth',connection_key_ciphertext:'encrypted'});
   expect((await executeOperation('owner-a','google_mail',{operation:'send',to:'a@b.c',title:'t',text:'x'})).status).toBe('confirmation_required');
   expect(googleMocks.call).not.toHaveBeenCalled();
+ });
+ it('direct Outlook mail reads use the chosen account without gateway credentials',async()=>{
+  mocks.get.mockResolvedValue({id:'row',account_key:'microsoft:second',enabled:true,credential_kind:'microsoft_oauth',connection_key_ciphertext:'encrypted'});
+  microsoftMocks.call.mockResolvedValue(Response.json({value:[{id:'message-1',subject:'邮件',bodyPreview:'预览'}]}));
+  const result=await executeOperation('owner-a','microsoft_outlook',{operation:'search',account:'microsoft:second'});
+  expect(mocks.get).toHaveBeenCalledWith('owner-a','microsoft_outlook','microsoft:second');expect(result.items?.[0]?.id).toBe('message-1');expect(mocks.call).not.toHaveBeenCalled();
+ });
+ it('direct Outlook sends remain pending until explicitly confirmed',async()=>{
+  mocks.get.mockResolvedValue({id:'row',account_key:'microsoft:second',enabled:true,credential_kind:'microsoft_oauth',connection_key_ciphertext:'encrypted'});
+  const result=await executeOperation('owner-a','microsoft_outlook',{operation:'send',to:'r@example.com',title:'t',text:'x'});
+  expect(result.status).toBe('confirmation_required');expect(microsoftMocks.call).not.toHaveBeenCalled();
+  expect(mocks.insert.mock.calls[0]?.[0].payload.account).toBe('microsoft:second');
+ });
+ it('confirmed direct Outlook sends use Graph and accept empty 202 responses',async()=>{
+  mocks.get.mockResolvedValue({id:'row',enabled:true,credential_kind:'microsoft_oauth',connection_key_ciphertext:'encrypted'});
+  microsoftMocks.call.mockResolvedValue(new Response(null,{status:202}));
+  const result=await executeOperation('owner-a','microsoft_outlook',{operation:'send',to:'r@example.com',title:'t',text:'x'},true);
+  expect(result.status).toBe('completed');expect(microsoftMocks.call.mock.calls[0]?.[1]).toBe('/me/sendMail');expect(mocks.call).not.toHaveBeenCalled();
  });
 });
