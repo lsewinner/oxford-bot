@@ -1,7 +1,7 @@
 {
   "name": "Oxford Bot",
   "short_name": "Oxford",
-  "description": "极简暗黑风格的 AI 聊天助手",
+  "description": "支持联网搜索、生图与文件分析的 AI 助手",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

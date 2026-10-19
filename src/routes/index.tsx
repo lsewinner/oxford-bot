@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Oxford Bot — 极简暗黑 AI 聊天助手" },
-      { name: "description", content: "Oxford Bot：极简暗黑科技风 AI 聊天，支持 Fun / Normal 模式、流式回复、代码高亮，可安装到手机桌面。" },
-      { property: "og:title", content: "Oxford Bot — 极简暗黑 AI 聊天助手" },
-      { property: "og:description", content: "极简暗黑科技风 AI 聊天，支持 Fun / Normal 模式与代码高亮。" },
+      { title: "Oxford Bot" },
+      { name: "description", content: "Oxford Bot：支持联网搜索、生图与文件分析、语音对话的 AI 助手，Fun / Normal 两种模式，可安装到手机桌面。" },
+      { property: "og:title", content: "Oxford Bot" },
+      { property: "og:description", content: "支持联网搜索、生图与文件分析的 AI 助手，Fun / Normal 两种模式。" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
