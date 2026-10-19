@@ -45,12 +45,18 @@ export function mergeBotEntries(previous: BotEntry[], incoming: BotEntry[]): Bot
 }
 
 export const botStorageKey = (scope: string) => `oxford:bots:v1:${scope}`;
+// App was renamed from "Nightwave AI Chat" to "Oxford Bot"; stored entries keep working under the new name.
+export const legacyAppNamePattern = /nightwave\s*(ai)?\s*chat/i;
+export function normalizeBotName(name: string): string {
+  return legacyAppNamePattern.test(name) ? "Oxford Bot" : name;
+}
 export function parseBotEntries(raw: string | null): BotEntry[] {
   try {
     const parsed: unknown = JSON.parse(raw ?? "[]");
     if (!Array.isArray(parsed)) return [];
     const breeds = ["mail", "document", "code", "team", "general"];
-    return parsed.filter((entry): entry is BotEntry => entry && typeof entry.id === "string" && typeof entry.threadId === "string" && typeof entry.messageId === "string" && typeof entry.bot?.name === "string" && breeds.includes(entry.bot.kind) && (entry.bot.breed === undefined || isCatBreed(entry.bot.breed)) && (entry.conversationId === undefined || typeof entry.conversationId === "string"));
+    return parsed.filter((entry): entry is BotEntry => entry && typeof entry.id === "string" && typeof entry.threadId === "string" && typeof entry.messageId === "string" && typeof entry.bot?.name === "string" && breeds.includes(entry.bot.kind) && (entry.bot.breed === undefined || isCatBreed(entry.bot.breed)) && (entry.conversationId === undefined || typeof entry.conversationId === "string"))
+      .map((entry) => ({ ...entry, bot: { ...entry.bot, name: normalizeBotName(entry.bot.name) } }));
   } catch { return []; }
 }
 
