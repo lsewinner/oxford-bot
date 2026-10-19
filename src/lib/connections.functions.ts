@@ -17,11 +17,11 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  const {getConnections,decryptConnectionKey}=await import('./connections/storage.server');
  const {callAsAppUser,appUserReconnectRequired}=await import('@/integrations/lovable/appUserConnector');
  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
- const paths={github:'/user',google_mail:'/gmail/v1/users/me/profile',microsoft_outlook:'/me?$select=displayName',google_drive:'/drive/v3/about?fields=user(displayName,emailAddress)',slack:'/api/auth.test',cloudflare:'/zones?per_page=1'};
+ const paths={github:'/user',google_mail:'/gmail/v1/users/me/profile',microsoft_outlook:'/me?$select=displayName',microsoft_teams:'/me/joinedTeams',google_drive:'/drive/v3/about?fields=user(displayName,emailAddress)',slack:'/api/auth.test',cloudflare:'/zones?per_page=1'};
  const withRetry=async<T>(fn:()=>Promise<T>)=>{try{return await fn();}catch(first){await new Promise(r=>setTimeout(r,800));try{return await fn();}catch{throw first;}}};
 
  const perProvider=await Promise.all(providerId.options.map(async(id)=>{
-  const configured=id==='google_mail'||id==='google_drive'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_ID'] && process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
+  const configured=id==='google_mail'||id==='google_drive'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
   if(!rows.length)return [{id,rowId:null as string|null,account:'',label:'',configured,credentialKind:'oauth',connected:false,enabled:false,reconnectRequired:false,connectionError:''}];
   return Promise.all(rows.map(async(row)=>{let account=row.account_key;
   let reconnectRequired=row?.reconnect_required ?? false;let connectionError='';
@@ -40,12 +40,13 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
          else{const b=await response.json().catch(()=>null) as {emailAddress?:string;user?:{emailAddress?:string}}|null;const email=(b?.emailAddress ?? b?.user?.emailAddress ?? '').toLowerCase();if(!account && email){const {error}=await supabaseAdmin.from('app_user_connections').update({account_key:email}).eq('id',row.id).eq('user_id',context.userId);if(!error)account=email;}}
        }catch(e){if(e instanceof GoogleReconnectError){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}else throw e;}
      } else if(row.credential_kind==='microsoft_oauth'){
+        if(id!=='microsoft_outlook' && id!=='microsoft_teams')throw new Error('此服务不支持微软授权');
         const {callWithMicrosoftToken,MicrosoftReconnectError}=await import('./connections/microsoft-oauth.server');
         const {rotateMicrosoftCredential}=await import('./connections/storage.server');
         try{
-          const response=await callWithMicrosoftToken(decryptConnectionKey(row.connection_key_ciphertext,'microsoft_oauth'),'/me?$select=id',undefined,token=>rotateMicrosoftCredential(context.userId,row.id,row.connection_key_ciphertext,token));
+          const response=await callWithMicrosoftToken(decryptConnectionKey(row.connection_key_ciphertext,'microsoft_oauth'),id==='microsoft_teams'?paths[id]:'/me?$select=id',undefined,token=>rotateMicrosoftCredential(context.userId,row.id,row.connection_key_ciphertext,token),id);
           if(response.status===401)throw new MicrosoftReconnectError();
-          if(!response.ok)connectionError=`Outlook (${response.status}): ${(await response.text()).slice(0,800)}`;
+          if(!response.ok)connectionError=`${PROVIDERS[id].name} (${response.status}): ${(await response.text()).slice(0,800)}`;
           else await response.arrayBuffer();
         }catch(e){if(e instanceof MicrosoftReconnectError){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}else throw e;}
       } else {const response=await callAsAppUser({gatewayBaseUrl:BASE,connectorId:id,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),path:paths[id],requiredScopes:PROVIDERS[id].scopes});
@@ -72,10 +73,10 @@ export const startGoogleOAuth=createServerFn({method:'POST'}).middleware([requir
  const redirectUri=new URL('/api/oauth/google/callback',origin).toString();
  return {authorizationUrl:buildGoogleAuthUrl(data.id,redirectUri,signState(context.userId,data.id))};
 });
-export const startMicrosoftOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).handler(async({context})=>{
+export const startMicrosoftOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['microsoft_outlook','microsoft_teams']).default('microsoft_outlook')}).strict().parse(v ?? {})).handler(async({data,context})=>{
  const {startMicrosoftAuthorization}=await import('./connections/microsoft-oauth.server');
  const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
- return startMicrosoftAuthorization(context.userId,new URL('/api/oauth/microsoft/callback',origin).toString());
+ return startMicrosoftAuthorization(context.userId,new URL('/api/oauth/microsoft/callback',origin).toString(),data.id);
 });
 export const completeMicrosoftOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({code:z.string().min(1).max(8192),state:z.string().min(1).max(4096)}).strict().parse(v)).handler(async({data,context})=>{
  const {verifyMicrosoftState,exchangeMicrosoftCode,getMicrosoftAccount}=await import('./connections/microsoft-oauth.server');
@@ -85,7 +86,7 @@ export const completeMicrosoftOAuth=createServerFn({method:'POST'}).middleware([
  if(payload.redirectUri!==new URL('/api/oauth/microsoft/callback',origin).toString())throw new Error('授权地址不匹配');
  const tokens=await exchangeMicrosoftCode(data.code,payload);const identity=await getMicrosoftAccount(tokens.accessToken);
  const {saveConnection}=await import('./connections/storage.server');
- await saveConnection(context.userId,'microsoft_outlook',tokens.refreshToken,'microsoft_oauth',identity.account,identity.label);
+ await saveConnection(context.userId,payload.provider,tokens.refreshToken,'microsoft_oauth',identity.account,identity.label);
  return {ok:true};
 });
 export const completeConnection=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>selection.extend({code:z.string().min(1).max(4096)}).parse(v)).handler(async({data,context})=>{
