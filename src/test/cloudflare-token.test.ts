@@ -25,3 +25,14 @@ describe('Cloudflare personal API token', () => {
   expect(()=>validateOperation('cloudflare',{operation:'purge_cache'})).toThrow('不支持');
  });
 });
+
+import { cloudflareAccountIdentity } from '@/lib/connections/personal-token.server';
+test('two Cloudflare tokens for different accounts get different account keys', async () => {
+  const a = await cloudflareAccountIdentity('tok-a', { result: [{ account: { id: 'acc1', name: 'Work' } }] });
+  const b = await cloudflareAccountIdentity('tok-b', { result: [{ account: { id: 'acc2', name: 'Home' } }] });
+  expect(a).toEqual({ account: 'cf-acc1', label: 'Work' });
+  expect(b.account).not.toBe(a.account);
+  const noZones1 = await cloudflareAccountIdentity('tok-c', { result: [] });
+  const noZones2 = await cloudflareAccountIdentity('tok-d', { result: [] });
+  expect(noZones1.account).not.toBe(noZones2.account);
+});
