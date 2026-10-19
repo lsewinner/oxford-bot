@@ -1,3 +1,4 @@
+import { MainBotLabel } from "@/components/chat/main-bot";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { ModeProvider } from "@/components/chat/mode-context";
