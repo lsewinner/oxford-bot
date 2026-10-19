@@ -245,6 +245,15 @@ function ChatMessage({
 
   return (
     <Message from={message.role}>
+      {message.role === "assistant" && (
+        <img
+          src={logo}
+          alt="Oxford Bot"
+          width={28}
+          height={28}
+          className="mt-0.5 size-7 shrink-0 rounded-full ring-1 ring-border"
+        />
+      )}
       <MessageContent
         className={
           message.role === "user"
