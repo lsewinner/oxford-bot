@@ -23,12 +23,13 @@ const routeTree = root.addChildren([
   createRoute({ getParentRoute: () => root, path: "/refund", component: RefundRoute.options.component! }),
 ]);
 
-function renderPage(path: string) {
+async function renderPage(path: string) {
   cleanup();
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [path] }),
   });
+  await router.start();
   render(<RouterProvider router={router} />);
 }
 
