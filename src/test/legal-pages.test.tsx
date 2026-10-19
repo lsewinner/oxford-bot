@@ -39,9 +39,9 @@ describe("Legal pages company registration", () => {
     expect(LEGAL_COMPANY.email).toBe("info@oxfordintelligence.co.uk");
   });
 
-  it("registers the company entity on every policy page", () => {
+  it("registers the company entity on every policy page", async () => {
     for (const path of ["/terms", "/privacy", "/refund"]) {
-      renderPage(path);
+      await renderPage(path);
       expect(screen.getAllByText(LEGAL_CONTACT).length).toBeGreaterThan(0);
       expect(screen.getAllByText(LEGAL_COMPANY.name).length).toBeGreaterThan(0);
       expect(screen.getAllByText(LEGAL_COMPANY.number).length).toBeGreaterThan(0);
