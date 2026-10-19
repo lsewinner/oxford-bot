@@ -9,7 +9,7 @@ import { ModeProvider } from "@/components/chat/mode-context";
 import { WebSearchProvider } from "@/components/chat/web-search-context";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
-import { threadsQuery, botHistoryQuery, createThread, type Thread } from "@/lib/chat-data";
+import { threadsQuery, botHistoryQuery, threadPreviewsQuery, createThread, type Thread } from "@/lib/chat-data";
 import { cn } from "@/lib/utils";
 import { BotPresenceLabel, BotPresenceProvider, BotSettings, NewBot, useBotPresence } from "@/components/chat/bot-presence";
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,12 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     finally { setOpening(null); }
   };
 
+  const botThreadIds = Array.from(new Set(bots.map((entry) => entry.conversationId ?? entry.threadId).filter(Boolean)));
+  const { data: previews = {} } = useQuery({ ...threadPreviewsQuery(botThreadIds), enabled: botThreadIds.length > 0 });
+  const firstThread = threads[0];
+  const oxonianPreview = firstThread ? previews[firstThread.id]?.preview : undefined;
+  const oxonianTime = firstThread ? previews[firstThread.id]?.updatedAt : undefined;
+
   const groups = threads.filter((t) => !bots.some((b) => b.conversationId === t.id || (b.messageId.startsWith("manual-") && b.threadId === t.id))).reduce<Record<string, Thread[]>>((acc, t) => {
     (acc[groupLabel(t.updated_at)] ??= []).push(t);
     return acc;
@@ -120,11 +126,11 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <section aria-label="我的 Bots" className="mb-5">
           <div className="flex items-center justify-between px-3 pb-2"><span className="text-[11px] font-medium text-muted-foreground">我的 Bots</span><NewBot onCreate={createBot} /></div>
           <Link to="/chat" onClick={onNavigate} aria-label="打开主 Bot Oxonian" className={cn("mb-1 flex rounded-lg px-3 py-2 transition-colors hover:bg-sidebar-accent", !params.threadId && "bg-sidebar-accent")}>
-            <MainBotLabel active={!params.threadId} />
+            <MainBotLabel active={!params.threadId} preview={oxonianPreview} time={oxonianTime} />
           </Link>
           {bots.map((entry) => <div key={entry.id} className={cn("group flex items-center rounded-lg hover:bg-sidebar-accent", params.threadId === entry.conversationId && "bg-sidebar-accent")}>
             <Button variant="ghost" disabled={opening !== null} onClick={() => openBot(entry)} className="h-auto min-w-0 flex-1 justify-start gap-2.5 px-3 py-2 text-left" aria-label={`打开 ${entry.bot.name}`}>
-              <BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} />
+              <BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} preview={previews[entry.conversationId ?? entry.threadId]?.preview} time={previews[entry.conversationId ?? entry.threadId]?.updatedAt} />
             </Button>
             <BotSettings entry={entry} />
             {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => remove(entry.conversationId ?? entry.threadId)} className="mr-1 shrink-0 text-muted-foreground hover:text-destructive md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}

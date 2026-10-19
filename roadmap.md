@@ -33,3 +33,4 @@
 - [x] 替换 Logo 为用户上传的 Oxford AI 3D 金属徽标：侧边栏、移动顶栏、登录页、对话头像
 - [x] 更新 Favicon 与 PWA Manifest 图标
 - [x] Main Bot pinned in 我的 Bots, named Oxonian
+- 侧栏微信样式：最近消息摘要 + 右侧最近消息时间（已完成：游客端已浏览器验证，登录端走同一组件）

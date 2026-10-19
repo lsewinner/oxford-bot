@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { botIsWorking, botStorageKey, parseBotEntries, mergeBotEntries, type BotEntry, type CatBreed, type BotActivity, type BotIdentity, type BotKind } from "@/lib/bot-presence";
 import { catBreeds } from "@/lib/cat-breeds";
+import { formatChatTime } from "@/lib/chat-time";
 import { cn } from "@/lib/utils";
 
 type PresenceContext = { entries: BotEntry[]; register: (entries: BotEntry[]) => void; update: (id: string, bot: BotIdentity) => void; removeThread: (id: string) => void; linkConversation: (id: string, conversationId: string) => void; activities: Record<string, BotActivity>; report: (id: string, activity: BotActivity) => void; settle: (id: string) => void };
@@ -105,15 +106,15 @@ export function BotSettings({ entry }: { entry: BotEntry }) {
   </>;
 }
 
-export function BotPresenceLabel({ bot, status = "ready" }: { bot: BotIdentity; status?: BotActivity["status"] }) {
+export function BotPresenceLabel({ bot, status = "ready", preview, time }: { bot: BotIdentity; status?: BotActivity["status"] | undefined; preview?: string | undefined; time?: string | undefined }) {
   const working = botIsWorking(status);
+  const line = status === "submitted" ? "正在思考…" : status === "streaming" ? "正在回复…" : status === "error" ? "回复中断" : preview || "还没有消息";
   return <>
     <BotAvatar bot={bot} working={working} />
     <span className="min-w-0 flex-1">
       <span className="block truncate text-sm font-medium">{bot.name}</span>
-      <span role="status" className="block truncate text-[11px] text-muted-foreground">
-        {status === "submitted" ? "正在思考" : status === "streaming" ? "正在回复" : status === "error" ? "回复中断" : "会话助手"}
-      </span>
+      <span role="status" className="block truncate text-[11px] text-muted-foreground">{line}</span>
     </span>
+    {time ? <span className="shrink-0 self-start text-[10px] text-muted-foreground/70">{formatChatTime(time)}</span> : null}
   </>;
 }

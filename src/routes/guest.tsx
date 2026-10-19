@@ -8,10 +8,10 @@ import logo from "@/assets/logo.png";
 import { BotPresenceLabel, BotPresenceProvider, BotSettings, NewBot, useBotPresence } from "@/components/chat/bot-presence";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { UIMessage } from "ai";
 import type { BotEntry } from "@/lib/bot-presence";
-import { guestConversationId, guestMessagesKey, parseGuestMessages } from "@/lib/guest-conversations";
+import { guestConversationId, guestLastActivity, guestMessagesKey, parseGuestMessages } from "@/lib/guest-conversations";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/guest")({
@@ -31,13 +31,21 @@ function GuestChat() {
 
 function GuestBots({ activeId, onSelect }: { activeId: string; onSelect: (entry: BotEntry | null) => void }) {
   const { activities, entries, register } = useBotPresence();
+  // Local storage is read after mount only: the server render must match the first client render.
+  const [previews, setPreviews] = useState<Record<string, { preview: string; time?: string | undefined }>>({});
+  useEffect(() => {
+    const map: Record<string, { preview: string; time?: string | undefined }> = { guest: guestLastActivity("guest") };
+    for (const entry of entries) map[guestConversationId(entry.id)] = guestLastActivity(guestConversationId(entry.id));
+    setPreviews(map);
+    // activities changes when a stream settles, so previews refresh after each reply.
+  }, [entries, activities]);
 
   return <div className="h-full overflow-y-auto bg-sidebar px-3 py-5 text-sidebar-foreground">
     <div className="mb-6 flex items-center gap-2 px-2"><img src={logo} width={28} height={28} alt="Oxford Bot" /><span className="text-sm font-semibold">Oxford Bot</span></div>
     <div className="flex items-center justify-between px-2 pb-2"><span className="text-[11px] text-muted-foreground">我的 Bots</span><NewBot onCreate={(bot) => { const messageId = `manual-${crypto.randomUUID()}`; const entry = { id: `guest:${messageId}`, threadId: "guest", messageId, bot }; register([entry]); onSelect(entry); }} /></div>
-    <button type="button" aria-label="打开主 Bot Oxonian" onClick={() => onSelect(null)} className={cn("mb-1 flex w-full rounded-lg px-2 py-3 text-left transition-colors hover:bg-sidebar-accent", !entries.some((e) => activeId === guestConversationId(e.id)) && "bg-sidebar-accent")}><MainBotLabel active={!entries.some((e) => activeId === guestConversationId(e.id))} /></button>
+    <button type="button" aria-label="打开主 Bot Oxonian" onClick={() => onSelect(null)} className={cn("mb-1 flex w-full rounded-lg px-2 py-3 text-left transition-colors hover:bg-sidebar-accent", !entries.some((e) => activeId === guestConversationId(e.id)) && "bg-sidebar-accent")}><MainBotLabel active={!entries.some((e) => activeId === guestConversationId(e.id))} preview={previews["guest"]?.preview} time={previews["guest"]?.time} /></button>
     {entries.map((entry) => <div key={entry.id} className={cn("mb-1 flex items-center rounded-lg", activeId === guestConversationId(entry.id) && "bg-sidebar-accent")}>
-      <Button variant="ghost" aria-label={`打开 ${entry.bot.name}`} onClick={() => onSelect(entry)} className="h-auto min-w-0 flex-1 justify-start gap-2.5 px-2 py-3 text-left"><BotPresenceLabel bot={entry.bot} status={activities[guestConversationId(entry.id)]?.status ?? "ready"} /></Button>
+      <Button variant="ghost" aria-label={`打开 ${entry.bot.name}`} onClick={() => onSelect(entry)} className="h-auto min-w-0 flex-1 justify-start gap-2.5 px-2 py-3 text-left"><BotPresenceLabel bot={entry.bot} status={activities[guestConversationId(entry.id)]?.status ?? "ready"} preview={previews[guestConversationId(entry.id)]?.preview} time={previews[guestConversationId(entry.id)]?.time} /></Button>
       <BotSettings entry={entry} />
     </div>)}
   </div>;

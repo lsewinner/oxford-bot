@@ -73,7 +73,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
     messages: initialMessages,
     transport,
     onError: (e) => toast.error(errorText(e)),
-    onFinish: () => { queryClient.invalidateQueries({ queryKey: ["threads"] }); queryClient.invalidateQueries({ queryKey: ["bot-history"] }); },
+    onFinish: () => { queryClient.invalidateQueries({ queryKey: ["threads"] }); queryClient.invalidateQueries({ queryKey: ["bot-history"] }); queryClient.invalidateQueries({ queryKey: ["thread-previews"] }); },
   });
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
@@ -89,7 +89,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
       // Defer to the next macrotask. Sending synchronously from this effect is
       // dropped by the chat store before it dispatches, losing the first question.
       setTimeout(() => sendMessage(parsePendingInput(pending)), 0);
-      const refresh = setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
+      const refresh = setTimeout(() => { queryClient.invalidateQueries({ queryKey: ["threads"] }); queryClient.invalidateQueries({ queryKey: ["thread-previews"] }); }, 1500);
       return () => clearTimeout(refresh);
     }
     return undefined;

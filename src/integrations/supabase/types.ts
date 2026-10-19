@@ -150,7 +150,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      thread_previews: {
+        Args: { p_thread_ids: string[] }
+        Returns: {
+          preview: string
+          role: string
+          thread_id: string
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
