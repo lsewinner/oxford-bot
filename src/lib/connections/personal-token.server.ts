@@ -10,7 +10,10 @@ export async function callWithPersonalToken(id: PersonalTokenProvider, token: st
   const headers = new Headers(init?.headers);
   headers.set('Authorization', `Bearer ${token}`);
   if (id === 'github') { headers.set('Accept', 'application/vnd.github+json'); headers.set('X-GitHub-Api-Version', '2022-11-28'); headers.set('User-Agent', 'Oxford-Bot'); }
-  return fetch(`${id === 'github' ? 'https://api.github.com' : 'https://slack.com'}${path}`, { ...init, headers, redirect: 'error' });
+  const res = await fetch(`${id === 'github' ? 'https://api.github.com' : 'https://slack.com'}${path}`, { ...init, headers, redirect: 'manual' });
+  // Never follow redirects off the fixed provider host; surface them as a gateway error.
+  if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) return new Response(JSON.stringify({ error: 'unexpected_redirect' }), { status: 502, headers: { 'content-type': 'application/json' } });
+  return res;
 }
 export function personalTokenError(id: PersonalTokenProvider, status: number, slackError?: unknown) {
   const name = id === 'github' ? 'GitHub' : 'Slack';

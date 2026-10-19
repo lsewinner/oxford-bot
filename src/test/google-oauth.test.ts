@@ -47,7 +47,7 @@ describe('google oauth direct flow', () => {
   expect(res.ok).toBe(true);
   expect(fetcher.mock.calls[0]?.[0]).toBe('https://oauth2.googleapis.com/token');
   expect(fetcher.mock.calls[1]?.[0]).toBe('https://gmail.googleapis.com/gmail/v1/users/me/profile');
-  expect((fetcher.mock.calls[1]?.[1] as RequestInit).redirect).toBe('error');
+  expect((fetcher.mock.calls[1]?.[1] as RequestInit).redirect).toBe('manual');
  });
 
  it('rejects arbitrary paths before sending credentials', async () => {
