@@ -226,14 +226,22 @@ function ChatMessage({
     .filter((p) => p.type === "text")
     .map((p) => (p as { text: string }).text)
     .join("\n");
-  const sources = dedupeSources(
-    message.parts
-      .filter((p) => p.type === "source-url")
-      .map((p) => {
-        const s = p as { url: string; title?: string };
-        return { url: s.url, title: s.title };
-      }),
-  );
+  // 合并两类来源：正文中模型引用的链接（按出现顺序）+ 检索工具返回的来源
+  const cited: Source[] = [];
+  for (const m of text.matchAll(/\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/g)) {
+    const url = m[1];
+    if (url && !cited.some((s) => domainOf(s.url) === domainOf(url))) cited.push({ url });
+  }
+  const toolSources: Source[] = message.parts
+    .filter((p) => p.type === "source-url")
+    .map((p) => {
+      const s = p as { url: string; title?: string };
+      return { url: s.url, title: s.title };
+    });
+  const sources = dedupeSources([
+    ...cited,
+    ...toolSources.filter((s) => !cited.some((c) => domainOf(c.url) === domainOf(s.url))),
+  ]);
 
   return (
     <Message from={message.role}>
