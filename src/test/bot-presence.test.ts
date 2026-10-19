@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { botFromMessages, botFromRequest, botsFromMessages, botIsWorking, mergeBotEntries } from "@/lib/bot-presence";
+import { botFromMessages, botFromRequest, botsFromMessages, botIsWorking, mergeBotEntries, parseBotEntries } from "@/lib/bot-presence";
 
 describe("Bot request identity and execution state", () => {
+  it("recognizes a website Bot without requiring GitHub or code keywords", () => {
+    expect(botFromRequest("再帮我建立一个bot来帮我建立网站")).toEqual({ name: "建站 Bot", kind: "code" });
+  });
+  it("recognizes a code-writing Bot", () => {
+    expect(botFromRequest("做一个写代码的bot")).toEqual({ name: "开发 Bot", kind: "code" });
+  });
+  it("rejects corrupted stored entries instead of rendering unknown cat breeds", () => {
+    expect(parseBotEntries('{"entries":[]}')).toEqual([]);
+    expect(parseBotEntries('[{"id":"a","threadId":"guest","messageId":"a","bot":{"name":"cat","kind":"unknown"}}]')).toEqual([]);
+  });
   it("adds a GitHub Bot below the mail Bot in the same conversation without duplicate streaming entries", () => {
     const entries = botsFromMessages("guest", [
       { id: "mail", role: "user", parts: [{ type: "text", text: "建立一个邮件BOT" }] },
