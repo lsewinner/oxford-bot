@@ -32,6 +32,7 @@ import { FileAttachment, GeneratedImage } from "./media-card";
 import { SpeakControls } from "./voice-controls";
 import { RealToolResult } from './real-tool-result';
 import type { ToolResult } from '@/lib/connections/catalog';
+import { ConversationTools } from './conversation-tools';
 
 function errorText(err: Error) {
   try {
@@ -118,6 +119,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
   return (
     <div className="flex h-full min-h-0 flex-col">
       {activeBot && <header className="flex shrink-0 items-center gap-3 border-b border-border px-5 py-3"><BotAvatar bot={activeBot} /><h1 className="min-w-0 truncate text-base font-medium">{activeBot.name}</h1></header>}
+      <ConversationTools messages={messages} threadId={threadId} busy={busy} />
       <Conversation className="min-h-0 flex-1">
         <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 pb-10 pt-6">
           {activeBot && messages.length === 0 && <p className="text-sm text-muted-foreground">你需要我为你做什么？</p>}
@@ -133,8 +135,8 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
               canRegenerate={!busy && idx === messages.length - 1 && m.role === "assistant"}
               onRegenerate={() => regenerate()}
               fresh={!initialMessages.some((message) => message.id === m.id)}
-              onImageComplete={(toolCallId, image) => {
-                const updated = messagesRef.current.map((message) => message.id !== m.id ? message : { ...message, parts: message.parts.map((part) => part.type === "tool-generate_image" && part.toolCallId === toolCallId && part.state === "output-available" ? { ...part, output: { ...(part.output as object), image } } : part) });
+              onImageComplete={(toolCallId, image, prompt) => {
+                const updated = messagesRef.current.map((message) => message.id !== m.id ? message : { ...message, parts: message.parts.map((part) => part.type === "tool-generate_image" && part.toolCallId === toolCallId && part.state === "output-available" ? { ...part, output: { ...(part.output as object), image, prompt } } : part) });
                 setMessages(updated);
                 if (!isGuestConversation(threadId)) {
                   const saved = updated.find((message) => message.id === m.id);
@@ -269,7 +271,7 @@ function ChatMessage({
   streaming: boolean;
   canRegenerate: boolean;
   onRegenerate: () => void;
-  onImageComplete: (toolCallId: string, image: string) => void;
+  onImageComplete: (toolCallId: string, image: string, prompt: string) => void;
   fresh: boolean;
 }) {
   const [copied, setCopied] = useState(false);
@@ -319,7 +321,7 @@ function ChatMessage({
             if (generation.state === "output-error") return <p key={i} role="alert" className="text-sm text-destructive">{generation.errorText ?? "图片任务失败"}</p>;
             const prompt = generation.output?.prompt ?? generation.input?.prompt;
             if (!prompt) return <Shimmer key={i}>正在构思画面…</Shimmer>;
-            return <GeneratedImage key={generation.toolCallId} prompt={prompt} {...(generation.output?.image ? { image: generation.output.image } : {})} autoStart={fresh && !streaming && generation.state === "output-available"} onComplete={(image) => onImageComplete(generation.toolCallId, image)} />;
+            return <GeneratedImage key={generation.toolCallId} prompt={prompt} {...(generation.output?.image ? { image: generation.output.image } : {})} autoStart={fresh && !streaming && generation.state === "output-available"} onComplete={(image, prompt) => onImageComplete(generation.toolCallId, image, prompt)} />;
           }
           if (part.type === "reasoning" && part.text) {
             return (
