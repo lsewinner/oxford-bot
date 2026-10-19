@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,6 +39,7 @@ function Index() {
       >
         开始对话
       </Link>
+      <Button asChild variant="ghost" className="mt-3"><Link to="/guest">游客对话</Link></Button>
       <p className="mt-6 font-mono text-xs text-muted-foreground">在手机浏览器中「添加到主屏幕」即可像 App 一样使用</p>
     </div>
   );

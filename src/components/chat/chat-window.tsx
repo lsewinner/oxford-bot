@@ -24,6 +24,7 @@ import { pendingKey } from "@/lib/chat-data";
 import { Composer } from "./composer";
 import { useMode } from "./mode-context";
 import { useWebSearch } from "./web-search-context";
+import { useTools } from "./use-tools";
 
 function errorText(err: Error) {
   try {
@@ -43,6 +44,9 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   const webSearchRef = useRef(webSearch);
   webSearchRef.current = webSearch;
   const queryClient = useQueryClient();
+  const { enabled: demoTools } = useTools();
+  const toolsRef = useRef(demoTools);
+  toolsRef.current = demoTools;
 
   const transport = useMemo(
     () =>
@@ -53,7 +57,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: () => ({ threadId, mode: modeRef.current, webSearch: webSearchRef.current }),
+        body: () => ({ threadId, mode: modeRef.current, webSearch: webSearchRef.current, demoTools: toolsRef.current }),
       }),
     [threadId],
   );
@@ -84,9 +88,10 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   }, [threadId, initialMessages.length, sendMessage, queryClient]);
 
   const busy = status === "submitted" || status === "streaming";
+  const lastMessage = messages.at(-1);
   const lastAssistantHasText =
-    messages.at(-1)?.role === "assistant" &&
-    messages.at(-1)!.parts.some((p) => (p.type === "text" || p.type === "reasoning") && p.text);
+    lastMessage?.role === "assistant" &&
+    lastMessage.parts.some((p) => (p.type === "text" || p.type === "reasoning") && p.text);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -273,6 +278,15 @@ function ChatMessage({
           }
           if (part.type === "tool-web_search") {
             return <SearchSteps key={i} part={part} streaming={streaming} />;
+          }
+          if (part.type.startsWith("tool-demo_")) {
+            const step = part as { type: string; state?: string; output?: { provider?: string; summary?: string; sample?: string }; errorText?: string };
+            const done = step.state === "output-available";
+            return <details key={i} className="mb-3 border-l-2 border-border pl-3 text-xs text-muted-foreground">
+              <summary className="cursor-pointer py-1">模拟 · {step.output?.provider ?? step.type.replace("tool-demo_", "")} · {done ? "已完成" : step.state === "output-error" ? "执行失败" : "正在执行"}</summary>
+              <p className="mt-2">{step.errorText ?? step.output?.summary ?? "正在准备模拟结果…"}</p>
+              {step.output?.sample && <p className="mt-2">{step.output.sample}</p>}
+            </details>;
           }
           if (part.type === "text") {
             return message.role === "user" ? (
