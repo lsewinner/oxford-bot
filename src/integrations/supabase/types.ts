@@ -156,6 +156,7 @@ export type Database = {
           preview: string
           role: string
           thread_id: string
+          updated_at: string
         }[]
       }
     }

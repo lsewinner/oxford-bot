@@ -22,6 +22,13 @@
       "when": 1792396702734,
       "tag": "0002_thread_previews_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792396763651,
+      "tag": "0003_thread_previews_with_time",
+      "breakpoints": true
     }
   ]
 }
