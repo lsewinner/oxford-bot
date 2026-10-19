@@ -6,8 +6,23 @@ import { providerId,PROVIDERS,operationInput,type ToolResult } from './connectio
 const BASE='https://connector-gateway.lovable.dev';
 const selection=z.object({id:providerId});
 export const connectionStatus=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).handler(async({context})=>{
- const {getConnection}=await import('./connections/storage.server');
- return Promise.all(providerId.options.map(async(id)=>{const configured=Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const row=await getConnection(context.userId,id);return {id,configured,connected:Boolean(row),enabled:row?.enabled ?? false,reconnectRequired:row?.reconnect_required ?? false};}));
+ const {getConnection,decryptConnectionKey}=await import('./connections/storage.server');
+ const {callAsAppUser,appUserReconnectRequired}=await import('@/integrations/lovable/appUserConnector');
+ const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
+ const paths={github:'/user',google_mail:'/gmail/v1/users/me/profile',microsoft_outlook:'/me?$select=displayName',google_drive:'/drive/v3/about?fields=user(displayName)',slack:'/api/auth.test'};
+ return Promise.all(providerId.options.map(async(id)=>{
+   const configured=Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const row=await getConnection(context.userId,id);
+   let reconnectRequired=row?.reconnect_required ?? false;let connectionError='';
+   if(row && !reconnectRequired){
+     try{const response=await callAsAppUser({gatewayBaseUrl:BASE,connectorId:id,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),path:paths[id],requiredScopes:PROVIDERS[id].scopes});
+       if(await appUserReconnectRequired(response)){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}
+       else if(!response.ok){connectionError=`${PROVIDERS[id].name} (${response.status}): ${(await response.text()).slice(0,800)}`;}
+       else if(id==='slack'){const b=await response.json();if(b.ok===false)connectionError=`Slack: ${b.error}`;}
+       else await response.arrayBuffer();
+     }catch(error){connectionError=error instanceof Error?error.message:'连接检查失败';}
+   }
+   return {id,configured,connected:Boolean(row),enabled:row?.enabled ?? false,reconnectRequired,connectionError};
+ }));
 });
 export const startConnection=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>selection.parse(v)).handler(async({data,context})=>{
  const client=process.env[`${data.id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`];if(!client)throw new Error('管理员尚未配置此服务的授权应用');
