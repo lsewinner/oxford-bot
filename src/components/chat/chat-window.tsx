@@ -18,6 +18,7 @@ import {
 } from "@/components/ai-elements/message";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { pendingKey } from "@/lib/chat-data";
 import { Composer } from "./composer";
