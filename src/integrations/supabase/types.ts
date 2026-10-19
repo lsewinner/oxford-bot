@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       app_user_connections: {
         Row: {
+          account_key: string
           connection_key_ciphertext: string
           connector_id: string
           created_at: string
@@ -27,6 +28,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_key?: string
           connection_key_ciphertext: string
           connector_id: string
           created_at?: string
@@ -38,6 +40,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_key?: string
           connection_key_ciphertext?: string
           connector_id?: string
           created_at?: string

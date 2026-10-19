@@ -50,6 +50,13 @@
       "when": 1792400896911,
       "tag": "0006_google_oauth_credential_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792403511272,
+      "tag": "0007_multi_account_connections",
+      "breakpoints": true
     }
   ]
 }
