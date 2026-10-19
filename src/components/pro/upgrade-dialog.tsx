@@ -10,6 +10,7 @@ import { FEATURE_PROMPTS, PLAN_ROWS, PRO_PRICES, type BillingCycle, type ProFeat
 import { getStripe, getStripeEnvironment, paymentsConfigured } from "@/lib/stripe";
 import { createCheckoutSession, createPortalSession } from "@/lib/payments.functions";
 import { usePro } from "./pro-context";
+import { LegalLinks } from "@/components/legal/legal-page";
 
 function Cell({ value }: { value: string | boolean }) {
   if (value === true) return <CheckIcon className="mx-auto size-4 text-foreground" aria-label="包含" />;
@@ -71,6 +72,8 @@ export function UpgradeDialog({ feature, onClose }: { feature: ProFeature | null
         </div> : userId ? <Button className="w-full" size="lg" disabled={!paymentsConfigured()} onClick={() => setCheckout(true)}>升级 Pro · {PRO_PRICES[cycle].label}{PRO_PRICES[cycle].note.split(" · ")[0]}</Button>
           : <Button asChild className="w-full" size="lg"><Link to="/auth" onClick={onClose}>登录后升级 Pro</Link></Button>}
         {subscription?.cancel_at_period_end && isPro && subscription.current_period_end && <p className="text-center text-xs text-muted-foreground">订阅将于 {new Date(subscription.current_period_end).toLocaleDateString("zh-CN")} 结束</p>}
+        <p className="text-center text-xs text-muted-foreground">订阅即表示同意以下条款，自动续费，可随时取消。</p>
+        <LegalLinks onNavigate={onClose} />
       </>}
     </DialogContent>
   </Dialog>;

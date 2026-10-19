@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { LegalLinks } from "@/components/legal/legal-page";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,6 +42,7 @@ function Index() {
       </Link>
       <Button asChild variant="ghost" className="mt-3"><Link to="/guest">游客对话</Link></Button>
       <p className="mt-6 font-mono text-xs text-muted-foreground">在手机浏览器中「添加到主屏幕」即可像 App 一样使用</p>
+      <div className="mt-8"><LegalLinks /></div>
     </div>
   );
 }
