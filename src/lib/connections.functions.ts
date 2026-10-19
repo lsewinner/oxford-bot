@@ -40,7 +40,7 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
        else if(!response.ok){connectionError=`${PROVIDERS[id].name} (${response.status}): ${(await response.text()).slice(0,800)}`;}
        else if(id==='slack'){const b=await response.json();if(b.ok===false)connectionError=`Slack: ${b.error}`;}
        else await response.arrayBuffer();}
-     }catch(error){connectionError=error instanceof Error?error.message:'连接检查失败';}
+     }catch(error){const msg=error instanceof Error?error.message:'';connectionError=/fetch|network|ECONN|ETIMEDOUT|timed out|无法访问/i.test(msg)?'暂时无法访问服务，请稍后重试':msg||'连接检查失败';}
    }
    return {id,configured,credentialKind:row?.credential_kind ?? 'oauth',connected:Boolean(row),enabled:row?.enabled ?? false,reconnectRequired,connectionError};
  }));
@@ -50,6 +50,12 @@ export const startConnection=createServerFn({method:'POST'}).middleware([require
  const {getConnection,decryptConnectionKey}=await import('./connections/storage.server');const {authorizeAppUserOAuth}=await import('@/integrations/lovable/appUserConnector');const row=await getConnection(context.userId,data.id);
  const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
  return authorizeAppUserOAuth({gatewayBaseUrl:BASE,connectorId:data.id,appUserId:context.userId,clientAPIKey:client,returnUrl:new URL('/api/public/oauth/return',origin).toString(),...(row && row.credential_kind!=='personal_token'?{connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext)}:{}),credentialsConfiguration:{scopes:PROVIDERS[data.id].scopes,...(data.id==='microsoft_outlook'?{domain_hint:'none',prompt:'select_account'}:{})}});
+});
+export const startGoogleOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['google_mail','google_drive'])}).strict().parse(v)).handler(async({data,context})=>{
+ const {buildGoogleAuthUrl,signState}=await import('./connections/google-oauth.server');
+ const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
+ const redirectUri=new URL('/api/oauth/google/callback',origin).toString();
+ return {authorizationUrl:buildGoogleAuthUrl(data.id,redirectUri,signState(context.userId,data.id))};
 });
 export const completeConnection=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>selection.extend({code:z.string().min(1).max(4096)}).parse(v)).handler(async({data,context})=>{
  const {exchangeAppUserOAuthCode}=await import('@/integrations/lovable/appUserConnector');const {saveConnection}=await import('./connections/storage.server');const result=await exchangeAppUserOAuthCode(BASE,data.code);if(result.connectorId!==data.id)throw new Error('授权服务不匹配');await saveConnection(context.userId,data.id,result.connectionAPIKey);return {ok:true};
