@@ -36,5 +36,4 @@
 - Trends use fixed server-side GitHub Trending/Hacker News feeds and the current composer (why: preserve active-Bot context).
 - Nickname and compact avatar use authenticated owner metadata updates, never roles (why: sync identity without new tables).
 - Pro access: `subscriptions` rows are written only by the signed Stripe webhook; server checks use `has_active_subscription` with the environment derived from the build's client token, and gated server paths (chat Deep Think/persona, connection starts) re-check Pro (why: client gates are UX only).
-- Admin console `/admin` is gated by `user_roles` + `has_role`; privileged reads/writes run in `src/lib/admin.functions.ts` via supabaseAdmin only after that check, and every action writes `admin_audit_log` (why: client gates are UX only).
-- Daily message quotas are consumed atomically by the `consume_daily_message` RPC in chat.server; admin overrides, bans and granted Pro live in `account_controls`, and `has_active_subscription` also honors granted Pro (why: one server-side source of truth for limits and Pro).
+- Admin `/admin`: `has_role` check before supabaseAdmin in admin.functions; actions audited. Quotas via `consume_daily_message` RPC; overrides/bans/granted Pro in `account_controls`, honored by `has_active_subscription` (why: server is the only source of truth).
