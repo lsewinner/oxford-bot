@@ -16,6 +16,7 @@ import { ProProvider } from "@/components/pro/pro-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { DesktopInstallProvider } from "@/components/desktop-install";
 
 function NotFoundComponent() {
   return (
@@ -141,7 +142,9 @@ function RootComponent() {
       <TooltipProvider>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <ProProvider>
+      <DesktopInstallProvider>
       <Outlet />
+      </DesktopInstallProvider>
       </ProProvider>
       <Toaster theme="dark" position="top-center" />
       </TooltipProvider>

@@ -19,6 +19,7 @@ import { AccountProfile } from '@/components/chat/account-profile';
 import { UpgradeEntry, ProBadge } from '@/components/pro/upgrade-dialog';
 import { usePro } from '@/components/pro/pro-context';
 import { LockIcon } from 'lucide-react';
+import { DesktopInstallButton } from "@/components/desktop-install";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -186,6 +187,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </nav>
       <UpgradeEntry />
+      <div className="px-3 pb-1"><DesktopInstallButton sidebar /></div>
       <AccountProfile user={user} onSignOut={signOut} />
     </div>
   );
