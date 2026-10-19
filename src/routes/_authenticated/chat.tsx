@@ -43,7 +43,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = Route.useRouteContext();
-  const { activities, entries, register, removeThread } = useBotPresence();
+  const { activities, entries, register, removeThread, linkConversation } = useBotPresence();
   const { data: history } = useQuery(botHistoryQuery(user.id));
   useEffect(() => { if (history) register(history); }, [history, register]);
   const bots = entries;
@@ -52,13 +52,32 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     const { error } = await supabase.from("threads").update({ title: bot.name }).eq("id", threadId);
     if (error) throw error;
     const messageId = `manual-${crypto.randomUUID()}`;
-    register([{ id: `${threadId}:${messageId}`, threadId, messageId, bot }]);
+    register([{ id: `${threadId}:${messageId}`, threadId, conversationId: threadId, messageId, bot }]);
     await queryClient.invalidateQueries({ queryKey: ["threads"] });
     navigate({ to: "/chat/$threadId", params: { threadId } });
     onNavigate?.();
   };
 
-  const groups = threads.filter((t) => !bots.some((b) => b.threadId === t.id)).reduce<Record<string, Thread[]>>((acc, t) => {
+  const [opening, setOpening] = useState<string | null>(null);
+  const openBot = async (entry: (typeof entries)[number]) => {
+    if (opening) return;
+    setOpening(entry.id);
+    try {
+      let target = entry.conversationId;
+      if (!target) {
+        target = entry.messageId.startsWith("manual-") ? entry.threadId : await createThread();
+        const { error } = await supabase.from("threads").update({ title: entry.bot.name }).eq("id", target);
+        if (error) throw error;
+        linkConversation(entry.id, target);
+        await queryClient.invalidateQueries({ queryKey: ["threads"] });
+      }
+      await navigate({ to: "/chat/$threadId", params: { threadId: target } });
+      onNavigate?.();
+    } catch { toast.error("打开 Bot 对话失败，请重试"); }
+    finally { setOpening(null); }
+  };
+
+  const groups = threads.filter((t) => !bots.some((b) => b.conversationId === t.id || (b.messageId.startsWith("manual-") && b.threadId === t.id))).reduce<Record<string, Thread[]>>((acc, t) => {
     (acc[groupLabel(t.updated_at)] ??= []).push(t);
     return acc;
   }, {});
@@ -99,12 +118,12 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="mt-4 flex-1 overflow-y-auto px-2 pb-4">
         <section aria-label="我的 Bots" className="mb-5">
           <div className="flex items-center justify-between px-3 pb-2"><span className="text-[11px] font-medium text-muted-foreground">我的 Bots</span><NewBot onCreate={createBot} /></div>
-          {bots.map((entry) => <div key={entry.id} className={cn("group flex items-center rounded-lg hover:bg-sidebar-accent", params.threadId === entry.threadId && "bg-sidebar-accent")}>
-            <Link to="/chat/$threadId" params={{ threadId: entry.threadId }} onClick={() => { onNavigate?.(); setTimeout(() => document.getElementById(`message-${entry.messageId}`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 250); }} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2" aria-label={`打开 ${entry.bot.name}`}>
-              <BotPresenceLabel bot={entry.bot} status={entries.filter((item) => item.threadId === entry.threadId).at(-1)?.id === entry.id ? activities[entry.threadId]?.status ?? "ready" : "ready"} />
-            </Link>
+          {bots.map((entry) => <div key={entry.id} className={cn("group flex items-center rounded-lg hover:bg-sidebar-accent", params.threadId === entry.conversationId && "bg-sidebar-accent")}>
+            <Button variant="ghost" disabled={opening !== null} onClick={() => openBot(entry)} className="h-auto min-w-0 flex-1 justify-start gap-2.5 px-3 py-2 text-left" aria-label={`打开 ${entry.bot.name}`}>
+              <BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} />
+            </Button>
             <BotSettings entry={entry} />
-            <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => remove(entry.threadId)} className="mr-1 shrink-0 text-muted-foreground hover:text-destructive md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>
+            {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => remove(entry.conversationId ?? entry.threadId)} className="mr-1 shrink-0 text-muted-foreground hover:text-destructive md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}
           </div>)}
         </section>
         {threads.length === 0 && <p className="px-3 text-xs text-muted-foreground">还没有对话</p>}

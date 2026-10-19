@@ -4,17 +4,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
-import british from "@/assets/cat-british.webp";
-import ragdoll from "@/assets/cat-ragdoll.webp";
-import bengal from "@/assets/cat-bengal.webp";
-import tuxedo from "@/assets/cat-tuxedo.webp";
-import maineCoon from "@/assets/cat-maine-coon.webp";
-import { botIsWorking, botStorageKey, parseBotEntries, mergeBotEntries, type BotEntry, type CatBreed, type BotActivity, type BotIdentity } from "@/lib/bot-presence";
+import { botIsWorking, botStorageKey, parseBotEntries, mergeBotEntries, type BotEntry, type CatBreed, type BotActivity, type BotIdentity, type BotKind } from "@/lib/bot-presence";
+import { catBreeds } from "@/lib/cat-breeds";
 import { cn } from "@/lib/utils";
 
-type PresenceContext = { entries: BotEntry[]; register: (entries: BotEntry[]) => void; update: (id: string, bot: BotIdentity) => void; removeThread: (id: string) => void; activities: Record<string, BotActivity>; report: (id: string, activity: BotActivity) => void; settle: (id: string) => void };
+type PresenceContext = { entries: BotEntry[]; register: (entries: BotEntry[]) => void; update: (id: string, bot: BotIdentity) => void; removeThread: (id: string) => void; linkConversation: (id: string, conversationId: string) => void; activities: Record<string, BotActivity>; report: (id: string, activity: BotActivity) => void; settle: (id: string) => void };
 const noop = () => {};
-const Context = createContext<PresenceContext>({ entries: [], register: noop, update: noop, removeThread: noop, activities: {}, report: noop, settle: noop });
+const Context = createContext<PresenceContext>({ entries: [], register: noop, update: noop, removeThread: noop, linkConversation: noop, activities: {}, report: noop, settle: noop });
 
 export function BotPresenceProvider({ children, scope = "guest" }: { children: ReactNode; scope?: string }) {
   const [entries, setEntries] = useState<BotEntry[]>([]);
@@ -40,7 +36,8 @@ export function BotPresenceProvider({ children, scope = "guest" }: { children: R
   const update = useCallback((id: string, bot: BotIdentity) => {
     setEntries((previous) => previous.map((entry) => entry.id === id ? { ...entry, bot } : entry));
   }, []);
-  const removeThread = useCallback((id: string) => setEntries((previous) => previous.filter((entry) => entry.threadId !== id)), []);
+  const removeThread = useCallback((id: string) => setEntries((previous) => previous.filter((entry) => entry.conversationId !== id && entry.threadId !== id)), []);
+  const linkConversation = useCallback((id: string, conversationId: string) => setEntries((previous) => previous.map((entry) => entry.id === id ? { ...entry, conversationId } : entry)), []);
   const [activities, setActivities] = useState<Record<string, BotActivity>>({});
   const report = useCallback((id: string, activity: BotActivity) => {
     setActivities((prev) => ({ ...prev, [id]: activity }));
@@ -51,33 +48,35 @@ export function BotPresenceProvider({ children, scope = "guest" }: { children: R
       return current ? { ...prev, [id]: { ...current, status: "ready" } } : prev;
     });
   }, []);
-  const value = useMemo(() => ({ entries, register, update, removeThread, activities, report, settle }), [entries, register, update, removeThread, activities, report, settle]);
+  const value = useMemo(() => ({ entries, register, update, removeThread, linkConversation, activities, report, settle }), [entries, register, update, removeThread, linkConversation, activities, report, settle]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 
 export const useBotPresence = () => useContext(Context);
 
-const cats = {
-  mail: { src: british, breed: "英国短毛猫" },
-  document: { src: ragdoll, breed: "布偶猫" },
-  code: { src: bengal, breed: "孟加拉猫" },
-  team: { src: tuxedo, breed: "黑白猫" },
-  general: { src: maineCoon, breed: "缅因猫" },
-};
+const images = import.meta.glob("/src/assets/cat-*.webp", { eager: true, import: "default" }) as Record<string, string>;
+
+function CatPicker({ bot, breed, onChange }: { bot: BotIdentity; breed: CatBreed; onChange: (breed: CatBreed) => void }) {
+  const [search, setSearch] = useState("");
+  return <fieldset className="min-h-0"><legend className="mb-3 text-sm">猫咪品种 · {catBreeds.length}</legend>
+    <Input aria-label="搜索猫咪品种" placeholder="搜索品种…" value={search} onChange={(event) => setSearch(event.target.value)} className="mb-3" />
+    <div className="grid max-h-[40dvh] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-5">{catBreeds.filter((cat) => cat.name.includes(search)).map((cat) => <Button key={cat.id} type="button" variant="outline" aria-label={cat.name} aria-pressed={breed === cat.id} onClick={() => onChange(cat.id)} className={cn("relative h-24 flex-col gap-2 px-1 py-2", breed === cat.id && "border-primary bg-accent")}><BotAvatar bot={{ ...bot, breed: cat.id }} /><span className="whitespace-normal text-center text-[11px] leading-4">{cat.name}</span>{breed === cat.id && <CheckIcon className="absolute right-1 top-1 size-3" />}</Button>)}</div>
+  </fieldset>;
+}
 
 export function NewBot({ onCreate }: { onCreate: (bot: BotIdentity) => Promise<void> | void }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [kind, setKind] = useState<CatBreed>("general");
+  const [kind, setKind] = useState<BotKind>("general");
   const [breed, setBreed] = useState<CatBreed>("general");
   const [saving, setSaving] = useState(false);
   return <>
     <Button size="sm" variant="ghost" aria-label="新建 Bot" className="h-7 gap-1 px-2 text-xs" onClick={() => { setName(""); setKind("general"); setBreed("general"); setOpen(true); }}><PlusIcon className="size-3.5" />新建</Button>
-    <Dialog open={open} onOpenChange={(value) => { if (!saving) setOpen(value); }}><DialogContent className="max-w-sm"><DialogHeader><DialogTitle>新建 Bot</DialogTitle></DialogHeader>
+    <Dialog open={open} onOpenChange={(value) => { if (!saving) setOpen(value); }}><DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>新建 Bot</DialogTitle></DialogHeader>
       <form className="space-y-5" onSubmit={async (event) => { event.preventDefault(); if (!name.trim() || saving) return; setSaving(true); try { await onCreate({ name: name.trim(), kind, breed }); setOpen(false); } catch { toast.error("创建 Bot 失败，请重试"); } finally { setSaving(false); } }}>
         <div className="space-y-2"><label htmlFor="new-bot-name" className="text-sm">名字</label><Input id="new-bot-name" value={name} required maxLength={40} onChange={(event) => setName(event.target.value)} /></div>
-        <div className="space-y-2"><label htmlFor="new-bot-kind" className="text-sm">职能</label><select id="new-bot-kind" value={kind} onChange={(event) => { const next = event.target.value as CatBreed; setKind(next); setBreed(next); }} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="general">通用任务</option><option value="mail">邮件助手</option><option value="document">文档助手</option><option value="code">网站与代码</option><option value="team">协作助手</option></select></div>
-        <fieldset><legend className="mb-3 text-sm">猫咪品种</legend><div className="grid grid-cols-3 gap-2">{(Object.keys(cats) as CatBreed[]).map((key) => <Button key={key} type="button" variant="outline" aria-label={cats[key].breed} aria-pressed={breed === key} onClick={() => setBreed(key)} className={cn("relative h-auto flex-col gap-2 px-1 py-3", breed === key && "border-primary bg-accent")}><BotAvatar bot={{ name: name || "新 Bot", kind, breed: key }} /><span className="text-[11px]">{cats[key].breed}</span>{breed === key && <CheckIcon className="absolute right-1 top-1 size-3" />}</Button>)}</div></fieldset>
+        <div className="space-y-2"><label htmlFor="new-bot-kind" className="text-sm">职能</label><select id="new-bot-kind" value={kind} onChange={(event) => { const next = event.target.value as BotKind; setKind(next); setBreed(next); }} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="general">通用任务</option><option value="mail">邮件助手</option><option value="document">文档助手</option><option value="code">网站与代码</option><option value="team">协作助手</option></select></div>
+        <CatPicker bot={{ name: name || "新 Bot", kind }} breed={breed} onChange={setBreed} />
         <DialogFooter><Button type="submit" disabled={saving || !name.trim()}>{saving ? "正在创建…" : "创建 Bot"}</Button></DialogFooter>
       </form>
     </DialogContent></Dialog>
@@ -85,8 +84,8 @@ export function NewBot({ onCreate }: { onCreate: (bot: BotIdentity) => Promise<v
 }
 
 export function BotAvatar({ bot, working = false }: { bot: BotIdentity; working?: boolean }) {
-  const cat = cats[bot.breed ?? bot.kind];
-  return <img src={cat.src} alt={`${bot.name} · ${cat.breed}`} title={cat.breed} width={36} height={36} loading="lazy" className={cn("size-9 shrink-0 rounded-full object-cover ring-1 ring-sidebar-border", working && "bot-working")} />;
+  const cat = catBreeds.find((item) => item.id === (bot.breed ?? bot.kind)) ?? catBreeds[0];
+  return <img src={images[`/src/assets/cat-${cat.asset}.webp`]} alt={`${bot.name} · ${cat.name}`} title={cat.name} width={36} height={36} loading="lazy" className={cn("size-9 shrink-0 rounded-full object-cover ring-1 ring-sidebar-border", working && "bot-working")} />;
 }
 
 export function BotSettings({ entry }: { entry: BotEntry }) {
@@ -96,12 +95,10 @@ export function BotSettings({ entry }: { entry: BotEntry }) {
   const [breed, setBreed] = useState<CatBreed>(entry.bot.breed ?? entry.bot.kind);
   return <>
     <Button variant="ghost" size="icon-sm" title="修改名字和猫咪头像" aria-label={`设置 ${entry.bot.name}`} className="mr-1 shrink-0 text-muted-foreground" onClick={() => { setName(entry.bot.name); setBreed(entry.bot.breed ?? entry.bot.kind); setOpen(true); }}><Settings2Icon /></Button>
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-sm"><DialogHeader><DialogTitle>设置 Bot</DialogTitle></DialogHeader>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>设置 Bot</DialogTitle></DialogHeader>
       <form onSubmit={(event) => { event.preventDefault(); if (!name.trim()) return; update(entry.id, { ...entry.bot, name: name.trim(), breed }); setOpen(false); }} className="space-y-5">
         <div className="space-y-2"><label htmlFor={`name-${entry.id}`} className="text-sm">名字</label><Input id={`name-${entry.id}`} value={name} maxLength={40} required onChange={(event) => setName(event.target.value)} /></div>
-        <fieldset><legend className="mb-3 text-sm">猫咪品种</legend><div className="grid grid-cols-3 gap-2">{(Object.keys(cats) as CatBreed[]).map((key) => <Button key={key} variant="outline" type="button" aria-pressed={breed === key} aria-label={cats[key].breed} onClick={() => setBreed(key)} className={cn("relative h-auto flex-col gap-2 px-1 py-3", breed === key && "border-primary bg-accent")}>
-          <BotAvatar bot={{ name, kind: entry.bot.kind, breed: key }} /><span className="text-[11px]">{cats[key].breed}</span>{breed === key && <CheckIcon className="absolute right-1 top-1 size-3" />}
-        </Button>)}</div></fieldset>
+        <CatPicker bot={{ ...entry.bot, name }} breed={breed} onChange={setBreed} />
         <DialogFooter><Button type="submit" disabled={!name.trim()}>保存</Button></DialogFooter>
       </form>
     </DialogContent></Dialog>

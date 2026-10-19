@@ -5,6 +5,22 @@ import { BotPresenceProvider, useBotPresence } from "@/components/chat/bot-prese
 
 describe("per-thread Bot presence", () => {
   beforeEach(() => localStorage.clear());
+  it("persists separate target conversations and new cat selections without re-registering duplicates", () => {
+    const first = renderHook(() => useBotPresence(), { wrapper: BotPresenceProvider });
+    const entries = [
+      { id: "source:mail", threadId: "source", messageId: "mail", bot: { name: "邮件 Bot", kind: "mail" as const } },
+      { id: "source:website", threadId: "source", messageId: "website", bot: { name: "建站 Bot", kind: "code" as const } },
+    ];
+    act(() => first.result.current.register(entries));
+    act(() => first.result.current.linkConversation("source:mail", "mail-chat"));
+    act(() => first.result.current.linkConversation("source:website", "website-chat"));
+    act(() => first.result.current.update("source:website", { name: "建站猫", kind: "code", breed: "chartreux" }));
+    act(() => first.result.current.register(entries));
+    first.unmount();
+    const restored = renderHook(() => useBotPresence(), { wrapper: BotPresenceProvider });
+    expect(restored.result.current.entries.map((entry) => entry.conversationId)).toEqual(["mail-chat", "website-chat"]);
+    expect(restored.result.current.entries[1]?.bot).toEqual({ name: "建站猫", kind: "code", breed: "chartreux" });
+  });
   it("restores independent Bot names and breeds after remount", () => {
     const first = renderHook(() => useBotPresence(), { wrapper: BotPresenceProvider });
     act(() => first.result.current.register([
