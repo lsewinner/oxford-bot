@@ -44,7 +44,7 @@ export async function handleChat(request: Request): Promise<Response> {
   if (userErr || !userData.user) return json(401, "登录已失效，请重新登录");
   const userId = userData.user.id;
 
-  let body: { messages?: UIMessage[]; threadId?: string; mode?: ChatMode };
+  let body: { messages?: UIMessage[]; threadId?: string; mode?: ChatMode; webSearch?: boolean };
   try {
     body = await request.json();
   } catch {
@@ -53,6 +53,7 @@ export async function handleChat(request: Request): Promise<Response> {
   const messages = body.messages;
   const threadId = body.threadId;
   const mode: ChatMode = body.mode === "fun" ? "fun" : "normal";
+  const webSearch = body.webSearch === true;
   if (!Array.isArray(messages) || messages.length === 0 || !threadId) return json(400, "缺少消息或会话");
 
   const { data: thread, error: threadErr } = await supabase
@@ -100,9 +101,12 @@ export async function handleChat(request: Request): Promise<Response> {
 
   const result = streamText({
     model: provider.responses(MODEL),
-    instructions: buildInstructions(mode),
+    instructions: buildInstructions(mode, webSearch),
     messages: await convertToModelMessages(messages),
     abortSignal: request.signal,
+    ...(webSearch
+      ? { tools: { web_search: provider.tools.webSearch() }, toolChoice: "auto" as const }
+      : {}),
     providerOptions: {
       openai: {
         forceReasoning: true,
