@@ -21,6 +21,7 @@ import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
+import { Route as ApiOauthGoogleCallbackRouteImport } from './routes/api/oauth/google/callback'
 import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oauth/return'
 
 const IndexRoute = IndexRouteImport.update({
@@ -83,6 +84,11 @@ const AuthenticatedChatThreadIdRoute =
     path: '/$threadId',
     getParentRoute: () => AuthenticatedChatRoute,
   } as any)
+const ApiOauthGoogleCallbackRoute = ApiOauthGoogleCallbackRouteImport.update({
+  id: '/api/oauth/google/callback',
+  path: '/api/oauth/google/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicOauthReturnRoute = ApiPublicOauthReturnRouteImport.update({
   id: '/api/public/oauth/return',
   path: '/api/public/oauth/return',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
+  '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
 }
 export interface FileRoutesByTo {
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat': typeof AuthenticatedChatIndexRoute
+  '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
 }
 export interface FileRoutesById {
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
+  '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
 }
 export interface FileRouteTypes {
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/chat/$threadId'
     | '/chat/'
+    | '/api/oauth/google/callback'
     | '/api/public/oauth/return'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/chat/$threadId'
     | '/chat'
+    | '/api/oauth/google/callback'
     | '/api/public/oauth/return'
   id:
     | '__root__'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/chat/'
+    | '/api/oauth/google/callback'
     | '/api/public/oauth/return'
   fileRoutesById: FileRoutesById
 }
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   ApiSpeechRoute: typeof ApiSpeechRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   ShareTokenRoute: typeof ShareTokenRoute
+  ApiOauthGoogleCallbackRoute: typeof ApiOauthGoogleCallbackRoute
   ApiPublicOauthReturnRoute: typeof ApiPublicOauthReturnRoute
 }
 
@@ -276,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatThreadIdRouteImport
       parentRoute: typeof AuthenticatedChatRoute
     }
+    '/api/oauth/google/callback': {
+      id: '/api/oauth/google/callback'
+      path: '/api/oauth/google/callback'
+      fullPath: '/api/oauth/google/callback'
+      preLoaderRoute: typeof ApiOauthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/oauth/return': {
       id: '/api/public/oauth/return'
       path: '/api/public/oauth/return'
@@ -320,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpeechRoute: ApiSpeechRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
   ShareTokenRoute: ShareTokenRoute,
+  ApiOauthGoogleCallbackRoute: ApiOauthGoogleCallbackRoute,
   ApiPublicOauthReturnRoute: ApiPublicOauthReturnRoute,
 }
 export const routeTree = rootRouteImport
