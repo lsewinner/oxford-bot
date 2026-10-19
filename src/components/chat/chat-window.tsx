@@ -169,7 +169,14 @@ function SearchSteps({ part, streaming }: { part: UIMessage["parts"][number]; st
 }
 
 function SourceCards({ sources }: { sources: { url: string; title?: string | undefined }[] }) {
-  if (sources.length === 0) return null;
+  const seen = new Set<string>();
+  const unique = sources.filter((s) => {
+    const d = domainOf(s.url);
+    if (seen.has(d)) return false;
+    seen.add(d);
+    return true;
+  }).slice(0, 8);
+  if (unique.length === 0) return null;
   return (
     <div className="mt-3 flex flex-col gap-1.5">
       <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">来源</div>
