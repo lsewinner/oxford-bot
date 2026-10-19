@@ -64,6 +64,13 @@
       "when": 1792404802653,
       "tag": "0008_microsoft_direct_oauth",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792413268459,
+      "tag": "0009_provider_account_labels",
+      "breakpoints": true
     }
   ]
 }

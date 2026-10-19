@@ -1,0 +1,2 @@
+ALTER TABLE public.app_user_connections ADD COLUMN account_label text NOT NULL DEFAULT '';
+COMMENT ON COLUMN public.app_user_connections.account_label IS 'Non-secret display label; account_key remains the provider stable account identifier.';
