@@ -14,6 +14,11 @@ const noop = () => {};
 const Context = createContext<PresenceContext>({ entries: [], register: noop, update: noop, removeThread: noop, linkConversation: noop, activities: {}, report: noop, settle: noop });
 
 export function BotPresenceProvider({ children, scope = "guest" }: { children: ReactNode; scope?: string }) {
+  // Reset all registry state before restoring a different account's storage.
+  return <ScopedBotPresenceProvider key={scope} scope={scope}>{children}</ScopedBotPresenceProvider>;
+}
+
+function ScopedBotPresenceProvider({ children, scope }: { children: ReactNode; scope: string }) {
   const [entries, setEntries] = useState<BotEntry[]>([]);
   const [restored, setRestored] = useState(false);
   useEffect(() => {
@@ -30,12 +35,11 @@ export function BotPresenceProvider({ children, scope = "guest" }: { children: R
   }, [entries, restored, scope]);
   const register = useCallback((incoming: BotEntry[]) => {
     setEntries((previous) => {
-      const merged = mergeBotEntries(previous, incoming);
-      return merged.length === previous.length ? previous : merged;
+      return mergeBotEntries(previous, incoming);
     });
   }, []);
   const update = useCallback((id: string, bot: BotIdentity) => {
-    setEntries((previous) => previous.map((entry) => entry.id === id ? { ...entry, bot } : entry));
+    setEntries((previous) => previous.map((entry) => entry.id === id ? { ...entry, bot, overrides: { name: bot.name, ...(bot.breed ? { breed: bot.breed } : {}) } } : entry));
   }, []);
   const removeThread = useCallback((id: string) => setEntries((previous) => previous.filter((entry) => entry.conversationId !== id && entry.threadId !== id)), []);
   const linkConversation = useCallback((id: string, conversationId: string) => setEntries((previous) => previous.map((entry) => entry.id === id ? { ...entry, conversationId } : entry)), []);
@@ -89,18 +93,27 @@ export function BotAvatar({ bot, working = false }: { bot: BotIdentity; working?
   return <img src={images[`/src/assets/cat-${cat.asset}.webp`]} alt={`${bot.name} · ${cat.name}`} title={cat.name} width={32} height={32} loading="lazy" className={cn("size-8 shrink-0 rounded-full object-cover ring-1 ring-sidebar-border", working && "bot-working")} />;
 }
 
-export function BotSettings({ entry }: { entry: BotEntry }) {
+export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (name: string) => Promise<void> }) {
   const { update } = useBotPresence();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(entry.bot.name);
   const [breed, setBreed] = useState<CatBreed>(entry.bot.breed ?? entry.bot.kind);
+  const [saving, setSaving] = useState(false);
   return <>
     <Button variant="ghost" size="icon-sm" title="修改名字和猫咪头像" aria-label={`设置 ${entry.bot.name}`} className="size-6 shrink-0 text-muted-foreground [&_svg]:size-3.5" onClick={() => { setName(entry.bot.name); setBreed(entry.bot.breed ?? entry.bot.kind); setOpen(true); }}><Settings2Icon /></Button>
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>设置 Bot</DialogTitle></DialogHeader>
-      <form onSubmit={(event) => { event.preventDefault(); if (!name.trim()) return; update(entry.id, { ...entry.bot, name: name.trim(), breed }); setOpen(false); }} className="space-y-5">
+    <Dialog open={open} onOpenChange={(value) => { if (!saving) setOpen(value); }}><DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>设置 Bot</DialogTitle></DialogHeader>
+      <form onSubmit={async (event) => {
+        event.preventDefault();
+        if (!name.trim() || saving) return;
+        setSaving(true);
+        update(entry.id, { ...entry.bot, name: name.trim(), breed });
+        try { await onRename?.(name.trim()); setOpen(false); }
+        catch { toast.error("Bot 设置已在本机保存，但会话标题同步失败，请重试保存"); }
+        finally { setSaving(false); }
+      }} className="space-y-5">
         <div className="space-y-2"><label htmlFor={`name-${entry.id}`} className="text-sm">名字</label><Input id={`name-${entry.id}`} value={name} maxLength={40} required onChange={(event) => setName(event.target.value)} /></div>
         <CatPicker bot={{ ...entry.bot, name }} breed={breed} onChange={setBreed} />
-        <DialogFooter><Button type="submit" disabled={!name.trim()}>保存</Button></DialogFooter>
+        <DialogFooter><Button type="submit" disabled={!name.trim() || saving}>{saving ? "正在保存…" : "保存"}</Button></DialogFooter>
       </form>
     </DialogContent></Dialog>
   </>;

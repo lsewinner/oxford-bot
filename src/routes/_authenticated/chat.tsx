@@ -10,7 +10,7 @@ import { ModeProvider } from "@/components/chat/mode-context";
 import { WebSearchProvider } from "@/components/chat/web-search-context";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
-import { threadsQuery, botHistoryQuery, threadPreviewsQuery, createThread, type Thread } from "@/lib/chat-data";
+import { threadsQuery, botHistoryQuery, threadPreviewsQuery, createThread, renameBotThread, type Thread } from "@/lib/chat-data";
 import { cn } from "@/lib/utils";
 import { BotPresenceLabel, BotPresenceProvider, BotSettings, NewBot, useBotPresence } from "@/components/chat/bot-presence";
 import { Button } from "@/components/ui/button";
@@ -134,7 +134,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               <BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} preview={previews[entry.conversationId ?? entry.threadId]?.preview} time={previews[entry.conversationId ?? entry.threadId]?.updatedAt} />
             </Button>
             <div className="absolute bottom-2 right-2 flex h-6 items-center gap-1">
-            <BotSettings entry={entry} />
+            <BotSettings entry={entry} onRename={async (name) => { await renameBotThread(entry, name); await queryClient.invalidateQueries({ queryKey: ["threads"] }); }} />
             {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => remove(entry.conversationId ?? entry.threadId)} className="size-6 shrink-0 text-muted-foreground hover:text-destructive [&_svg]:size-3.5 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}
             </div>
           </div>)}
