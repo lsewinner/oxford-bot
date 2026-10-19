@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Outlook Microsoft Web OAuth：直接授权、加密刷新凭据、多账户、独立启停及测试读取
+- [ ] Outlook 真实授权端到端验证（需要 Microsoft Web OAuth 客户端凭据与微软账户授权）
+
 - [x] GitHub/Slack 个人 Token：按账户加密保存、验证后连接、固定服务地址直接调用、状态及断开、保留写入确认；77 项测试通过，未登录入口已实测
 - [ ] 个人 Token 真实账户端到端验证（需要用户登录并在应用内录入自己的 Token）
 
