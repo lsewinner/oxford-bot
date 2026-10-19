@@ -11,6 +11,7 @@ import {
 } from "./run-id";
 import { buildInstructions, type ChatMode } from "./modes";
 import { createDemoTools, createRealTools } from "./tools.server";
+import { botConfigSchema, botInstructions, thinkOptions } from '@/lib/bot-config';
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1";
 const MODEL = "openai/gpt-6-astra";
@@ -48,7 +49,7 @@ export async function handleChat(request: Request): Promise<Response> {
     userId = userData.user.id;
   }
 
-  let body: { messages?: UIMessage[]; threadId?: string; mode?: ChatMode; webSearch?: boolean; demoTools?: unknown; bot?: { name?: string; kind?: string } };
+  let body: { messages?: UIMessage[]; threadId?: string; mode?: ChatMode; webSearch?: boolean; deepThink?:boolean; demoTools?: unknown; bot?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -58,6 +59,8 @@ export async function handleChat(request: Request): Promise<Response> {
   const threadId = body.threadId;
   const mode: ChatMode = body.mode === "fun" ? "fun" : "normal";
   const webSearch = body.webSearch === true;
+  const deepThink=body.deepThink===true;
+  if(body.bot && !botConfigSchema.safeParse(body.bot).success)return json(400,'Bot 配置无效');
   if (!Array.isArray(messages) || messages.length === 0 || !threadId) return json(400, "缺少消息或会话");
   try { validateAttachments(messages); } catch (error) { return json(400, error instanceof Error ? error.message : "附件无效"); }
   if (threadId !== "guest" && (!supabase || !userId)) return json(401, "请先登录");
@@ -107,7 +110,7 @@ export async function handleChat(request: Request): Promise<Response> {
     fetch: runIdFetch.fetch,
   });
 
-  const botContext = body.bot && ["mail", "document", "code", "team", "general"].includes(body.bot.kind ?? "") ? ` 当前专属 Bot 类别：${body.bot.kind}。优先使用此类别对应的工具，仍可按用户明确要求使用其他已授权工具。` : "";
+  const botContext = botInstructions(body.bot) + (deepThink ? ' 本次为 Deep Think 深度分析。最终回复开头必须用 <public_summary>...</public_summary> 包含面向用户的公开论证摘要：关键依据、假设、方案取舍、风险和结论核查；随后给出正常答案。这个摘要是对答案的解释而非内部思维推导，不披露私有内部思维链。' : '');
   const realTools = threadId !== 'guest' ? await createRealTools(userId) : {};
   const actionResults = new Map<string, unknown>();
   if (userId && threadId !== 'guest') {
@@ -159,13 +162,7 @@ export async function handleChat(request: Request): Promise<Response> {
     },
     stopWhen: stepCountIs(5),
     providerOptions: {
-      openai: {
-        forceReasoning: true,
-        reasoningEffort: "low",
-        reasoningSummary: "auto",
-        store: false,
-        include: ["reasoning.encrypted_content"],
-      },
+      openai: thinkOptions(deepThink),
     },
   } as Parameters<typeof streamText>[0]);
 

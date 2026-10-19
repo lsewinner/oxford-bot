@@ -17,6 +17,7 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
+import { PublicSummary } from './public-summary';
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,7 +46,9 @@ function errorText(err: Error) {
 }
 
 export function ChatWindow({ threadId, initialMessages, activeBot = null }: { threadId: string; initialMessages: UIMessage[]; activeBot?: BotIdentity | null }) {
-  const { mode } = useMode();
+  const { mode, deepThink } = useMode();
+  const deepThinkRef=useRef(deepThink);
+  deepThinkRef.current=deepThink;
   const modeRef = useRef(mode);
   modeRef.current = mode;
   const { enabled: webSearch } = useWebSearch();
@@ -64,7 +67,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind } : null }),
+        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, deepThink:deepThinkRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind, systemPrompt:botRef.current.systemPrompt, preferredTools:botRef.current.preferredTools } : null }),
       }),
     [threadId],
   );
@@ -325,8 +328,8 @@ function ChatMessage({
           }
           if (part.type === "reasoning" && part.text) {
             return (
-              <Reasoning key={i} isStreaming={streaming && i === message.parts.length - 1} defaultOpen={false}>
-                <ReasoningTrigger />
+              <Reasoning key={i} className="rounded-lg border border-border bg-card p-3" isStreaming={streaming && i === message.parts.length - 1} defaultOpen={false}>
+                <ReasoningTrigger getThinkingMessage={(active)=>active?'正在深入思考 · 推理摘要':'思考摘要 · 展开查看论证与核查'}/>
                 <ReasoningContent>{part.text}</ReasoningContent>
               </Reasoning>
             );
@@ -350,6 +353,7 @@ function ChatMessage({
             return <Shimmer key={i}>{`正在调用 ${part.type.replace('tool-service_', '')}…`}</Shimmer>;
           }
           if (part.type === "text") {
+            if(message.role==='assistant' && part.text.includes('<public_summary>'))return <PublicSummary key={i} text={part.text} streaming={streaming}/>;
             return message.role === "user" ? (
               <p key={i} className="whitespace-pre-wrap">
                 {part.text}

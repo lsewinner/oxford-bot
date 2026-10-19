@@ -2,7 +2,7 @@ import { botListRowClass } from "@/components/chat/bot-list-label";
 import { MainBotLabel } from "@/components/chat/main-bot";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
-import { LogOutIcon, MenuIcon, PenSquareIcon, Trash2Icon } from "lucide-react";
+import { MenuIcon, PenSquareIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
@@ -14,6 +14,8 @@ import { threadsQuery, botHistoryQuery, threadPreviewsQuery, createThread, renam
 import { cn } from "@/lib/utils";
 import { BotPresenceLabel, BotPresenceProvider, BotSettings, NewBot, useBotPresence } from "@/components/chat/bot-presence";
 import { Button } from "@/components/ui/button";
+import { TrendsDrawer } from '@/components/chat/trends-drawer';
+import { AccountProfile } from '@/components/chat/account-profile';
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -115,6 +117,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-[15px] font-semibold tracking-tight">Oxford Bot</span>
       </div>
       <div className="px-3">
+        <TrendsDrawer />
         <Link
           to="/chat"
           onClick={onNavigate}
@@ -177,17 +180,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             ),
         )}
       </nav>
-      <div className="flex items-center justify-between border-t border-sidebar-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <span className="truncate text-xs text-muted-foreground">{user.email}</span>
-        <button
-          type="button"
-          onClick={signOut}
-          aria-label="退出登录"
-          className="rounded-md p-1.5 text-muted-foreground hover:text-foreground"
-        >
-          <LogOutIcon className="size-4" />
-        </button>
-      </div>
+      <AccountProfile user={user} onSignOut={signOut} />
     </div>
   );
 }

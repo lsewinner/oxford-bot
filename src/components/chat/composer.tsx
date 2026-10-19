@@ -15,6 +15,10 @@ import { toast } from "sonner";
 import { AttachmentButton, AttachmentPreviews, AttachmentSubmit } from "./composer-attachments";
 import { VoiceInputButton } from "./voice-controls";
 import { ATTACHMENT_ACCEPT, MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES, prepareAttachments, type ChatInput } from "@/lib/chat-attachments";
+import { useMode } from './mode-context';
+import { BrainIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendsDrawer } from './trends-drawer';
 
 export function Composer({
   onSend,
@@ -30,6 +34,14 @@ export function Composer({
   const [text, setText] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
   const busy = status === "submitted" || status === "streaming";
+  const {deepThink,setDeepThink,analysis,clearAnalysis}=useMode();
+  const analysisRef=useRef<string|null>(null);
+  useEffect(()=>{
+    if(!analysis || busy || analysisRef.current===analysis)return;
+    analysisRef.current=analysis;
+    const timer=setTimeout(()=>{clearAnalysis();void onSend(analysis);},0);
+    return ()=>{clearTimeout(timer);analysisRef.current=null;};
+  },[analysis,busy,onSend,clearAnalysis]);
 
   useEffect(() => {
     if (!busy) ref.current?.focus();
@@ -64,7 +76,7 @@ export function Composer({
         className="min-h-14 px-5 pt-4 text-[15px]"
       />
       <PromptInputFooter className="px-3 pb-3">
-        <PromptInputTools>
+        <PromptInputTools className="flex-wrap">
           <AttachmentButton disabled={busy} />
           <VoiceInputButton
             disabled={busy}
@@ -76,6 +88,8 @@ export function Composer({
           />
           <ModeToggle />
           <WebSearchToggle />
+          <Button type="button" variant={deepThink?'secondary':'ghost'} size="sm" aria-label="Deep Think 深度思考" aria-pressed={deepThink} title="深度思考 · 推理摘要与核查" disabled={busy} className="gap-1.5 px-2" onClick={()=>setDeepThink(!deepThink)}><BrainIcon className="size-4"/><span className="text-xs">Deep Think</span></Button>
+          <TrendsDrawer compact />
           <ToolsCenter />
         </PromptInputTools>
         <AttachmentSubmit text={text} busy={busy}>{(disabled) => <PromptInputSubmit
