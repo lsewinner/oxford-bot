@@ -132,6 +132,14 @@
 }
 
 .bot-working { animation: bot-working 900ms ease-in-out infinite; }
+
+:root { --image-glow: 0 0 36px oklch(0.75 0.09 220 / 12%); }
+@keyframes image-breathe { 0%, 100% { box-shadow: var(--image-glow); opacity: 0.65; } 50% { opacity: 1; } }
+@keyframes image-progress { from { transform: translateX(-100%); } to { transform: translateX(400%); } }
+@keyframes image-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.image-generating { animation: image-breathe 2.4s ease-in-out infinite; }
+.image-progress span { animation: image-progress 2s ease-in-out infinite; }
+.image-reveal { animation: image-reveal 500ms ease-out; }
 @media (prefers-reduced-motion: reduce) {
-  .bot-working { animation: none; }
+  .bot-working, .image-generating, .image-progress span, .image-reveal { animation: none; }
 }

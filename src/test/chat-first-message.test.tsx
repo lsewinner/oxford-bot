@@ -34,6 +34,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 import { ChatWindow } from "@/components/chat/chat-window";
 import { ModeProvider } from "@/components/chat/mode-context";
 import { pendingKey } from "@/lib/chat-data";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 describe("first message hand-off", () => {
   beforeEach(() => {
@@ -46,9 +47,9 @@ describe("first message hand-off", () => {
 
     render(
       <QueryClientProvider client={new QueryClient()}>
-        <ModeProvider>
+        <TooltipProvider><ModeProvider>
           <ChatWindow threadId="t1" initialMessages={[]} />
-        </ModeProvider>
+        </ModeProvider></TooltipProvider>
       </QueryClientProvider>,
     );
 
@@ -58,5 +59,16 @@ describe("first message hand-off", () => {
     await waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(1));
     expect(sendMessage).toHaveBeenCalledWith({ text: "你好，报上你的名字" });
     expect(sessionStorage.getItem(pendingKey("t1"))).toBeNull();
+  });
+  it("retains image and PDF attachments in the deferred first send", async () => {
+    const input = { text: "分析附件", files: [
+      { type: "file", mediaType: "image/png", url: "data:image/png;base64,YQ==", filename: "cat.png" },
+      { type: "file", mediaType: "application/pdf", url: "data:application/pdf;base64,YQ==", filename: "report.pdf" },
+    ] };
+    sessionStorage.setItem(pendingKey("t2"), JSON.stringify(input));
+    render(<QueryClientProvider client={new QueryClient()}><TooltipProvider><ModeProvider><ChatWindow threadId="t2" initialMessages={[]} /></ModeProvider></TooltipProvider></QueryClientProvider>);
+    expect(sendMessage).not.toHaveBeenCalled();
+    await waitFor(() => expect(sendMessage).toHaveBeenCalledWith(input));
+    expect(sendMessage).toHaveBeenCalledTimes(1);
   });
 });
