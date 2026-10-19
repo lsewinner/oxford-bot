@@ -1,8 +1,10 @@
 import type { UIMessage } from "ai";
 import { isCatBreed, type BotKind, type CatBreed } from "./cat-breeds";
+import { allowedToolIds } from './tool-catalog';
+import type { ProviderId } from './connections/catalog';
 export type { CatBreed, BotKind } from "./cat-breeds";
 
-export type BotIdentity = { name: string; kind: BotKind; breed?: CatBreed };
+export type BotIdentity = { name: string; kind: BotKind; breed?: CatBreed; systemPrompt?:string; preferredTools?:ProviderId[] };
 export type BotEntry = { id: string; threadId: string; messageId: string; bot: BotIdentity; conversationId?: string; overrides?: { name: string; breed?: CatBreed } };
 export type BotActivity = { bot: BotIdentity | null; status: "ready" | "submitted" | "streaming" | "error" };
 
@@ -63,7 +65,7 @@ export function parseBotEntries(raw: string | null): BotEntry[] {
         const overrides = entry.overrides && typeof entry.overrides.name === "string" && (entry.overrides.breed === undefined || isCatBreed(entry.overrides.breed))
           ? { name: normalizeBotName(entry.overrides.name), ...(entry.overrides.breed ? { breed: entry.overrides.breed } : {}) } : undefined;
         const { overrides: ignored, ...base } = entry;
-        return { ...base, ...(overrides ? { overrides } : {}), bot: { ...entry.bot, name: normalizeBotName(entry.bot.name), ...overrides } };
+        return { ...base, ...(overrides ? { overrides } : {}), bot: { ...entry.bot, ...(typeof entry.bot.systemPrompt==='string'?{systemPrompt:entry.bot.systemPrompt.slice(0,8000)}:{}), ...(Array.isArray(entry.bot.preferredTools)?{preferredTools:allowedToolIds(entry.bot.preferredTools)}:{}), name: normalizeBotName(entry.bot.name), ...overrides } };
       });
   } catch { return []; }
 }

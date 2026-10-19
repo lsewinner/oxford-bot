@@ -45,7 +45,9 @@ function errorText(err: Error) {
 }
 
 export function ChatWindow({ threadId, initialMessages, activeBot = null }: { threadId: string; initialMessages: UIMessage[]; activeBot?: BotIdentity | null }) {
-  const { mode } = useMode();
+  const { mode, deepThink } = useMode();
+  const deepThinkRef=useRef(deepThink);
+  deepThinkRef.current=deepThink;
   const modeRef = useRef(mode);
   modeRef.current = mode;
   const { enabled: webSearch } = useWebSearch();
@@ -64,7 +66,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind } : null }),
+        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, deepThink:deepThinkRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind, systemPrompt:botRef.current.systemPrompt, preferredTools:botRef.current.preferredTools } : null }),
       }),
     [threadId],
   );
@@ -325,8 +327,8 @@ function ChatMessage({
           }
           if (part.type === "reasoning" && part.text) {
             return (
-              <Reasoning key={i} isStreaming={streaming && i === message.parts.length - 1} defaultOpen={false}>
-                <ReasoningTrigger />
+              <Reasoning key={i} className="rounded-lg border border-border bg-card p-3" isStreaming={streaming && i === message.parts.length - 1} defaultOpen={false}>
+                <ReasoningTrigger getThinkingMessage={(active)=>active?'正在深入思考 · 推理摘要':'思考摘要 · 展开查看论证与核查'}/>
                 <ReasoningContent>{part.text}</ReasoningContent>
               </Reasoning>
             );

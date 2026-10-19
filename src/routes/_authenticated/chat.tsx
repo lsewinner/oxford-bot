@@ -14,6 +14,7 @@ import { threadsQuery, botHistoryQuery, threadPreviewsQuery, createThread, renam
 import { cn } from "@/lib/utils";
 import { BotPresenceLabel, BotPresenceProvider, BotSettings, NewBot, useBotPresence } from "@/components/chat/bot-presence";
 import { Button } from "@/components/ui/button";
+import { TrendsDrawer } from '@/components/chat/trends-drawer';
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -115,6 +116,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-[15px] font-semibold tracking-tight">Oxford Bot</span>
       </div>
       <div className="px-3">
+        <TrendsDrawer />
         <Link
           to="/chat"
           onClick={onNavigate}
