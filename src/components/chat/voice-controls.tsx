@@ -76,7 +76,7 @@ export function VoiceInputButton({
     const next = !autoSend;
     setAutoSend(next);
     localStorage.setItem(AUTO_SEND_KEY, next ? "1" : "0");
-    toast(next ? "松开后将直接发送" : "松开后将填入输入框");
+    toast(next ? "松开后将直接发送" : "松开后文字放入输入框，确认后再发送");
   };
 
   const recording = state === "recording";
@@ -120,7 +120,7 @@ export function VoiceInputButton({
             autoSend ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
-          {autoSend ? "直接发送" : "填入输入框"}
+          {autoSend ? "说完直接发送" : "说完先确认"}
         </button>
       )}
     </div>
