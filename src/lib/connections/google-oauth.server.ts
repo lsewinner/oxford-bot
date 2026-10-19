@@ -1,5 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { PROVIDERS, type ProviderId } from './catalog';
+import { resolveConnectionSecret } from './connection-secret.server';
 
 export type GoogleProvider = 'google_mail' | 'google_drive';
 export const isGoogleProvider = (id: ProviderId): id is GoogleProvider => id === 'google_mail' || id === 'google_drive';
@@ -9,9 +10,7 @@ const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const HOSTS: Record<GoogleProvider, string> = { google_mail: 'https://gmail.googleapis.com', google_drive: 'https://www.googleapis.com' };
 
 function stateKey(): string {
-  const raw = process.env['APP_USER_CONNECTION_KEY_SECRET'];
-  if (!raw) throw new Error('连接加密尚未配置');
-  return raw;
+  return resolveConnectionSecret('connection');
 }
 
 interface StatePayload { u: string; p: GoogleProvider; n: string; e: number }
