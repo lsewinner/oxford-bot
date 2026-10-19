@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LegalPage } from "@/components/legal/legal-page";
+import { LegalPage, LEGAL_CONTACT, LEGAL_ENTITY } from "@/components/legal/legal-page";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/terms")({
   }),
   component: () => (
     <LegalPage title="服务条款">
-      <p>欢迎使用 Oxford Bot（以下简称「本服务」）。注册或使用本服务即表示你同意以下条款。</p>
+      <p>欢迎使用 Oxford Bot（以下简称「本服务」）。本服务由 {LEGAL_ENTITY} 运营，官方联系邮箱为 {LEGAL_CONTACT}。注册或使用本服务即表示你同意以下条款。</p>
       <h2>1. 服务内容</h2>
       <p>Oxford Bot 是一款 AI 对话助手，提供对话、联网搜索、图片生成、文件分析、语音以及在你授权后连接第三方服务等功能。AI 生成内容可能不准确，请自行核实重要信息。</p>
       <h2>2. 账户</h2>
