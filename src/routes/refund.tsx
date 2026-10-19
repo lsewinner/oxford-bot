@@ -19,7 +19,7 @@ export const Route = createFileRoute("/refund")({
       <h2>2. 退款申请</h2>
       <p>首次订阅或续费扣款后 14 天内，如对服务不满意，可发邮件申请全额退款，请注明账户邮箱和扣款日期。超过 14 天的扣款一般不予退款，但因服务故障导致无法使用的情况我们会个案处理。</p>
       <h2>3. 退款方式</h2>
-      <p>批准的退款将通过 Stripe 原路退回你的支付方式，到账时间通常为 5–10 个工作日，以发卡行为准。退款后 Pro 权益随即终止。</p>
+      <p>批准的退款由 {LEGAL_COMPANY.name}（公司注册号 {LEGAL_COMPANY.number}，注册办公地址：{LEGAL_COMPANY.address}）通过 Stripe 原路退回你的支付方式，到账时间通常为 5–10 个工作日，以发卡行为准。退款后 Pro 权益随即终止。</p>
     </LegalPage>
   ),
 });

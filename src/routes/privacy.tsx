@@ -14,7 +14,7 @@ export const Route = createFileRoute("/privacy")({
   }),
   component: () => (
     <LegalPage title="隐私政策">
-      <p>本政策说明 Oxford Bot 收集哪些信息、如何使用，以及你拥有的选择。</p>
+      <p>本政策说明 Oxford Bot 收集哪些信息、如何使用，以及你拥有的选择。本服务的运营方及相关个人信息的控制者为 {LEGAL_ENTITY}。如需行使本政策所述权利或联系数据保护事宜，请发送邮件至 {LEGAL_CONTACT}。</p>
       <h2>1. 我们收集的信息</h2>
       <p>账户信息（邮箱、昵称、头像）；你发送的消息、上传的附件及对话记录；你主动连接的第三方服务授权；订阅状态。支付卡信息由 Stripe 直接处理，我们不会获取或存储完整卡号。</p>
       <h2>2. 使用方式</h2>
