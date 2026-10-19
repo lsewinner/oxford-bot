@@ -1,6 +1,8 @@
 import type { UIMessage } from "ai";
 
-export type BotIdentity = { name: string; kind: "mail" | "document" | "code" | "team" | "general" };
+export type CatBreed = "mail" | "document" | "code" | "team" | "general";
+export type BotIdentity = { name: string; kind: CatBreed; breed?: CatBreed };
+export type BotEntry = { id: string; threadId: string; messageId: string; bot: BotIdentity };
 export type BotActivity = { bot: BotIdentity | null; status: "ready" | "submitted" | "streaming" | "error" };
 
 // Presentation only: recognizing a request does not create or connect an automation.
@@ -15,12 +17,25 @@ export function botFromRequest(text: string): BotIdentity | null {
 }
 
 export function botFromMessages(messages: UIMessage[]): BotIdentity | null {
-  for (const message of messages) {
+  for (const message of [...messages].reverse()) {
     if (message.role !== "user") continue;
     const bot = botFromRequest(message.parts.filter((p) => p.type === "text").map((p) => p.text).join("\n"));
     if (bot) return bot;
   }
   return null;
+}
+
+export function botsFromMessages(threadId: string, messages: UIMessage[]): BotEntry[] {
+  return messages.flatMap((message) => {
+    if (message.role !== "user") return [];
+    const bot = botFromRequest(message.parts.filter((p) => p.type === "text").map((p) => p.text).join("\n"));
+    return bot ? [{ id: `${threadId}:${message.id}`, threadId, messageId: message.id, bot }] : [];
+  });
+}
+
+export function mergeBotEntries(previous: BotEntry[], incoming: BotEntry[]): BotEntry[] {
+  const known = new Set(previous.map((entry) => entry.id));
+  return [...previous, ...incoming.filter((entry) => !known.has(entry.id))];
 }
 
 export function botIsWorking(status: BotActivity["status"]): boolean {
