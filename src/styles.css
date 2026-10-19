@@ -124,3 +124,14 @@
 @utility bg-glow {
   background-image: var(--glow);
 }
+
+@keyframes bot-working {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  40% { transform: translateY(-4px) rotate(-7deg); }
+  70% { transform: translateY(-1px) rotate(5deg); }
+}
+
+.bot-working { animation: bot-working 900ms ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .bot-working { animation: none; }
+}

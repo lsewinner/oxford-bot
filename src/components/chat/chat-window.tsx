@@ -25,6 +25,8 @@ import { Composer } from "./composer";
 import { useMode } from "./mode-context";
 import { useWebSearch } from "./web-search-context";
 import { useTools } from "./use-tools";
+import { useBotPresence } from "./bot-presence";
+import { botFromMessages } from "@/lib/bot-presence";
 
 function errorText(err: Error) {
   try {
@@ -88,6 +90,12 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   }, [threadId, initialMessages.length, sendMessage, queryClient]);
 
   const busy = status === "submitted" || status === "streaming";
+  const { report, settle } = useBotPresence();
+  const bot = useMemo(() => botFromMessages(messages), [messages]);
+  useEffect(() => {
+    report(threadId, { bot, status });
+  }, [threadId, bot, status, report]);
+  useEffect(() => () => settle(threadId), [threadId, settle]);
   const lastMessage = messages.at(-1);
   const lastAssistantHasText =
     lastMessage?.role === "assistant" &&
