@@ -11,7 +11,8 @@ export function botFromRequest(text: string): BotIdentity | null {
   const custom = text.match(/(?:叫做|名叫|命名为|名字是|named)\s*[“"「]?([^”"」\n，。,:：]{1,24})/i)?.[1]?.trim();
   if (/(邮件|邮箱|gmail|outlook|email)/i.test(text)) return { name: custom || "邮件 Bot", kind: "mail" };
   if (/(文档|云盘|drive|文件)/i.test(text)) return { name: custom || "文档 Bot", kind: "document" };
-  if (/(github|代码|开发|运维|cloudflare|issue|pr\b)/i.test(text)) return { name: custom || "开发 Bot", kind: "code" };
+  if (/(网站|网页|建站|website|web\s*site)/i.test(text)) return { name: custom || "建站 Bot", kind: "code" };
+  if (/(github|代码|编程|程序|开发|运维|cloudflare|issue|pr\b|coding|code)/i.test(text)) return { name: custom || "开发 Bot", kind: "code" };
   if (/(slack|teams|频道|协作|简报)/i.test(text)) return { name: custom || "协作 Bot", kind: "team" };
   return { name: custom || "任务 Bot", kind: "general" };
 }
@@ -35,7 +36,21 @@ export function botsFromMessages(threadId: string, messages: UIMessage[]): BotEn
 
 export function mergeBotEntries(previous: BotEntry[], incoming: BotEntry[]): BotEntry[] {
   const known = new Set(previous.map((entry) => entry.id));
-  return [...previous, ...incoming.filter((entry) => !known.has(entry.id))];
+  return [...previous, ...incoming.filter((entry) => {
+    if (known.has(entry.id)) return false;
+    known.add(entry.id);
+    return true;
+  })];
+}
+
+export const botStorageKey = (scope: string) => `oxford:bots:v1:${scope}`;
+export function parseBotEntries(raw: string | null): BotEntry[] {
+  try {
+    const parsed: unknown = JSON.parse(raw ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    const breeds = ["mail", "document", "code", "team", "general"];
+    return parsed.filter((entry): entry is BotEntry => entry && typeof entry.id === "string" && typeof entry.threadId === "string" && typeof entry.messageId === "string" && typeof entry.bot?.name === "string" && breeds.includes(entry.bot.kind) && (entry.bot.breed === undefined || breeds.includes(entry.bot.breed)));
+  } catch { return []; }
 }
 
 export function botIsWorking(status: BotActivity["status"]): boolean {

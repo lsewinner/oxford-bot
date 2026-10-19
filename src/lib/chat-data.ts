@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { UIMessage } from "ai";
 import { supabase } from "@/integrations/supabase/client";
+import { botsFromMessages } from "@/lib/bot-presence";
 
 export type Thread = { id: string; title: string; updated_at: string };
 
@@ -45,6 +46,15 @@ export const messagesQuery = (threadId: string) =>
       };
     },
   });
+
+export const botHistoryQuery = (userId: string) => queryOptions({
+  queryKey: ["bot-history", userId],
+  queryFn: async () => {
+    const { data, error } = await supabase.from("messages").select("thread_id, ui_id, role, parts").eq("role", "user").order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).flatMap((message) => botsFromMessages(message.thread_id, [{ id: message.ui_id, role: "user", parts: (message.parts ?? []) as UIMessage["parts"] }]));
+  },
+});
 
 export async function createThread(): Promise<string> {
   const { data: u } = await supabase.auth.getUser();
