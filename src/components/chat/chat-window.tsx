@@ -25,6 +25,8 @@ import { Composer } from "./composer";
 import { useMode } from "./mode-context";
 import { useWebSearch } from "./web-search-context";
 import { useTools } from "./use-tools";
+import { BotAvatar, useBotPresence } from "./bot-presence";
+import { botFromMessages, type BotIdentity } from "@/lib/bot-presence";
 
 function errorText(err: Error) {
   try {
@@ -88,6 +90,12 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   }, [threadId, initialMessages.length, sendMessage, queryClient]);
 
   const busy = status === "submitted" || status === "streaming";
+  const { report, settle } = useBotPresence();
+  const bot = useMemo(() => botFromMessages(messages), [messages]);
+  useEffect(() => {
+    report(threadId, { bot, status });
+  }, [threadId, bot, status, report]);
+  useEffect(() => () => settle(threadId), [threadId, settle]);
   const lastMessage = messages.at(-1);
   const lastAssistantHasText =
     lastMessage?.role === "assistant" &&
@@ -101,13 +109,15 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
             <ChatMessage
               key={m.id}
               message={m}
+              bot={bot}
               streaming={busy && idx === messages.length - 1}
               canRegenerate={!busy && idx === messages.length - 1 && m.role === "assistant"}
               onRegenerate={() => regenerate()}
             />
           ))}
           {busy && !lastAssistantHasText && (
-            <div className="px-1 text-sm">
+            <div className="flex items-center gap-3 px-1 text-sm">
+              {bot && <BotAvatar bot={bot} working />}
               <Shimmer>{mode === "fun" ? "正在憋个大招…" : "思考中…"}</Shimmer>
             </div>
           )}
@@ -218,11 +228,13 @@ function SourceCards({ sources }: { sources: Source[] }) {
 
 function ChatMessage({
   message,
+  bot,
   streaming,
   canRegenerate,
   onRegenerate,
 }: {
   message: UIMessage;
+  bot: BotIdentity | null;
   streaming: boolean;
   canRegenerate: boolean;
   onRegenerate: () => void;
@@ -252,7 +264,7 @@ function ChatMessage({
   return (
     <Message from={message.role}>
       {message.role === "assistant" && (
-        <img
+        bot ? <div className="flex items-center gap-2"><BotAvatar bot={bot} working={streaming} /><span className="text-xs font-medium text-muted-foreground">{bot.name}</span></div> : <img
           src={logo}
           alt="Oxford Bot"
           width={28}
