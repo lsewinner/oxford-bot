@@ -48,7 +48,7 @@ export function buildGoogleAuthUrl(provider: GoogleProvider, redirectUri: string
     response_type: 'code',
     scope: PROVIDERS[provider].scopes.join(' '),
     access_type: 'offline',
-    prompt: 'consent',
+    prompt: 'consent select_account',
     state,
   });
   return `${AUTH_URL}?${params.toString()}`;
@@ -79,6 +79,15 @@ export async function getGoogleAccessToken(refreshToken: string): Promise<string
     throw new Error(`Google 访问凭据刷新失败 (${res.status})`);
   }
   return body.access_token;
+}
+
+/** Returns the signed-in Google account email for the refresh token, used to keep multiple accounts apart. */
+export async function getGoogleAccountEmail(refreshToken: string): Promise<string> {
+  const accessToken = await getGoogleAccessToken(refreshToken);
+  const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', { headers: { Authorization: `Bearer ${accessToken}` }, redirect: 'manual' });
+  const body = (await res.json().catch(() => null)) as { email?: string } | null;
+  if (!res.ok || !body?.email) throw new Error('无法读取 Google 账户邮箱');
+  return body.email.toLowerCase();
 }
 
 export class GoogleReconnectError extends Error {

@@ -20,12 +20,13 @@ export const Route = createFileRoute('/api/oauth/google/callback')({
         try {
           if (error) throw new Error('授权被取消');
           if (!code) throw new Error('授权缺少代码');
-          const { verifyState, exchangeGoogleCode } = await import('@/lib/connections/google-oauth.server');
+          const { verifyState, exchangeGoogleCode, getGoogleAccountEmail } = await import('@/lib/connections/google-oauth.server');
           const payload = verifyState(state);
           const redirectUri = new URL('/api/oauth/google/callback', url.origin).toString();
           const refreshToken = await exchangeGoogleCode(code, redirectUri);
           const { saveConnection } = await import('@/lib/connections/storage.server');
-          await saveConnection(payload.u, payload.p, refreshToken, 'google_oauth');
+          const email = await getGoogleAccountEmail(refreshToken);
+          await saveConnection(payload.u, payload.p, refreshToken, 'google_oauth', email);
           return html(true, payload.p, '授权成功，正在保存连接…');
         } catch (e) {
           console.error('Google OAuth callback failed:', e instanceof Error ? e.message : e);

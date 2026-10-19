@@ -8,7 +8,7 @@ export const PROVIDERS = {
  google_drive: { name:'Google Drive', scopes:['https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/drive.readonly','https://www.googleapis.com/auth/drive.file'], setup:'https://console.cloud.google.com/apis/credentials', operations:['search','read','create_file'] },
  slack: { name:'Slack', scopes:['channels:read','channels:history','chat:write','users:read'], setup:'https://api.slack.com/apps', operations:['channels','history','send'] },
 } as const;
-export const operationInput = z.object({ operation:z.string(), query:z.string().max(2000).optional(), id:z.string().max(500).optional(), repo:z.string().max(200).optional(), path:z.string().max(500).optional(), title:z.string().max(300).optional(), text:z.string().max(30000).optional(), to:z.string().email().optional(), sha:z.string().max(100).optional() }).strict();
+export const operationInput = z.object({ operation:z.string(), account:z.string().max(320).optional(), query:z.string().max(2000).optional(), id:z.string().max(500).optional(), repo:z.string().max(200).optional(), path:z.string().max(500).optional(), title:z.string().max(300).optional(), text:z.string().max(30000).optional(), to:z.string().email().optional(), sha:z.string().max(100).optional() }).strict();
 export type OperationInput = z.infer<typeof operationInput>;
 export function isWrite(operation:string) { return ['draft','send','create_issue','write_file','create_file'].includes(operation); }
 export function validateOperation(provider:ProviderId,input:OperationInput) {
