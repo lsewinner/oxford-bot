@@ -20,8 +20,8 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  const withRetry=async<T>(fn:()=>Promise<T>)=>{try{return await fn();}catch(first){await new Promise(r=>setTimeout(r,800));try{return await fn();}catch{throw first;}}};
 
  const perProvider=await Promise.all(providerId.options.map(async(id)=>{
-  const configured=id==='google_mail'||id==='google_drive'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
-  if(!rows.length)return [{id,rowId:null as string|null,account:'',configured,credentialKind:'oauth',connected:false,enabled:false,reconnectRequired:false,connectionError:''}];
+  const configured=id==='google_mail'||id==='google_drive'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_ID'] && process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
+  if(!rows.length)return [{id,rowId:null as string|null,account:'',label:'',configured,credentialKind:'oauth',connected:false,enabled:false,reconnectRequired:false,connectionError:''}];
   return Promise.all(rows.map(async(row)=>{let account=row.account_key;
   let reconnectRequired=row?.reconnect_required ?? false;let connectionError='';
   if(row && !reconnectRequired){
@@ -38,14 +38,23 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
          if(!response.ok)connectionError=`${PROVIDERS[id].name} (${response.status})`;
          else{const b=await response.json().catch(()=>null) as {emailAddress?:string;user?:{emailAddress?:string}}|null;const email=(b?.emailAddress ?? b?.user?.emailAddress ?? '').toLowerCase();if(!account && email){const {error}=await supabaseAdmin.from('app_user_connections').update({account_key:email}).eq('id',row.id).eq('user_id',context.userId);if(!error)account=email;}}
        }catch(e){if(e instanceof GoogleReconnectError){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}else throw e;}
-     } else {const response=await callAsAppUser({gatewayBaseUrl:BASE,connectorId:id,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),path:paths[id],requiredScopes:PROVIDERS[id].scopes});
+     } else if(row.credential_kind==='microsoft_oauth'){
+        const {callWithMicrosoftToken,MicrosoftReconnectError}=await import('./connections/microsoft-oauth.server');
+        const {rotateMicrosoftCredential}=await import('./connections/storage.server');
+        try{
+          const response=await callWithMicrosoftToken(decryptConnectionKey(row.connection_key_ciphertext,'microsoft_oauth'),'/me?$select=id',undefined,token=>rotateMicrosoftCredential(context.userId,row.id,row.connection_key_ciphertext,token));
+          if(response.status===401)throw new MicrosoftReconnectError();
+          if(!response.ok)connectionError=`Outlook (${response.status}): ${(await response.text()).slice(0,800)}`;
+          else await response.arrayBuffer();
+        }catch(e){if(e instanceof MicrosoftReconnectError){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}else throw e;}
+      } else {const response=await callAsAppUser({gatewayBaseUrl:BASE,connectorId:id,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),path:paths[id],requiredScopes:PROVIDERS[id].scopes});
        if(await appUserReconnectRequired(response)){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}
        else if(!response.ok){connectionError=`${PROVIDERS[id].name} (${response.status}): ${(await response.text()).slice(0,800)}`;}
        else if(id==='slack'){const b=await response.json();if(b.ok===false)connectionError=`Slack: ${b.error}`;}
        else await response.arrayBuffer();}
      }catch(error){const msg=error instanceof Error?error.message:'';connectionError=/fetch|network|ECONN|ETIMEDOUT|timed out|无法访问/i.test(msg)?'暂时无法访问服务，请稍后重试':msg||'连接检查失败';}
    }
-   return {id,rowId:row.id as string|null,account,configured,credentialKind:row.credential_kind,connected:true,enabled:row.enabled,reconnectRequired,connectionError};
+   return {id,rowId:row.id as string|null,account,label:row.account_label || account,configured,credentialKind:row.credential_kind,connected:true,enabled:row.enabled,reconnectRequired,connectionError};
   }));
  }));
  return perProvider.flat();
@@ -61,6 +70,22 @@ export const startGoogleOAuth=createServerFn({method:'POST'}).middleware([requir
  const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
  const redirectUri=new URL('/api/oauth/google/callback',origin).toString();
  return {authorizationUrl:buildGoogleAuthUrl(data.id,redirectUri,signState(context.userId,data.id))};
+});
+export const startMicrosoftOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).handler(async({context})=>{
+ const {startMicrosoftAuthorization}=await import('./connections/microsoft-oauth.server');
+ const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
+ return startMicrosoftAuthorization(context.userId,new URL('/api/oauth/microsoft/callback',origin).toString());
+});
+export const completeMicrosoftOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({code:z.string().min(1).max(8192),state:z.string().min(1).max(4096)}).strict().parse(v)).handler(async({data,context})=>{
+ const {verifyMicrosoftState,exchangeMicrosoftCode,getMicrosoftAccount}=await import('./connections/microsoft-oauth.server');
+ const payload=verifyMicrosoftState(data.state);
+ if(payload.userId!==context.userId)throw new Error('授权不属于当前账户');
+ const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
+ if(payload.redirectUri!==new URL('/api/oauth/microsoft/callback',origin).toString())throw new Error('授权地址不匹配');
+ const tokens=await exchangeMicrosoftCode(data.code,payload);const identity=await getMicrosoftAccount(tokens.accessToken);
+ const {saveConnection}=await import('./connections/storage.server');
+ await saveConnection(context.userId,'microsoft_outlook',tokens.refreshToken,'microsoft_oauth',identity.account,identity.label);
+ return {ok:true};
 });
 export const completeConnection=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>selection.extend({code:z.string().min(1).max(4096)}).parse(v)).handler(async({data,context})=>{
  const {exchangeAppUserOAuthCode}=await import('@/integrations/lovable/appUserConnector');const {saveConnection}=await import('./connections/storage.server');const result=await exchangeAppUserOAuthCode(BASE,data.code);if(result.connectorId!==data.id)throw new Error('授权服务不匹配');await saveConnection(context.userId,data.id,result.connectionAPIKey);return {ok:true};

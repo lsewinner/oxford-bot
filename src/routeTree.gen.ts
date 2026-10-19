@@ -22,6 +22,7 @@ import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as ApiOauthGoogleCallbackRouteImport } from './routes/api/oauth/google/callback'
+import { Route as ApiOauthMicrosoftCallbackRouteImport } from './routes/api/oauth/microsoft/callback'
 import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oauth/return'
 
 const IndexRoute = IndexRouteImport.update({
@@ -89,6 +90,12 @@ const ApiOauthGoogleCallbackRoute = ApiOauthGoogleCallbackRouteImport.update({
   path: '/api/oauth/google/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOauthMicrosoftCallbackRoute =
+  ApiOauthMicrosoftCallbackRouteImport.update({
+    id: '/api/oauth/microsoft/callback',
+    path: '/api/oauth/microsoft/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicOauthReturnRoute = ApiPublicOauthReturnRouteImport.update({
   id: '/api/public/oauth/return',
   path: '/api/public/oauth/return',
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
+  '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
 }
 export interface FileRoutesByTo {
@@ -122,6 +130,7 @@ export interface FileRoutesByTo {
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
+  '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
 }
 export interface FileRoutesById {
@@ -139,6 +148,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
+  '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
 }
 export interface FileRouteTypes {
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/chat/$threadId'
     | '/chat/'
     | '/api/oauth/google/callback'
+    | '/api/oauth/microsoft/callback'
     | '/api/public/oauth/return'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/chat/$threadId'
     | '/chat'
     | '/api/oauth/google/callback'
+    | '/api/oauth/microsoft/callback'
     | '/api/public/oauth/return'
   id:
     | '__root__'
@@ -186,6 +198,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/chat/'
     | '/api/oauth/google/callback'
+    | '/api/oauth/microsoft/callback'
     | '/api/public/oauth/return'
   fileRoutesById: FileRoutesById
 }
@@ -200,6 +213,7 @@ export interface RootRouteChildren {
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ApiOauthGoogleCallbackRoute: typeof ApiOauthGoogleCallbackRoute
+  ApiOauthMicrosoftCallbackRoute: typeof ApiOauthMicrosoftCallbackRoute
   ApiPublicOauthReturnRoute: typeof ApiPublicOauthReturnRoute
 }
 
@@ -296,6 +310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOauthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oauth/microsoft/callback': {
+      id: '/api/oauth/microsoft/callback'
+      path: '/api/oauth/microsoft/callback'
+      fullPath: '/api/oauth/microsoft/callback'
+      preLoaderRoute: typeof ApiOauthMicrosoftCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/oauth/return': {
       id: '/api/public/oauth/return'
       path: '/api/public/oauth/return'
@@ -341,6 +362,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTranscribeRoute: ApiTranscribeRoute,
   ShareTokenRoute: ShareTokenRoute,
   ApiOauthGoogleCallbackRoute: ApiOauthGoogleCallbackRoute,
+  ApiOauthMicrosoftCallbackRoute: ApiOauthMicrosoftCallbackRoute,
   ApiPublicOauthReturnRoute: ApiPublicOauthReturnRoute,
 }
 export const routeTree = rootRouteImport

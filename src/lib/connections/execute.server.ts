@@ -1,8 +1,9 @@
 import { callAsAppUser,appUserReconnectRequired } from '@/integrations/lovable/appUserConnector';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { decryptConnectionKey,getConnection } from './storage.server';
+import { decryptConnectionKey,getConnection,rotateMicrosoftCredential } from './storage.server';
 import { PROVIDERS,validateOperation,isWrite,type ProviderId,type OperationInput,type ToolResult } from './catalog';
 import { callWithPersonalToken,supportsPersonalToken,personalTokenError } from './personal-token.server';
+import { callWithMicrosoftToken,MicrosoftReconnectError } from './microsoft-oauth.server';
 import { callWithGoogleToken,isGoogleProvider } from './google-oauth.server';
 const BASE='https://connector-gateway.lovable.dev';
 const enc=encodeURIComponent;
@@ -22,12 +23,16 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  const init={method,headers:{Accept:id==='github'?'application/vnd.github+json':'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})};
  const personal=row.credential_kind==='personal_token';
  const google=row.credential_kind==='google_oauth';
+ const microsoft=row.credential_kind==='microsoft_oauth';
+ if(microsoft && id!=='microsoft_outlook')throw new Error('此服务不支持微软授权');
  if(personal && !supportsPersonalToken(id))throw new Error('不支持此服务的个人 Token');
  if(google && !isGoogleProvider(id))throw new Error('此服务不支持 Google 授权');
- const r=personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):google && isGoogleProvider(id)?await callWithGoogleToken(id,decryptConnectionKey(row.connection_key_ciphertext),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});
+ let r:Response;
+ try{r=microsoft?await callWithMicrosoftToken(decryptConnectionKey(row.connection_key_ciphertext,'microsoft_oauth'),path,init,token=>rotateMicrosoftCredential(userId,row.id,row.connection_key_ciphertext,token)):personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):google && isGoogleProvider(id)?await callWithGoogleToken(id,decryptConnectionKey(row.connection_key_ciphertext),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});}catch(e){if(e instanceof MicrosoftReconnectError){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);return Promise.reject(e);}throw e;}
+ if(microsoft && r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new MicrosoftReconnectError();}
  if(google && isGoogleProvider(id)){
    if(!r.ok){if(r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new Error('授权需要更新，请重新连接');}throw new Error(`${provider} (${r.status})`);}
-   const b=raw?await r.text():r.status===204?{}:await r.json();return b;
+   const b=raw?await r.text():(r.status===204 || (microsoft && method==='POST' && path==='/me/sendMail'))?{}:await r.json();return b;
   }
  if(personal && supportsPersonalToken(id)){
    if(!r.ok)throw new Error(personalTokenError(id,r.status));
@@ -38,7 +43,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  }
  if(await appUserReconnectRequired(r)){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new Error('授权需要更新，请重新连接');}
  if(!r.ok){const text=await r.text();console.error(`Provider ${id} failed [${r.status}]: ${text}`);throw new Error(`${provider} (${r.status}): ${text.slice(0,1200)}`);}
- const b=raw?await r.text():r.status===204?{}:await r.json();if(!raw && b.ok===false)throw new Error(`${provider}: ${b.error}`);return b;
+ const b=raw?await r.text():(r.status===204 || (microsoft && method==='POST' && path==='/me/sendMail'))?{}:await r.json();if(!raw && b.ok===false)throw new Error(`${provider}: ${b.error}`);return b;
  };
  const o=input.operation;let items:NonNullable<ToolResult['items']>=[],text:string|undefined;
  if(id==='github'){
@@ -56,7 +61,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  } else if(id==='microsoft_outlook'){
  if(o==='search'){const b=await request(`/me/messages?$top=10&$select=id,subject,from,bodyPreview${input.query?'&$search='+enc('"'+input.query.replace(/"/g,'')+'"'):''}`);items=(b.value ?? []).map((v:any)=>({title:v.subject,id:v.id,detail:v.bodyPreview}));}
  if(o==='read'){const b=await request(`/me/messages/${enc(input.id ?? '')}?$select=id,subject,body,from`);items=[{title:b.subject,id:b.id,detail:b.from?.emailAddress?.address}];text=String(b.body?.content ?? '').slice(0,30000);}
- if(o==='draft' || o==='send'){const message={subject:input.title,body:{contentType:'Text',content:input.text},toRecipients:[{emailAddress:{address:input.to}}]};if(o==='send'){const r=await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path:'/me/sendMail',requiredScopes:PROVIDERS[id].scopes,init:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message})}});if(await appUserReconnectRequired(r)){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id);throw new Error('授权需要更新，请重新连接');}if(!r.ok)throw new Error(`Outlook (${r.status}): ${(await r.text()).slice(0,1200)}`);}else{const b=await request('/me/messages','POST',message);items=[{title:b.subject,id:b.id}];}}
+ if(o==='draft' || o==='send'){const message={subject:input.title,body:{contentType:'Text',content:input.text},toRecipients:[{emailAddress:{address:input.to}}]};if(o==='send'){await request('/me/sendMail','POST',{message});}else{const b=await request('/me/messages','POST',message);items=[{title:b.subject,id:b.id}];}}
  } else if(id==='google_drive'){
  if(o==='search'){const q=`trashed = false${input.query?" and name contains '"+input.query.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'":''}`;const b=await request(`/drive/v3/files?pageSize=20&fields=files(id,name,mimeType,webViewLink)&q=${enc(q)}`);items=(b.files ?? []).map((v:any)=>({title:v.name,id:v.id,url:v.webViewLink,detail:v.mimeType}));}
  if(o==='read'){const file=enc(input.id ?? '');const b=await request(`/drive/v3/files/${file}?fields=id,name,mimeType,size`);if(Number(b.size)>1000000)throw new Error('文件过大，请上传附件进行分析');if(b.mimeType==='application/vnd.google-apps.document')text=await request(`/drive/v3/files/${file}/export?mimeType=text/plain`,'GET',undefined,true);else if(b.mimeType.startsWith('text/') || b.mimeType==='application/json')text=await request(`/drive/v3/files/${file}?alt=media`,'GET',undefined,true);else throw new Error('此类型请下载后上传至对话分析');text=text?.slice(0,30000);items=[{title:b.name,id:b.id}];}
