@@ -197,7 +197,7 @@ export function playSpeech(markdown: string): SpeechPlayer {
     while (true) { const n = await reader.read(); if (n.done) break; parser.feed(n.value); }
     if (failed) throw new Error(failed);
     if (!completed || !played) throw new Error("朗读未完成，请重试");
-    return last;
+    return { last };
   };
 
   const done = (async () => {
@@ -206,7 +206,7 @@ export function playSpeech(markdown: string): SpeechPlayer {
       const chunks = chunkText(speakableText(markdown));
       if (!chunks.length) throw new Error("没有可朗读的内容");
       let tail: Promise<void> = Promise.resolve();
-      for (const chunk of chunks) tail = await speakChunk(chunk);
+      for (const chunk of chunks) tail = (await speakChunk(chunk)).last;
       await tail;
     } finally {
       controller.abort();
