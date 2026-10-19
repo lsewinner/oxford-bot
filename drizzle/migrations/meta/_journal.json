@@ -71,6 +71,13 @@
       "when": 1792413268459,
       "tag": "0009_provider_account_labels",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792426648272,
+      "tag": "0010_migration",
+      "breakpoints": true
     }
   ]
 }

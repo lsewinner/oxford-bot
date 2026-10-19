@@ -12,6 +12,8 @@ import { botIsWorking, botStorageKey, parseBotEntries, mergeBotEntries, type Bot
 import { catBreeds } from "@/lib/cat-breeds";
 import { BotListLabel } from "@/components/chat/bot-list-label";
 import { cn } from "@/lib/utils";
+import { usePro } from "@/components/pro/pro-context";
+import { canAddBot } from "@/lib/pro";
 
 type PresenceContext = { entries: BotEntry[]; register: (entries: BotEntry[]) => void; update: (id: string, bot: BotIdentity) => void; removeThread: (id: string) => void; linkConversation: (id: string, conversationId: string) => void; activities: Record<string, BotActivity>; report: (id: string, activity: BotActivity) => void; settle: (id: string) => void };
 const noop = () => {};
@@ -79,8 +81,10 @@ export function NewBot({ onCreate }: { onCreate: (bot: BotIdentity) => Promise<v
   const [kind, setKind] = useState<BotKind>("general");
   const [breed, setBreed] = useState<CatBreed>("general");
   const [saving, setSaving] = useState(false);
+  const { isPro, requirePro } = usePro();
+  const { entries } = useBotPresence();
   return <>
-    <Button size="sm" variant="ghost" aria-label="新建 Bot" className="h-7 gap-1 px-2 text-xs" onClick={() => { setName(""); setKind("general"); setBreed("general"); setOpen(true); }}><PlusIcon className="size-3.5" />新建</Button>
+    <Button size="sm" variant="ghost" aria-label="新建 Bot" className="h-7 gap-1 px-2 text-xs" onClick={() => { if (!canAddBot(isPro, entries.length) && !requirePro("bot")) return; setName(""); setKind("general"); setBreed("general"); setOpen(true); }}><PlusIcon className="size-3.5" />新建</Button>
     <Dialog open={open} onOpenChange={(value) => { if (!saving) setOpen(value); }}><DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>新建 Bot</DialogTitle></DialogHeader>
       <form className="space-y-5" onSubmit={async (event) => { event.preventDefault(); if (!name.trim() || saving) return; setSaving(true); try { await onCreate({ name: name.trim(), kind, breed }); setOpen(false); } catch { toast.error("创建 Bot 失败，请重试"); } finally { setSaving(false); } }}>
         <div className="space-y-2"><label htmlFor="new-bot-name" className="text-sm">名字</label><Input id="new-bot-name" value={name} required maxLength={40} onChange={(event) => setName(event.target.value)} /></div>
@@ -105,6 +109,7 @@ export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (
   const [systemPrompt,setSystemPrompt]=useState(entry.bot.systemPrompt ?? '');
   const [preferredTools,setPreferredTools]=useState<ProviderId[]>(entry.bot.preferredTools ?? []);
   const [saving, setSaving] = useState(false);
+  const { isPro, openUpgrade } = usePro();
   return <>
     <Button variant="ghost" size="icon-sm" title="Bot 人设、职能与头像" aria-label={`设置 ${entry.bot.name}`} className="size-6 shrink-0 text-muted-foreground [&_svg]:size-3.5" onClick={() => { setName(entry.bot.name); setBreed(entry.bot.breed ?? entry.bot.kind); setSystemPrompt(entry.bot.systemPrompt ?? '');setPreferredTools(entry.bot.preferredTools ?? []);setOpen(true); }}><Settings2Icon /></Button>
     <Dialog open={open} onOpenChange={(value) => { if (!saving) setOpen(value); }}><DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>设置 Bot</DialogTitle></DialogHeader>
@@ -112,13 +117,13 @@ export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (
         event.preventDefault();
         if (!name.trim() || saving) return;
         setSaving(true);
-        update(entry.id, { ...entry.bot, name: name.trim(), breed, systemPrompt, preferredTools });
+        update(entry.id, { ...entry.bot, name: name.trim(), breed, ...(isPro ? { systemPrompt, preferredTools } : {}) });
         try { await onRename?.(name.trim()); setOpen(false); }
         catch { toast.error("Bot 设置已在本机保存，但会话标题同步失败，请重试保存"); }
         finally { setSaving(false); }
       }} className="space-y-5">
         <div className="space-y-2"><label htmlFor={`name-${entry.id}`} className="text-sm">名字</label><Input id={`name-${entry.id}`} value={name} maxLength={40} required onChange={(event) => setName(event.target.value)} /></div>
-        <div className="space-y-2"><label htmlFor={`persona-${entry.id}`} className="text-sm">系统提示词 · 人设 / 说话风格 / 专注职能</label><Textarea id={`persona-${entry.id}`} aria-label="Bot 系统提示词" value={systemPrompt} maxLength={8000} rows={5} onChange={e=>setSystemPrompt(e.target.value)} placeholder="例如：你是一位严谨的技术顾问，用简洁中文回答，专注代码审查与架构分析。"/></div>
+        <div className="space-y-2"><label htmlFor={`persona-${entry.id}`} className="text-sm">系统提示词 · 人设 / 说话风格 / 专注职能</label>{!isPro && <button type="button" onClick={() => openUpgrade("persona")} className="block text-xs text-muted-foreground underline">自定义人设为 Pro 权益 · 升级解锁</button>}<Textarea readOnly={!isPro} onFocus={() => { if (!isPro) openUpgrade("persona"); }} id={`persona-${entry.id}`} aria-label="Bot 系统提示词" value={systemPrompt} maxLength={8000} rows={5} onChange={e=>setSystemPrompt(e.target.value)} placeholder="例如：你是一位严谨的技术顾问，用简洁中文回答，专注代码审查与架构分析。"/></div>
         <fieldset><legend className="mb-3 text-sm">默认工具偏好</legend><div className="grid grid-cols-2 gap-3">{TOOL_CATALOG.map(tool=><label key={tool.id} className="flex items-center gap-2 text-sm"><Checkbox checked={preferredTools.includes(tool.id)} onCheckedChange={checked=>setPreferredTools(prev=>checked?[...prev,tool.id]:prev.filter(id=>id!==tool.id))}/>{tool.name}</label>)}</div></fieldset>
         <CatPicker bot={{ ...entry.bot, name }} breed={breed} onChange={setBreed} />
         <DialogFooter><Button type="submit" disabled={!name.trim() || saving}>{saving ? "正在保存…" : "保存"}</Button></DialogFooter>

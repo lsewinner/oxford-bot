@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { providerId,PROVIDERS,operationInput,type ToolResult } from './connections/catalog';
 const BASE='https://connector-gateway.lovable.dev';
 const selection=z.object({id:providerId});
-export const connectPersonalToken=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['github','slack','cloudflare']),token:z.string().trim().min(1).max(4096).regex(/^[\x21-\x7E]+$/),label:z.string().trim().max(60).optional()}).strict().parse(v)).handler(async({data,context})=>{
+export const connectPersonalToken=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['github','slack','cloudflare']),token:z.string().trim().min(1).max(4096).regex(/^[\x21-\x7E]+$/),label:z.string().trim().max(60).optional()}).strict().parse(v)).handler(async({data,context})=>{await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
  const {validatePersonalToken,personalTokenIdentity}=await import('./connections/personal-token.server');
  const {saveConnection}=await import('./connections/storage.server');
  const body=await validatePersonalToken(data.id,data.token);
@@ -61,19 +61,19 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  }));
  return perProvider.flat();
 });
-export const startConnection=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>selection.parse(v)).handler(async({data,context})=>{
+export const startConnection=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>selection.parse(v)).handler(async({data,context})=>{await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
  const client=process.env[`${data.id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`];if(!client)throw new Error('管理员尚未配置此服务的授权应用');
  const {getConnection,decryptConnectionKey}=await import('./connections/storage.server');const {authorizeAppUserOAuth}=await import('@/integrations/lovable/appUserConnector');const row=await getConnection(context.userId,data.id);
  const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
  return authorizeAppUserOAuth({gatewayBaseUrl:BASE,connectorId:data.id,appUserId:context.userId,clientAPIKey:client,returnUrl:new URL('/api/public/oauth/return',origin).toString(),...(row && row.credential_kind!=='personal_token'?{connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext)}:{}),credentialsConfiguration:{scopes:PROVIDERS[data.id].scopes,...(data.id==='microsoft_outlook'?{domain_hint:'none',prompt:'select_account'}:{})}});
 });
-export const startGoogleOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['google_mail','google_drive'])}).strict().parse(v)).handler(async({data,context})=>{
+export const startGoogleOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['google_mail','google_drive'])}).strict().parse(v)).handler(async({data,context})=>{await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
  const {buildGoogleAuthUrl,signState}=await import('./connections/google-oauth.server');
  const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
  const redirectUri=new URL('/api/oauth/google/callback',origin).toString();
  return {authorizationUrl:buildGoogleAuthUrl(data.id,redirectUri,signState(context.userId,data.id))};
 });
-export const startMicrosoftOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['microsoft_outlook','microsoft_teams']).default('microsoft_outlook')}).strict().parse(v ?? {})).handler(async({data,context})=>{
+export const startMicrosoftOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['microsoft_outlook','microsoft_teams']).default('microsoft_outlook')}).strict().parse(v ?? {})).handler(async({data,context})=>{await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
  const {startMicrosoftAuthorization}=await import('./connections/microsoft-oauth.server');
  const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
  return startMicrosoftAuthorization(context.userId,new URL('/api/oauth/microsoft/callback',origin).toString(),data.id);

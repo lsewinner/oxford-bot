@@ -16,6 +16,9 @@ import { BotPresenceLabel, BotPresenceProvider, BotSettings, NewBot, useBotPrese
 import { Button } from "@/components/ui/button";
 import { TrendsDrawer } from '@/components/chat/trends-drawer';
 import { AccountProfile } from '@/components/chat/account-profile';
+import { UpgradeEntry, ProBadge } from '@/components/pro/upgrade-dialog';
+import { usePro } from '@/components/pro/pro-context';
+import { LockIcon } from 'lucide-react';
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -62,9 +65,11 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     onNavigate?.();
   };
 
+  const { isPro, openUpgrade } = usePro();
   const [opening, setOpening] = useState<string | null>(null);
   const openBot = async (entry: (typeof entries)[number]) => {
     if (opening) return;
+    if (!isPro) { openUpgrade("bot"); return; }
     setOpening(entry.id);
     try {
       let target = entry.conversationId;
@@ -114,7 +119,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex items-center gap-2.5 px-4 pb-3 pt-4">
         <img src={logo} alt="Oxford Bot" width={28} height={28} className="size-7 rounded-md" />
-        <span className="text-[15px] font-semibold tracking-tight">Oxford Bot</span>
+        <span className="text-[15px] font-semibold tracking-tight">Oxford Bot</span><ProBadge />
       </div>
       <div className="px-3">
         <TrendsDrawer />
@@ -134,7 +139,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </Link>
           {bots.map((entry) => <div key={entry.id} className="group relative">
             <Button variant="ghost" disabled={opening !== null} onClick={() => openBot(entry)} className={cn(botListRowClass, "justify-start hover:bg-sidebar-accent", params.threadId === entry.conversationId && "bg-sidebar-accent")} aria-label={`打开 ${entry.bot.name}`}>
-              <BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} preview={previews[entry.conversationId ?? entry.threadId]?.preview} time={previews[entry.conversationId ?? entry.threadId]?.updatedAt} />
+              {!isPro && <LockIcon aria-label="Pro 专属" className="absolute left-1 top-1 z-10 size-3 text-muted-foreground" />}<BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} preview={previews[entry.conversationId ?? entry.threadId]?.preview} time={previews[entry.conversationId ?? entry.threadId]?.updatedAt} />
             </Button>
             <div className="absolute bottom-2 right-2 flex h-6 items-center gap-1">
             <BotSettings entry={entry} onRename={async (name) => { await renameBotThread(entry, name); await queryClient.invalidateQueries({ queryKey: ["threads"] }); }} />
@@ -180,6 +185,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             ),
         )}
       </nav>
+      <UpgradeEntry />
       <AccountProfile user={user} onSignOut={signOut} />
     </div>
   );

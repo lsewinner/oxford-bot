@@ -19,6 +19,7 @@ import { useMode } from './mode-context';
 import { BrainIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TrendsDrawer } from './trends-drawer';
+import { usePro } from '@/components/pro/pro-context';
 
 export function Composer({
   onSend,
@@ -35,6 +36,8 @@ export function Composer({
   const ref = useRef<HTMLTextAreaElement>(null);
   const busy = status === "submitted" || status === "streaming";
   const {deepThink,setDeepThink,analysis,clearAnalysis}=useMode();
+  const { isPro, requirePro } = usePro();
+  const deepOn = deepThink && isPro;
   const analysisRef=useRef<string|null>(null);
   useEffect(()=>{
     if(!analysis || busy || analysisRef.current===analysis)return;
@@ -88,7 +91,7 @@ export function Composer({
           />
           <ModeToggle />
           <WebSearchToggle />
-          <Button type="button" variant={deepThink?'secondary':'ghost'} size="sm" aria-label="Deep Think 深度思考" aria-pressed={deepThink} title="深度思考 · 推理摘要与核查" disabled={busy} className="gap-1.5 px-2" onClick={()=>setDeepThink(!deepThink)}><BrainIcon className="size-4"/><span className="text-xs">Deep Think</span></Button>
+          <Button type="button" variant={deepOn?'secondary':'ghost'} size="sm" aria-label="Deep Think 深度思考" aria-pressed={deepOn} title="深度思考 · 推理摘要与核查" disabled={busy} className="gap-1.5 px-2" onClick={()=>{ if(!requirePro('deep_think'))return; setDeepThink(!deepThink); }}><BrainIcon className="size-4"/><span className="text-xs">Deep Think</span></Button>
           <TrendsDrawer compact />
           <ToolsCenter />
         </PromptInputTools>

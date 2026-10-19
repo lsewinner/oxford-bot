@@ -59,8 +59,11 @@ export async function handleChat(request: Request): Promise<Response> {
   const threadId = body.threadId;
   const mode: ChatMode = body.mode === "fun" ? "fun" : "normal";
   const webSearch = body.webSearch === true;
-  const deepThink=body.deepThink===true;
   if(body.bot && !botConfigSchema.safeParse(body.bot).success)return json(400,'Bot 配置无效');
+  const { isProUser } = await import('@/lib/pro.server');
+  const pro = threadId !== 'guest' && await isProUser(supabase as never, userId);
+  const deepThink=pro && body.deepThink===true;
+  if(!pro && body.bot && typeof body.bot==='object'){ const { systemPrompt: _p, preferredTools: _t, ...rest } = body.bot as Record<string, unknown>; body.bot = rest; }
   if (!Array.isArray(messages) || messages.length === 0 || !threadId) return json(400, "缺少消息或会话");
   try { validateAttachments(messages); } catch (error) { return json(400, error instanceof Error ? error.message : "附件无效"); }
   if (threadId !== "guest" && (!supabase || !userId)) return json(401, "请先登录");
