@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { ModeProvider } from "@/components/chat/mode-context";
+import { WebSearchProvider } from "@/components/chat/web-search-context";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { threadsQuery, type Thread } from "@/lib/chat-data";
@@ -136,6 +137,7 @@ function ChatLayout() {
   const [open, setOpen] = useState(false);
   return (
     <ModeProvider>
+      <WebSearchProvider>
       <div className="flex h-dvh overflow-hidden bg-background">
         <aside className="hidden w-64 shrink-0 border-r border-sidebar-border md:block">
           <Sidebar />
@@ -166,6 +168,7 @@ function ChatLayout() {
           </div>
         </main>
       </div>
+      </WebSearchProvider>
     </ModeProvider>
   );
 }

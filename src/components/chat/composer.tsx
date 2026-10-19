@@ -9,6 +9,7 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { ModeToggle } from "./mode-toggle";
+import { WebSearchToggle } from "./web-search-toggle";
 
 export function Composer({
   onSend,
@@ -53,6 +54,7 @@ export function Composer({
       <PromptInputFooter className="px-3 pb-3">
         <PromptInputTools>
           <ModeToggle />
+          <WebSearchToggle />
         </PromptInputTools>
         <PromptInputSubmit
           status={status}

@@ -1,7 +1,7 @@
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { CheckIcon, CopyIcon, RefreshCcwIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, FileTextIcon, GlobeIcon, RefreshCcwIcon, SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -18,10 +18,12 @@ import {
 } from "@/components/ai-elements/message";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { pendingKey } from "@/lib/chat-data";
 import { Composer } from "./composer";
 import { useMode } from "./mode-context";
+import { useWebSearch } from "./web-search-context";
 
 function errorText(err: Error) {
   try {
@@ -37,6 +39,9 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   const { mode } = useMode();
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const { enabled: webSearch } = useWebSearch();
+  const webSearchRef = useRef(webSearch);
+  webSearchRef.current = webSearch;
   const queryClient = useQueryClient();
 
   const transport = useMemo(
@@ -48,7 +53,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: () => ({ threadId, mode: modeRef.current }),
+        body: () => ({ threadId, mode: modeRef.current, webSearch: webSearchRef.current }),
       }),
     [threadId],
   );
@@ -118,6 +123,94 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   );
 }
 
+type SearchAction =
+  | { type: "search"; query?: string; queries?: string[] }
+  | { type: "openPage"; url?: string | null }
+  | { type: "findInPage"; url?: string | null; pattern?: string };
+
+function domainOf(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+function SearchSteps({ part, streaming }: { part: UIMessage["parts"][number]; streaming: boolean }) {
+  const p = part as { state?: string; output?: { action?: SearchAction } };
+  const action = p.output?.action;
+  const done = p.state === "output-available" || !!p.output;
+  const steps: { icon: typeof SearchIcon; label: string; active: boolean }[] = [];
+  if (!action || action.type === "search") {
+    const q = action?.type === "search" ? (action.queries ?? (action.query ? [action.query] : [])) : [];
+    steps.push({
+      icon: SearchIcon,
+      label: q.length ? `正在检索：${q.join("、")}` : "正在检索关键词",
+      active: !done,
+    });
+  }
+  if (action?.type === "openPage" && action.url) {
+    steps.push({ icon: GlobeIcon, label: `正在阅读：${domainOf(action.url)}`, active: !done });
+  }
+  if (action?.type === "findInPage" && action.url) {
+    steps.push({ icon: FileTextIcon, label: `正在定位内容：${domainOf(action.url)}`, active: !done });
+  }
+  if (done) steps.push({ icon: FileTextIcon, label: "正在整理答案", active: streaming });
+  if (steps.length === 0) return null;
+  return (
+    <div className="mb-2 flex flex-col gap-1.5">
+      {steps.map((s, i) => (
+        <div key={i} className="flex items-center gap-2 text-[13px] text-muted-foreground">
+          <s.icon className="size-3.5 shrink-0" />
+          {s.active ? <Shimmer>{s.label}</Shimmer> : <span>{s.label.replace("正在", "已")}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+type Source = { url: string; title?: string | undefined };
+
+function dedupeSources(sources: Source[]): Source[] {
+  const seen = new Set<string>();
+  return sources
+    .filter((s) => {
+      const d = domainOf(s.url);
+      if (seen.has(d)) return false;
+      seen.add(d);
+      return true;
+    })
+    .slice(0, 8);
+}
+
+function SourceCards({ sources }: { sources: Source[] }) {
+  if (sources.length === 0) return null;
+  return (
+    <div className="mt-3 flex flex-col gap-1.5">
+      <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">来源</div>
+      <div className="grid gap-1.5 sm:grid-cols-2">
+        {sources.map((s, i) => (
+          <a
+            key={i}
+            href={s.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 text-xs transition-colors hover:bg-accent"
+          >
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-secondary text-[10px] font-semibold text-muted-foreground">
+              {i + 1}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-foreground">{s.title || domainOf(s.url)}</span>
+              <span className="block truncate text-muted-foreground">{domainOf(s.url)}</span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ChatMessage({
   message,
   streaming,
@@ -134,9 +227,34 @@ function ChatMessage({
     .filter((p) => p.type === "text")
     .map((p) => (p as { text: string }).text)
     .join("\n");
+  // 合并两类来源：正文中模型引用的链接（按出现顺序）+ 检索工具返回的来源
+  const cited: Source[] = [];
+  for (const m of text.matchAll(/\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/g)) {
+    const url = m[1];
+    if (url && !cited.some((s) => domainOf(s.url) === domainOf(url))) cited.push({ url });
+  }
+  const toolSources: Source[] = message.parts
+    .filter((p) => p.type === "source-url")
+    .map((p) => {
+      const s = p as { url: string; title?: string };
+      return { url: s.url, title: s.title };
+    });
+  const sources = dedupeSources([
+    ...cited,
+    ...toolSources.filter((s) => !cited.some((c) => domainOf(c.url) === domainOf(s.url))),
+  ]);
 
   return (
     <Message from={message.role}>
+      {message.role === "assistant" && (
+        <img
+          src={logo}
+          alt="Oxford Bot"
+          width={28}
+          height={28}
+          className="mt-0.5 size-7 shrink-0 rounded-full ring-1 ring-border"
+        />
+      )}
       <MessageContent
         className={
           message.role === "user"
@@ -153,19 +271,48 @@ function ChatMessage({
               </Reasoning>
             );
           }
+          if (part.type === "tool-web_search") {
+            return <SearchSteps key={i} part={part} streaming={streaming} />;
+          }
           if (part.type === "text") {
             return message.role === "user" ? (
               <p key={i} className="whitespace-pre-wrap">
                 {part.text}
               </p>
             ) : (
-              <MessageResponse key={i} isAnimating={streaming}>
+              <MessageResponse
+                key={i}
+                isAnimating={streaming}
+                components={{
+                  a: ({ href, children }) => {
+                    const idx = href ? sources.findIndex((s) => domainOf(s.url) === domainOf(href)) : -1;
+                    if (idx >= 0) {
+                      return (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mx-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-md bg-secondary px-1 align-super text-[10px] font-semibold text-muted-foreground no-underline transition-colors hover:bg-accent hover:text-foreground"
+                        >
+                          {idx + 1}
+                        </a>
+                      );
+                    }
+                    return (
+                      <a href={href} target="_blank" rel="noreferrer">
+                        {children}
+                      </a>
+                    );
+                  },
+                }}
+              >
                 {part.text}
               </MessageResponse>
             );
           }
           return null;
         })}
+        {message.role === "assistant" && <SourceCards sources={sources} />}
       </MessageContent>
       {message.role === "assistant" && text && !streaming && (
         <MessageActions className="-mt-2">
