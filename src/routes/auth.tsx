@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import "@lovable.dev/cloud-auth-js/styles.css";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,7 +63,7 @@ function AuthPage() {
     setLoading(false);
   };
 
-  const oauth = async (provider: "google" | "lovable") => {
+  const oauth = async (provider: "google") => {
     const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
     if (result.error) toast.error("登录失败，请重试");
   };
@@ -88,9 +87,6 @@ function AuthPage() {
               <Button variant="outline" className="h-11 rounded-xl" onClick={() => oauth("google")}>
                 使用 Google 继续
               </Button>
-              <button type="button" className="lovable-auth-button" onClick={() => oauth("lovable")}>
-                使用 Lovable 继续
-              </button>
             </div>
             <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
               <div className="h-px flex-1 bg-border" /> 或 <div className="h-px flex-1 bg-border" />
