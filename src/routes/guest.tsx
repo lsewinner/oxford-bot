@@ -26,7 +26,7 @@ function GuestChat() {
 
 function GuestBots({ onSelect }: { onSelect?: () => void }) {
   const { activities } = useBotPresence();
-  const activity = activities.guest;
+  const activity = activities["guest"];
   return <div className="h-full bg-sidebar px-3 py-5 text-sidebar-foreground">
     <div className="mb-6 flex items-center gap-2 px-2"><img src={logo} width={28} height={28} alt="Oxford Bot" /><span className="text-sm font-semibold">Oxford Bot</span></div>
     <div className="px-2 pb-2 text-[11px] text-muted-foreground">我的 Bots</div>
