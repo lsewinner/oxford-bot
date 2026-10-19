@@ -113,7 +113,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     <div className="flex h-full min-h-0 flex-col">
       <Conversation className="min-h-0 flex-1">
         <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 pb-10 pt-6">
-          {messages.length === 0 && bot && <div className="flex items-center gap-3"><BotAvatar bot={bot} /><div><p className="text-sm font-medium">{bot.name}</p><p className="text-sm text-muted-foreground">你需要我为你做什么？</p></div></div>}
+          {entries.filter((entry) => entry.threadId === threadId && entry.messageId.startsWith("manual-")).map((entry) => <div key={entry.id} id={`message-${entry.messageId}`} className="flex items-center gap-3"><BotAvatar bot={entry.bot} /><div><p className="text-sm font-medium">{entry.bot.name}</p><p className="text-sm text-muted-foreground">已创建并同步到「我的 Bots」。你需要我为你做什么？</p></div></div>)}
           {messages.map((m, idx) => (
             <div key={m.id} id={`message-${m.id}`}>
             <ChatMessage
