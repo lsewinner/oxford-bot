@@ -35,3 +35,4 @@
 - Deep Think uses the existing model and public reasoning summaries only (why: retain model selection and reasoning privacy).
 - Trends use fixed server-side GitHub Trending/Hacker News feeds and the current composer (why: preserve active-Bot context).
 - Nickname and compact avatar use authenticated owner metadata updates, never roles (why: sync identity without new tables).
+- Pro access: `subscriptions` rows are written only by the signed Stripe webhook; server checks use `has_active_subscription` with the environment derived from the build's client token, and gated server paths (chat Deep Think/persona, connection starts) re-check Pro (why: client gates are UX only).

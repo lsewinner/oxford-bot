@@ -60,6 +60,7 @@
 - [ ] 登录后分享创建、访问与撤销端到端验证（本人暂无可恢复账户，需要在预览登录）
 - [x] GitHub & Cloudflare: multiple token accounts per service
 
-- [ ] Pro 会员：侧栏升级入口、Free vs Pro 对比弹窗（月/年付）、Stripe 结账
-- [ ] Pro 权限：第 2 只猫咪 / 自定义人设 / Deep Think / 真实工具拦截（含服务端校验）
-- [ ] 订阅生效显示 Pro 徽标；取消/过期降级锁定额外 Bot 并提示重新订阅；管理订阅门户
+- [x] Pro 会员：侧栏升级入口、Free vs Pro 对比弹窗（月/年付）、Stripe 结账
+- [x] Pro 权限：第 2 只猫咪 / 自定义人设 / Deep Think / 真实工具拦截（含服务端校验）
+- [x] 订阅生效显示 Pro 徽标；取消/过期降级锁定额外 Bot 并提示重新订阅；管理订阅门户
+- [ ] Pro 真实结账端到端验证（需用户登录预览，用测试卡 4242 完成订阅）
