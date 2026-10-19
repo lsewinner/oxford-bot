@@ -7,7 +7,7 @@ import { ArrowLeftIcon, RotateCcwIcon, SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { checkAdmin, loadAdminData, runAdminAction, type AdminAction } from "@/lib/admin.functions";
+import { checkAdmin, loadAdminData, runAdminAction, type AdminAction, type AdminAuditRow } from "@/lib/admin.functions";
 import { FREE_DAILY_MESSAGES, PRO_DAILY_MESSAGES } from "@/lib/quota";
 import { cn } from "@/lib/utils";
 
@@ -119,7 +119,7 @@ function AdminPage() {
           </div>
         ) : (
           <div className="mt-4 divide-y divide-border rounded-xl border border-border">
-            {(data.data?.audit ?? []).map((a) => (
+            {(data.data?.audit ?? []).map((a: AdminAuditRow) => (
               <div key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-sm">
                 <span className="font-medium">{ACTION_LABEL[a.action] ?? a.action}</span>
                 {a.target && <span className="text-muted-foreground">→ {a.target}</span>}
