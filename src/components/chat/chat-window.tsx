@@ -33,7 +33,11 @@ function errorText(err: Error) {
   return err.message || "出错了，请重试";
 }
 
+let INSTANCE = 0;
+
 export function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMessages: UIMessage[] }) {
+  const self = useRef(++INSTANCE).current;
+  console.warn("[pd] render", self, threadId.slice(0, 4), "msgs:", initialMessages.length);
   const { mode } = useMode();
   const modeRef = useRef(mode);
   modeRef.current = mode;
@@ -63,17 +67,22 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
 
   const sentPending = useRef(false);
   useEffect(() => {
+    console.warn("[pd] effect", self);
     if (sentPending.current) return;
     sentPending.current = true;
     const key = pendingKey(threadId);
     const pending = sessionStorage.getItem(key);
     if (pending && initialMessages.length === 0) {
       sessionStorage.removeItem(key);
+      console.warn("[pd] send", self);
       sendMessage({ text: pending });
       const refresh = setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
-      return () => clearTimeout(refresh);
+      return () => {
+        console.warn("[pd] cleanup", self);
+        clearTimeout(refresh);
+      };
     }
-  }, [threadId, initialMessages.length, sendMessage, queryClient]);
+  }, [threadId, initialMessages.length, sendMessage, queryClient, self]);
 
   const busy = status === "submitted" || status === "streaming";
   const lastAssistantHasText =
