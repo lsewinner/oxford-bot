@@ -37,7 +37,7 @@ function NewChat() {
     <div className="flex h-full flex-col items-center justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="w-full max-w-2xl">
         <div className="mb-8 flex flex-col items-center gap-4 text-center">
-          <img src={logo} alt="Nova" width={64} height={64} className="size-16 rounded-2xl" />
+          <img src={logo} alt="Oxford Bot" width={64} height={64} className="size-16 rounded-2xl" />
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
             {mode === "fun" ? "来吧，问点刺激的。" : "今天想了解什么？"}
           </h1>

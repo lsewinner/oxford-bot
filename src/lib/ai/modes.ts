@@ -1,7 +1,7 @@
 export type ChatMode = "normal" | "fun";
 
 const BASE =
-  "你是 Nova，一个聪明、直接、有洞见的 AI 助手。默认用用户使用的语言回答。使用 Markdown 排版，代码放在带语言标记的代码块中。";
+  "你是 Oxford Bot，一个聪明、直接、有洞见的 AI 助手。默认用用户使用的语言回答。使用 Markdown 排版，代码放在带语言标记的代码块中。";
 
 export function buildInstructions(mode: ChatMode): string {
   if (mode === "fun") {

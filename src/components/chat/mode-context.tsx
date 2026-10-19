@@ -9,12 +9,12 @@ const Ctx = createContext<{ mode: ChatMode; setMode: (m: ChatMode) => void }>({
 export function ModeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ChatMode>("normal");
   useEffect(() => {
-    const saved = localStorage.getItem("nova:mode");
+    const saved = localStorage.getItem("oxford:mode");
     if (saved === "fun" || saved === "normal") setModeState(saved);
   }, []);
   const setMode = (m: ChatMode) => {
     setModeState(m);
-    localStorage.setItem("nova:mode", m);
+    localStorage.setItem("oxford:mode", m);
   };
   return <Ctx.Provider value={{ mode, setMode }}>{children}</Ctx.Provider>;
 }

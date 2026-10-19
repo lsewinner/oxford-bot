@@ -59,4 +59,4 @@ export async function createThread(): Promise<string> {
   return data.id;
 }
 
-export const pendingKey = (id: string) => `nova:pending:${id}`;
+export const pendingKey = (id: string) => `oxford:pending:${id}`;
