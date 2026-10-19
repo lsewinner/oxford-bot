@@ -75,6 +75,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
       const refresh = setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
       return () => clearTimeout(refresh);
     }
+    return undefined;
   }, [threadId, initialMessages.length, sendMessage, queryClient]);
 
   const busy = status === "submitted" || status === "streaming";
