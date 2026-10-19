@@ -11,7 +11,7 @@ import { MenuIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { UIMessage } from "ai";
 import type { BotEntry } from "@/lib/bot-presence";
-import { guestConversationId, guestMessagesKey, parseGuestMessages } from "@/lib/guest-conversations";
+import { guestConversationId, guestMessagesKey, guestPreview, parseGuestMessages } from "@/lib/guest-conversations";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/guest")({
