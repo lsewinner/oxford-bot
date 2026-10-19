@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { ModeProvider } from "@/components/chat/mode-context";
+import { WebSearchProvider } from "@/components/chat/web-search-context";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { threadsQuery, type Thread } from "@/lib/chat-data";
