@@ -13,7 +13,7 @@ describe('personal token connection registration',()=>{
   mocks.validate.mockResolvedValue(undefined);mocks.save.mockResolvedValue(undefined);
   expect(await call('github')).toEqual({ok:true});
   expect(mocks.validate).toHaveBeenCalledWith('github','test-only-credential');
-  expect(mocks.save).toHaveBeenCalledWith('owner-a','github','test-only-credential','personal_token');
+  expect(mocks.save).toHaveBeenCalledWith('owner-a','github','test-only-credential','personal_token','','');
  });
  it('never persists an invalid token or claims connection success',async()=>{
   mocks.validate.mockRejectedValue(new Error('Token 已失效'));
