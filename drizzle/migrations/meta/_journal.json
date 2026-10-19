@@ -15,6 +15,13 @@
       "when": 1792394412975,
       "tag": "0001_personal_tool_connections",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792396702734,
+      "tag": "0002_thread_previews_rpc",
+      "breakpoints": true
     }
   ]
 }
