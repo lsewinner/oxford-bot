@@ -1,0 +1,2 @@
+ALTER TABLE public.app_user_connections ADD COLUMN credential_kind text NOT NULL DEFAULT 'oauth' CHECK (credential_kind IN ('oauth', 'personal_token'));
+COMMENT ON COLUMN public.app_user_connections.credential_kind IS 'Selects gateway OAuth handle or encrypted per-user personal provider token; credentials remain server-only.';
