@@ -32,7 +32,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(microsoft && r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new MicrosoftReconnectError();}
  if(google && isGoogleProvider(id)){
    if(!r.ok){if(r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new Error('授权需要更新，请重新连接');}throw new Error(`${provider} (${r.status})`);}
-   const b=raw?await r.text():r.status===204?{}:await r.json();return b;
+   const b=raw?await r.text():(r.status===204 || (microsoft && method==='POST' && path==='/me/sendMail'))?{}:await r.json();return b;
   }
  if(personal && supportsPersonalToken(id)){
    if(!r.ok)throw new Error(personalTokenError(id,r.status));
@@ -43,7 +43,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  }
  if(await appUserReconnectRequired(r)){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new Error('授权需要更新，请重新连接');}
  if(!r.ok){const text=await r.text();console.error(`Provider ${id} failed [${r.status}]: ${text}`);throw new Error(`${provider} (${r.status}): ${text.slice(0,1200)}`);}
- const b=raw?await r.text():r.status===204?{}:await r.json();if(!raw && b.ok===false)throw new Error(`${provider}: ${b.error}`);return b;
+ const b=raw?await r.text():(r.status===204 || (microsoft && method==='POST' && path==='/me/sendMail'))?{}:await r.json();if(!raw && b.ok===false)throw new Error(`${provider}: ${b.error}`);return b;
  };
  const o=input.operation;let items:NonNullable<ToolResult['items']>=[],text:string|undefined;
  if(id==='github'){
