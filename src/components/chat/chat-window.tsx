@@ -67,6 +67,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     sentPending.current = true;
     const key = pendingKey(threadId);
     const pending = sessionStorage.getItem(key);
+    console.warn("[pending-debug]", JSON.stringify({ threadId, key, pending, len: initialMessages.length }));
     if (pending && initialMessages.length === 0) {
       sessionStorage.removeItem(key);
       sendMessage({ text: pending });
