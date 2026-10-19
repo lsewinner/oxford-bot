@@ -1,7 +1,7 @@
 import { describe,it,expect } from 'vitest';
 import { providerId,isWrite,validateOperation,operationInput } from '@/lib/connections/catalog';
 describe('real provider task boundaries',()=>{
- it('supports the five requested personal services',()=>expect(providerId.options).toEqual(['github','google_mail','microsoft_outlook','google_drive','slack','cloudflare']));
+ it('supports the five requested personal services',()=>expect(providerId.options).toEqual(['github','google_mail','microsoft_outlook','google_drive','slack','cloudflare','microsoft_teams']));
  it('requires confirmation for sending mail, drafts and external changes',()=>{for(const op of ['send','draft','write_file','create_issue','create_file'])expect(isWrite(op)).toBe(true);expect(isWrite('search')).toBe(false);});
  it('rejects arbitrary provider operations',()=>expect(()=>validateOperation('github',{operation:'delete_repo',repo:'a/b'})).toThrow());
  it('requires a specific repository before code changes',()=>expect(()=>validateOperation('github',{operation:'write_file',path:'index.html',text:'hello',title:'update'})).toThrow());

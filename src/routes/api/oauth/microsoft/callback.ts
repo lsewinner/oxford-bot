@@ -10,6 +10,7 @@ export const Route = createFileRoute('/api/oauth/microsoft/callback')({
       if (url.searchParams.has('error') || !code || code.length > 8192 || !state) throw new Error('授权未完成');
       const { verifyMicrosoftState } = await import('@/lib/connections/microsoft-oauth.server');
       const payload = verifyMicrosoftState(state);
+      result.connectorId = payload.provider;
       if (new URL(payload.redirectUri).origin !== url.origin) throw new Error('授权地址不匹配');
       // Only the opener has the app session. It exchanges this one-time code in an authenticated function.
       result = { ...result, type: 'appUserConnectorOAuthComplete', code: JSON.stringify({ code, state }) };

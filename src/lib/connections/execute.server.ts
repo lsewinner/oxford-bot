@@ -17,18 +17,18 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(isWrite(input.operation) && !confirmed){
  const {data,error}=await supabaseAdmin.from('tool_actions').insert({user_id:userId,connector_id:id,operation:input.operation,payload:row.account_key && !input.account?{...input,account:row.account_key}:input}).select('id').single();
  if(error || !data)throw new Error('无法保存待确认操作');
- return {provider,status:'confirmation_required',actionId:data.id,summary:`${provider} · ${input.operation} · ${input.to ?? input.repo ?? input.id ?? input.title ?? ''}`,...(input.text?{text:input.text}:{})};
+ return {provider,status:'confirmation_required',actionId:data.id,summary:`${provider} · ${input.operation} · ${row.account_label || row.account_key || ''} · ${input.teamId ? `${input.teamId} / ${input.channelId ?? ''}` : input.to ?? input.repo ?? input.id ?? input.title ?? ''}`,...(input.text?{text:input.text}:{})};
  }
  const request=async(path:string,method='GET',body?:unknown,raw=false)=>{
  const init={method,headers:{Accept:id==='github'?'application/vnd.github+json':'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})};
  const personal=row.credential_kind==='personal_token';
  const google=row.credential_kind==='google_oauth';
  const microsoft=row.credential_kind==='microsoft_oauth';
- if(microsoft && id!=='microsoft_outlook')throw new Error('此服务不支持微软授权');
+ if(microsoft && id!=='microsoft_outlook' && id!=='microsoft_teams')throw new Error('此服务不支持微软授权');
  if(personal && !supportsPersonalToken(id))throw new Error('不支持此服务的个人 Token');
  if(google && !isGoogleProvider(id))throw new Error('此服务不支持 Google 授权');
  let r:Response;
- try{r=microsoft?await callWithMicrosoftToken(decryptConnectionKey(row.connection_key_ciphertext,'microsoft_oauth'),path,init,token=>rotateMicrosoftCredential(userId,row.id,row.connection_key_ciphertext,token)):personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):google && isGoogleProvider(id)?await callWithGoogleToken(id,decryptConnectionKey(row.connection_key_ciphertext),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});}catch(e){if(e instanceof MicrosoftReconnectError){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);return Promise.reject(e);}throw e;}
+  try{r=microsoft?await callWithMicrosoftToken(decryptConnectionKey(row.connection_key_ciphertext,'microsoft_oauth'),path,init,token=>rotateMicrosoftCredential(userId,row.id,row.connection_key_ciphertext,token),id==='microsoft_teams'?'microsoft_teams':'microsoft_outlook'):personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):google && isGoogleProvider(id)?await callWithGoogleToken(id,decryptConnectionKey(row.connection_key_ciphertext),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});}catch(e){if(e instanceof MicrosoftReconnectError){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);return Promise.reject(e);}throw e;}
  if(microsoft && r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new MicrosoftReconnectError();}
  if(google && isGoogleProvider(id)){
    if(!r.ok){if(r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new Error('授权需要更新，请重新连接');}throw new Error(`${provider} (${r.status})`);}
@@ -63,6 +63,23 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(o==='search'){const b=await request(`/me/messages?$top=10&$select=id,subject,from,bodyPreview${input.query?'&$search='+enc('"'+input.query.replace(/"/g,'')+'"'):''}`);items=(b.value ?? []).map((v:any)=>({title:v.subject,id:v.id,detail:v.bodyPreview}));}
  if(o==='read'){const b=await request(`/me/messages/${enc(input.id ?? '')}?$select=id,subject,body,from`);items=[{title:b.subject,id:b.id,detail:b.from?.emailAddress?.address}];text=String(b.body?.content ?? '').slice(0,30000);}
  if(o==='draft' || o==='send'){const message={subject:input.title,body:{contentType:'Text',content:input.text},toRecipients:[{emailAddress:{address:input.to}}]};if(o==='send'){await request('/me/sendMail','POST',{message});}else{const b=await request('/me/messages','POST',message);items=[{title:b.subject,id:b.id}];}}
+ } else if(id==='microsoft_teams'){
+  const base=`/teams/${enc(input.teamId ?? '')}/channels`;
+  const messages=`${base}/${enc(input.channelId ?? '')}/messages`;
+  if(o==='teams' || o==='channels'){
+   const b=await request(o==='teams'?'/me/joinedTeams':base);
+   items=(b.value ?? []).map((v:any)=>({title:v.displayName ?? '未命名',id:v.id,detail:v.description ?? '',...(v.webUrl?{url:v.webUrl}:{})}));
+   if(b['@odata.nextLink'])text='当前显示一页结果';
+  }
+  if(o==='messages'){
+   const b=await request(`${messages}?$top=20`);
+   items=(b.value ?? []).map((v:any)=>({title:v.from?.user?.displayName || v.from?.application?.displayName || '系统消息',id:v.id,detail:`${v.createdDateTime ?? ''}\n${String(v.body?.content ?? '').slice(0,3000)}`,...(v.webUrl?{url:v.webUrl}:{})}));
+   if(b['@odata.nextLink'])text='仅显示当前 20 条频道消息';
+  }
+  if(o==='send'){
+   const b=await request(messages,'POST',{body:{contentType:'text',content:input.text}});
+   items=[{title:input.text?.slice(0,100) ?? '消息',id:b.id,...(b.webUrl?{url:b.webUrl}:{})}];
+  }
  } else if(id==='google_drive'){
  if(o==='search'){const q=`trashed = false${input.query?" and name contains '"+input.query.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'":''}`;const b=await request(`/drive/v3/files?pageSize=20&fields=files(id,name,mimeType,webViewLink)&q=${enc(q)}`);items=(b.files ?? []).map((v:any)=>({title:v.name,id:v.id,url:v.webViewLink,detail:v.mimeType}));}
  if(o==='read'){const file=enc(input.id ?? '');const b=await request(`/drive/v3/files/${file}?fields=id,name,mimeType,size`);if(Number(b.size)>1000000)throw new Error('文件过大，请上传附件进行分析');if(b.mimeType==='application/vnd.google-apps.document')text=await request(`/drive/v3/files/${file}/export?mimeType=text/plain`,'GET',undefined,true);else if(b.mimeType.startsWith('text/') || b.mimeType==='application/json')text=await request(`/drive/v3/files/${file}?alt=media`,'GET',undefined,true);else throw new Error('此类型请下载后上传至对话分析');text=text?.slice(0,30000);items=[{title:b.name,id:b.id}];}

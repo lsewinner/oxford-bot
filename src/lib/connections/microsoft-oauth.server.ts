@@ -5,7 +5,8 @@ import { encryptConnectionKey, decryptConnectionKey } from './storage.server';
 
 const AUTH_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
 const TOKEN_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
-const stateSchema = z.object({ userId: z.string().uuid(), provider: z.literal('microsoft_outlook'), verifier: z.string().min(43).max(128), redirectUri: z.string().url(), expires: z.number() }).strict();
+const stateSchema = z.object({ userId: z.string().uuid(), provider: z.enum(['microsoft_outlook','microsoft_teams']), verifier: z.string().min(43).max(128), redirectUri: z.string().url(), expires: z.number() }).strict();
+export type MicrosoftProvider = 'microsoft_outlook' | 'microsoft_teams';
 export type MicrosoftState = z.infer<typeof stateSchema>;
 
 function config() {
@@ -21,13 +22,14 @@ function config() {
 }
 
 /** Encrypted authenticated state keeps the PKCE verifier out of the browser. */
-export function startMicrosoftAuthorization(userId: string, redirectUri: string) {
+export function startMicrosoftAuthorization(userId: string, redirectUri: string, provider: MicrosoftProvider = 'microsoft_outlook') {
   const { clientId } = config();
   const verifier = randomBytes(32).toString('base64url');
-  const payload = stateSchema.parse({ userId, provider: 'microsoft_outlook', verifier, redirectUri, expires: Date.now() + 10 * 60 * 1000 });
+  const payload = stateSchema.parse({ userId, provider, verifier, redirectUri, expires: Date.now() + 10 * 60 * 1000 });
   const state = encryptConnectionKey(JSON.stringify(payload), 'microsoft_oauth');
-  const params = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri, response_type: 'code', response_mode: 'query', scope: PROVIDERS.microsoft_outlook.scopes.join(' '), prompt: 'select_account', state, code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' });
-  return { authorizationUrl: `${AUTH_URL}?${params}` };
+  const params = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri, response_type: 'code', response_mode: 'query', scope: PROVIDERS[provider].scopes.join(' '), prompt: 'select_account', state, code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' });
+  const authUrl = provider === 'microsoft_teams' ? AUTH_URL.replace('/common/', '/organizations/') : AUTH_URL;
+  return { authorizationUrl: `${authUrl}?${params}` };
 }
 
 export function verifyMicrosoftState(state: string): MicrosoftState {
@@ -68,15 +70,18 @@ export async function getMicrosoftAccount(accessToken: string) {
   return { account: `microsoft:${body.id}`.toLowerCase(), label: body.mail || body.userPrincipalName || body.displayName || body.id };
 }
 
-/** Only mail and identity endpoints are allowed; caller cannot change the host or follow redirects. */
-export async function callWithMicrosoftToken(refreshToken: string, path: string, init?: RequestInit, rotate?: (refreshToken: string) => Promise<void>) {
+/** Provider-specific fixed Graph endpoints; never follow redirects or cross mail/Teams scopes. */
+export async function callWithMicrosoftToken(refreshToken: string, path: string, init?: RequestInit, rotate?: (refreshToken: string) => Promise<void>, provider: MicrosoftProvider = 'microsoft_outlook') {
   const method = (init?.method ?? 'GET').toUpperCase();
   if (!path.startsWith('/') || /[\\\r\n#]/.test(path) || path.includes('://') || path.includes('..') || /%(?:2e|2f|5c)/i.test(path)) throw new Error('不支持的微软请求路径');
   const url = new URL(`https://graph.microsoft.com/v1.0${path}`);
   const endpoint = url.pathname.slice('/v1.0'.length);
-  const allowed = method === 'GET' ? /^\/me(?:\/messages(?:\/[^/]+)?)?$/.test(endpoint) : method === 'POST' && ['/me/messages', '/me/sendMail'].includes(endpoint);
+  const teamsPath = /^\/teams\/[0-9a-f-]{36}\/channels(?:\/[^/]+\/messages)?$/i.test(endpoint);
+  const allowed = provider === 'microsoft_teams'
+    ? method === 'GET' ? ['/me','/me/joinedTeams'].includes(endpoint) || teamsPath : method === 'POST' && teamsPath && endpoint.endsWith('/messages')
+    : method === 'GET' ? /^\/me(?:\/messages(?:\/[^/]+)?)?$/.test(endpoint) : method === 'POST' && ['/me/messages', '/me/sendMail'].includes(endpoint);
   if (!allowed || url.origin !== 'https://graph.microsoft.com') throw new Error('不支持的微软请求路径');
-  const result = await tokens({ grant_type: 'refresh_token', refresh_token: refreshToken, scope: PROVIDERS.microsoft_outlook.scopes.join(' ') });
+  const result = await tokens({ grant_type: 'refresh_token', refresh_token: refreshToken, scope: PROVIDERS[provider].scopes.join(' ') });
   if (result.refresh_token && result.refresh_token !== refreshToken && rotate) await rotate(result.refresh_token);
   const headers = new Headers(init?.headers);
   headers.set('Authorization', `Bearer ${result.access_token}`);
