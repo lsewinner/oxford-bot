@@ -42,7 +42,7 @@ async function tokens(fields: Record<string, string>): Promise<Tokens> {
   const response = await fetch(TOKEN_URL, { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ ...fields, client_id: clientId, client_secret: clientSecret }) });
   const body = await response.json().catch(() => null) as { access_token?: string; refresh_token?: string; error?: string } | null;
   if (!response.ok || !body?.access_token) {
-    if (fields.grant_type === 'refresh_token' && body?.error === 'invalid_grant') throw new MicrosoftReconnectError();
+    if (fields['grant_type'] === 'refresh_token' && body?.error === 'invalid_grant') throw new MicrosoftReconnectError();
     // Do not log token endpoint bodies: they can include credentials.
     throw new Error(`微软授权失败 (${response.status})${body?.error ? `：${body.error}` : ''}`);
   }
