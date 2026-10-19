@@ -253,7 +253,32 @@ function ChatMessage({
                 {part.text}
               </p>
             ) : (
-              <MessageResponse key={i} isAnimating={streaming}>
+              <MessageResponse
+                key={i}
+                isAnimating={streaming}
+                components={{
+                  a: ({ href, children }) => {
+                    const idx = href ? sources.findIndex((s) => domainOf(s.url) === domainOf(href)) : -1;
+                    if (idx >= 0) {
+                      return (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mx-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-md bg-secondary px-1 align-super text-[10px] font-semibold text-muted-foreground no-underline transition-colors hover:bg-accent hover:text-foreground"
+                        >
+                          {idx + 1}
+                        </a>
+                      );
+                    }
+                    return (
+                      <a href={href} target="_blank" rel="noreferrer">
+                        {children}
+                      </a>
+                    );
+                  },
+                }}
+              >
                 {part.text}
               </MessageResponse>
             );
