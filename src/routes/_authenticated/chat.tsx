@@ -1,3 +1,4 @@
+import { MainBotLabel } from "@/components/chat/main-bot";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
 import { LogOutIcon, MenuIcon, PenSquareIcon, Trash2Icon } from "lucide-react";
@@ -118,6 +119,9 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="mt-4 flex-1 overflow-y-auto px-2 pb-4">
         <section aria-label="我的 Bots" className="mb-5">
           <div className="flex items-center justify-between px-3 pb-2"><span className="text-[11px] font-medium text-muted-foreground">我的 Bots</span><NewBot onCreate={createBot} /></div>
+          <Link to="/chat" onClick={onNavigate} aria-label="打开主 Bot Oxonian" className={cn("mb-1 flex rounded-lg px-3 py-2 transition-colors hover:bg-sidebar-accent", !params.threadId && "bg-sidebar-accent")}>
+            <MainBotLabel active={!params.threadId} />
+          </Link>
           {bots.map((entry) => <div key={entry.id} className={cn("group flex items-center rounded-lg hover:bg-sidebar-accent", params.threadId === entry.conversationId && "bg-sidebar-accent")}>
             <Button variant="ghost" disabled={opening !== null} onClick={() => openBot(entry)} className="h-auto min-w-0 flex-1 justify-start gap-2.5 px-3 py-2 text-left" aria-label={`打开 ${entry.bot.name}`}>
               <BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} />
