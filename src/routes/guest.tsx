@@ -31,7 +31,7 @@ function GuestBots({ onSelect }: { onSelect?: () => void }) {
     <div className="mb-6 flex items-center gap-2 px-2"><img src={logo} width={28} height={28} alt="Oxford Bot" /><span className="text-sm font-semibold">Oxford Bot</span></div>
     <div className="px-2 pb-2 text-[11px] text-muted-foreground">我的 Bots</div>
     {entries.length ? entries.map((entry, index) => <div key={entry.id} className="mb-1 flex items-center rounded-lg bg-sidebar-accent">
-      <Button variant="ghost" aria-label={`打开 ${entry.bot.name}`} onClick={() => { onSelect?.(); document.getElementById(`message-${entry.messageId}`)?.scrollIntoView({ block: "start", behavior: "smooth" }); }} className="h-auto min-w-0 flex-1 justify-start gap-2.5 px-2 py-3 text-left"><BotPresenceLabel bot={entry.bot} status={index === entries.length - 1 ? activity?.status : "ready"} /></Button>
+      <Button variant="ghost" aria-label={`打开 ${entry.bot.name}`} onClick={() => { onSelect?.(); document.getElementById(`message-${entry.messageId}`)?.scrollIntoView({ block: "start", behavior: "smooth" }); }} className="h-auto min-w-0 flex-1 justify-start gap-2.5 px-2 py-3 text-left"><BotPresenceLabel bot={entry.bot} status={index === entries.length - 1 ? activity?.status ?? "ready" : "ready"} /></Button>
       <BotSettings entry={entry} />
     </div>) : <p className="px-2 text-xs text-muted-foreground">暂无 Bot</p>}
   </div>;

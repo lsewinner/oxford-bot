@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { threadsQuery, type Thread } from "@/lib/chat-data";
 import { cn } from "@/lib/utils";
 import { BotPresenceLabel, BotPresenceProvider, BotSettings, useBotPresence } from "@/components/chat/bot-presence";
-import { botFromRequest } from "@/lib/bot-presence";
+import { botFromRequest, type BotActivity, type BotEntry, type BotIdentity } from "@/lib/bot-presence";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/chat")({
@@ -45,7 +45,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const queryClient = useQueryClient();
   const { user } = Route.useRouteContext();
   const { activities, entries } = useBotPresence();
-  const bots = threads.flatMap((thread) => {
+  const bots = threads.flatMap<{ thread: Thread; entry: BotEntry | null; bot: BotIdentity; status: BotActivity["status"] }>((thread) => {
     const registered = entries.filter((entry) => entry.threadId === thread.id);
     if (registered.length) return registered.map((entry, index) => ({ thread, entry, bot: entry.bot, status: index === registered.length - 1 ? activities[thread.id]?.status ?? "ready" as const : "ready" as const }));
     const bot = activities[thread.id]?.bot ?? botFromRequest(thread.title);
