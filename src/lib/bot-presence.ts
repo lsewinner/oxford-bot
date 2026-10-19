@@ -1,8 +1,9 @@
 import type { UIMessage } from "ai";
+import { isCatBreed, type BotKind, type CatBreed } from "./cat-breeds";
+export type { CatBreed, BotKind } from "./cat-breeds";
 
-export type CatBreed = "mail" | "document" | "code" | "team" | "general";
-export type BotIdentity = { name: string; kind: CatBreed; breed?: CatBreed };
-export type BotEntry = { id: string; threadId: string; messageId: string; bot: BotIdentity };
+export type BotIdentity = { name: string; kind: BotKind; breed?: CatBreed };
+export type BotEntry = { id: string; threadId: string; messageId: string; bot: BotIdentity; conversationId?: string };
 export type BotActivity = { bot: BotIdentity | null; status: "ready" | "submitted" | "streaming" | "error" };
 
 // Presentation only: recognizing a request does not create or connect an automation.
@@ -49,7 +50,7 @@ export function parseBotEntries(raw: string | null): BotEntry[] {
     const parsed: unknown = JSON.parse(raw ?? "[]");
     if (!Array.isArray(parsed)) return [];
     const breeds = ["mail", "document", "code", "team", "general"];
-    return parsed.filter((entry): entry is BotEntry => entry && typeof entry.id === "string" && typeof entry.threadId === "string" && typeof entry.messageId === "string" && typeof entry.bot?.name === "string" && breeds.includes(entry.bot.kind) && (entry.bot.breed === undefined || breeds.includes(entry.bot.breed)));
+    return parsed.filter((entry): entry is BotEntry => entry && typeof entry.id === "string" && typeof entry.threadId === "string" && typeof entry.messageId === "string" && typeof entry.bot?.name === "string" && breeds.includes(entry.bot.kind) && (entry.bot.breed === undefined || isCatBreed(entry.bot.breed)) && (entry.conversationId === undefined || typeof entry.conversationId === "string"));
   } catch { return []; }
 }
 
