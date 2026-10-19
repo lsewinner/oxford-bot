@@ -13,7 +13,7 @@ export function parseGitHubTrending(html: string): TrendItem[] {
 let cache: Trends | undefined;
 let pending: Promise<Trends> | undefined;
 async function read(url: string) {
-  const r = await fetch(url, { headers: { Accept: '*/*', 'User-Agent': 'OxfordBot-Trends' }, redirect: 'error' });
+  const r = await fetch(url, { headers: { Accept: '*/*', 'User-Agent': 'OxfordBot-Trends' }, redirect: 'follow' });
   if (!r.ok) throw new Error(`资讯来源返回 ${r.status}`);
   return r;
 }

@@ -40,6 +40,12 @@ function AuthPage() {
     return () => data.subscription.unsubscribe();
   }, [navigate]);
 
+  useEffect(() => {
+    const t = mode === "signup" ? "注册 · Oxford Bot" : "登录 · Oxford Bot";
+    document.title = t;
+    document.querySelector('meta[property="og:title"]')?.setAttribute("content", t);
+  }, [mode]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

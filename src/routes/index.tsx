@@ -32,7 +32,7 @@ function Index() {
       <img src={logo} alt="Oxford Bot" width={88} height={88} className="size-22 rounded-3xl" />
       <h1 className="mt-8 text-4xl font-semibold tracking-tight md:text-6xl">Oxford Bot</h1>
       <p className="mt-4 max-w-md text-muted-foreground">
-        直接、机智、偶尔叛逆的 AI。正经问题用 Normal，想找乐子切 Fun。
+        直接、机智、偶尔叛逆的 AI。正经问题用 Normal，想找乐子切<span className="whitespace-nowrap"> Fun。</span>
       </p>
       <Link
         to="/auth"
