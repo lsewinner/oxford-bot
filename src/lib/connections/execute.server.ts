@@ -2,6 +2,7 @@ import { callAsAppUser,appUserReconnectRequired } from '@/integrations/lovable/a
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { decryptConnectionKey,getConnection } from './storage.server';
 import { PROVIDERS,validateOperation,isWrite,type ProviderId,type OperationInput,type ToolResult } from './catalog';
+import { callWithPersonalToken,supportsPersonalToken,personalTokenError } from './personal-token.server';
 const BASE='https://connector-gateway.lovable.dev';
 const enc=encodeURIComponent;
 const b64=(s:string)=>Buffer.from(s,'utf8').toString('base64');
@@ -16,7 +17,17 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  return {provider,status:'confirmation_required',actionId:data.id,summary:`${provider} · ${input.operation} · ${input.to ?? input.repo ?? input.id ?? input.title ?? ''}`,...(input.text?{text:input.text}:{})};
  }
  const request=async(path:string,method='GET',body?:unknown,raw=false)=>{
- const r=await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init:{method,headers:{Accept:id==='github'?'application/vnd.github+json':'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})}});
+ const init={method,headers:{Accept:id==='github'?'application/vnd.github+json':'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})};
+ const personal=row.credential_kind==='personal_token';
+ if(personal && !supportsPersonalToken(id))throw new Error('不支持此服务的个人 Token');
+ const r=personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});
+ if(personal && supportsPersonalToken(id)){
+   if(!r.ok)throw new Error(personalTokenError(id,r.status));
+   const b=await r.json().catch(()=>null);
+   if(!b)throw new Error('服务返回格式错误');
+   if(id==='slack' && b.ok!==true)throw new Error(personalTokenError(id,r.status,b.error));
+   return b;
+ }
  if(await appUserReconnectRequired(r)){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new Error('授权需要更新，请重新连接');}
  if(!r.ok){const text=await r.text();console.error(`Provider ${id} failed [${r.status}]: ${text}`);throw new Error(`${provider} (${r.status}): ${text.slice(0,1200)}`);}
  const b=raw?await r.text():r.status===204?{}:await r.json();if(!raw && b.ok===false)throw new Error(`${provider}: ${b.error}`);return b;

@@ -19,6 +19,7 @@ export type Database = {
           connection_key_ciphertext: string
           connector_id: string
           created_at: string
+          credential_kind: string
           enabled: boolean
           id: string
           reconnect_required: boolean
@@ -29,6 +30,7 @@ export type Database = {
           connection_key_ciphertext: string
           connector_id: string
           created_at?: string
+          credential_kind?: string
           enabled?: boolean
           id?: string
           reconnect_required?: boolean
@@ -39,6 +41,7 @@ export type Database = {
           connection_key_ciphertext?: string
           connector_id?: string
           created_at?: string
+          credential_kind?: string
           enabled?: boolean
           id?: string
           reconnect_required?: boolean
