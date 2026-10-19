@@ -2,7 +2,7 @@ import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 
 /** The always-present default Bot (Oxonian), pinned at the top of 「我的 Bots」. */
-export function MainBotLabel({ active }: { active?: boolean }) {
+export function MainBotLabel({ active, preview }: { active?: boolean; preview?: string }) {
   return (
     <span className="flex min-w-0 items-center gap-2.5">
       <span className={cn("relative shrink-0 rounded-full", active && "ring-1 ring-ring")}>
@@ -11,7 +11,7 @@ export function MainBotLabel({ active }: { active?: boolean }) {
       </span>
       <span className="min-w-0">
         <span className="block truncate text-sm font-medium">Oxonian</span>
-        <span className="block truncate text-[11px] text-muted-foreground">主 Bot · 全能助手</span>
+        <span className="block truncate text-[11px] text-muted-foreground">{preview || "开始新对话"}</span>
       </span>
     </span>
   );

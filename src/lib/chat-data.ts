@@ -47,6 +47,23 @@ export const messagesQuery = (threadId: string) =>
     },
   });
 
+export type ThreadPreviewRow = { thread_id: string; preview: string; role: string };
+
+export const threadPreviewsQuery = (threadIds: string[]) =>
+  queryOptions({
+    queryKey: ["thread-previews", threadIds],
+    staleTime: 10_000,
+    queryFn: async (): Promise<Record<string, string>> => {
+      if (threadIds.length === 0) return {};
+      const { data, error } = await supabase.rpc("thread_previews", { p_thread_ids: threadIds });
+      if (error) throw error;
+      return ((data ?? []) as ThreadPreviewRow[]).reduce<Record<string, string>>((acc, row) => {
+        acc[row.thread_id] = row.preview;
+        return acc;
+      }, {});
+    },
+  });
+
 export const botHistoryQuery = (userId: string) => queryOptions({
   queryKey: ["bot-history", userId],
   queryFn: async () => {

@@ -105,15 +105,14 @@ export function BotSettings({ entry }: { entry: BotEntry }) {
   </>;
 }
 
-export function BotPresenceLabel({ bot, status = "ready" }: { bot: BotIdentity; status?: BotActivity["status"] }) {
+export function BotPresenceLabel({ bot, status = "ready", preview }: { bot: BotIdentity; status?: BotActivity["status"]; preview?: string }) {
   const working = botIsWorking(status);
+  const line = status === "submitted" ? "正在思考…" : status === "streaming" ? "正在回复…" : status === "error" ? "回复中断" : preview || "还没有消息";
   return <>
     <BotAvatar bot={bot} working={working} />
     <span className="min-w-0 flex-1">
       <span className="block truncate text-sm font-medium">{bot.name}</span>
-      <span role="status" className="block truncate text-[11px] text-muted-foreground">
-        {status === "submitted" ? "正在思考" : status === "streaming" ? "正在回复" : status === "error" ? "回复中断" : "会话助手"}
-      </span>
+      <span role="status" className="block truncate text-[11px] text-muted-foreground">{line}</span>
     </span>
   </>;
 }
