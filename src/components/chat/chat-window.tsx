@@ -24,7 +24,6 @@ import { pendingKey } from "@/lib/chat-data";
 import { Composer } from "./composer";
 import { useMode } from "./mode-context";
 import { useWebSearch } from "./web-search-context";
-import { useTools } from "./use-tools";
 import { BotAvatar, useBotPresence } from "./bot-presence";
 import { botsFromMessages, type BotIdentity } from "@/lib/bot-presence";
 import { guestMessagesKey, isGuestConversation } from "@/lib/guest-conversations";
@@ -51,11 +50,8 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
   const webSearchRef = useRef(webSearch);
   webSearchRef.current = webSearch;
   const queryClient = useQueryClient();
-  const { enabled: demoTools } = useTools();
   const botRef = useRef(activeBot);
   botRef.current = activeBot;
-  const toolsRef = useRef(demoTools);
-  toolsRef.current = demoTools;
 
   const transport = useMemo(
     () =>
@@ -66,7 +62,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, webSearch: webSearchRef.current, demoTools: toolsRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind } : null }),
+        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind } : null }),
       }),
     [threadId],
   );
