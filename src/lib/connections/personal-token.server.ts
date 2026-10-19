@@ -41,6 +41,11 @@ export async function validatePersonalToken(id: PersonalTokenProvider, token: st
   return body as Record<string, unknown>;
 }
 /** Identify which Cloudflare account a token belongs to, so several tokens can be stored side by side. */
+export async function personalTokenIdentity(id: PersonalTokenProvider, token: string, body: Record<string, unknown> | null) {
+  if (id === 'cloudflare') return cloudflareAccountIdentity(token, body);
+  if (id === 'github' && body && (typeof body.id === 'number' || typeof body.id === 'string')) return { account: `gh-${body.id}`, label: typeof body.login === 'string' ? body.login : '' };
+  return { account: '', label: '' };
+}
 export async function cloudflareAccountIdentity(token: string, body: Record<string, unknown> | null) {
   const zone = Array.isArray(body?.result) ? (body!.result as Array<{ account?: { id?: string; name?: string } }>)[0] : undefined;
   const accountId = typeof zone?.account?.id === 'string' ? zone.account.id : '';

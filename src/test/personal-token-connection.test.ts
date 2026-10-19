@@ -3,7 +3,7 @@ const mocks=vi.hoisted(()=>({validate:vi.fn(),save:vi.fn()}));
 vi.mock('@tanstack/react-start',()=>({createServerFn:()=>{const c={middleware:()=>c,inputValidator:()=>c,handler:(h:unknown)=>h};return c;}}));
 vi.mock('@tanstack/react-start/server',()=>({getRequest:vi.fn()}));
 vi.mock('@/integrations/supabase/auth-middleware',()=>({requireSupabaseAuth:{}}));
-vi.mock('@/lib/connections/personal-token.server',()=>({validatePersonalToken:mocks.validate}));
+vi.mock('@/lib/connections/personal-token.server',()=>({validatePersonalToken:mocks.validate,personalTokenIdentity:async()=>({account:'',label:''})}));
 vi.mock('@/lib/connections/storage.server',()=>({saveConnection:mocks.save}));
 import { connectPersonalToken } from '@/lib/connections.functions';
 const call=(id:'github'|'slack')=>(connectPersonalToken as unknown as (v:object)=>Promise<unknown>)({data:{id,token:'test-only-credential'},context:{userId:'owner-a'}});

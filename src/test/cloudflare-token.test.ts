@@ -36,3 +36,10 @@ test('two Cloudflare tokens for different accounts get different account keys', 
   const noZones2 = await cloudflareAccountIdentity('tok-d', { result: [] });
   expect(noZones1.account).not.toBe(noZones2.account);
 });
+import { personalTokenIdentity } from '@/lib/connections/personal-token.server';
+test('two GitHub tokens for different users get different account keys', async () => {
+  const a = await personalTokenIdentity('github', 'x', { id: 1, login: 'alice' });
+  const b = await personalTokenIdentity('github', 'y', { id: 2, login: 'bob' });
+  expect(a).toEqual({ account: 'gh-1', label: 'alice' });
+  expect(b.account).toBe('gh-2');
+});
