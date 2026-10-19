@@ -80,8 +80,9 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const botThreadIds = Array.from(new Set(bots.map((entry) => entry.conversationId ?? entry.threadId).filter(Boolean)));
   const { data: previews = {} } = useQuery({ ...threadPreviewsQuery(botThreadIds), enabled: botThreadIds.length > 0 });
-  const oxonianPreview = threads.length > 0 ? previews[threads[0].id]?.preview : undefined;
-  const oxonianTime = threads.length > 0 ? previews[threads[0].id]?.updatedAt : undefined;
+  const firstThread = threads[0];
+  const oxonianPreview = firstThread ? previews[firstThread.id]?.preview : undefined;
+  const oxonianTime = firstThread ? previews[firstThread.id]?.updatedAt : undefined;
 
   const groups = threads.filter((t) => !bots.some((b) => b.conversationId === t.id || (b.messageId.startsWith("manual-") && b.threadId === t.id))).reduce<Record<string, Thread[]>>((acc, t) => {
     (acc[groupLabel(t.updated_at)] ??= []).push(t);

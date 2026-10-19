@@ -3,7 +3,7 @@ import { formatChatTime } from "@/lib/chat-time";
 import { cn } from "@/lib/utils";
 
 /** The always-present default Bot (Oxonian), pinned at the top of 「我的 Bots」. */
-export function MainBotLabel({ active, preview, time }: { active?: boolean; preview?: string; time?: string }) {
+export function MainBotLabel({ active, preview, time }: { active?: boolean; preview?: string | undefined; time?: string | undefined }) {
   return (
     <span className="flex min-w-0 flex-1 items-center gap-2.5">
       <span className={cn("relative shrink-0 rounded-full", active && "ring-1 ring-ring")}>

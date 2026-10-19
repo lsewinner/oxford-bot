@@ -106,7 +106,7 @@ export function BotSettings({ entry }: { entry: BotEntry }) {
   </>;
 }
 
-export function BotPresenceLabel({ bot, status = "ready", preview, time }: { bot: BotIdentity; status?: BotActivity["status"]; preview?: string; time?: string }) {
+export function BotPresenceLabel({ bot, status = "ready", preview, time }: { bot: BotIdentity; status?: BotActivity["status"] | undefined; preview?: string | undefined; time?: string | undefined }) {
   const working = botIsWorking(status);
   const line = status === "submitted" ? "正在思考…" : status === "streaming" ? "正在回复…" : status === "error" ? "回复中断" : preview || "还没有消息";
   return <>
