@@ -6,7 +6,7 @@ describe('personal provider tokens', () => {
   const fetcher=vi.fn().mockResolvedValue(Response.json({id:1}));vi.stubGlobal('fetch',fetcher);
   await validatePersonalToken('github','test-only-credential');
   expect(fetcher.mock.calls[0]?.[0]).toBe('https://api.github.com/user');
-  expect(fetcher.mock.calls[0]?.[1].redirect).toBe('error');
+  expect(fetcher.mock.calls[0]?.[1].redirect).toBe('manual');
  });
  it('rejects arbitrary hosts and paths before sending credentials',async()=>{
   const fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);
