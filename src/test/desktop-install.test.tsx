@@ -33,6 +33,7 @@ describe("desktop installation", () => {
     fireEvent(window, Object.assign(new Event("beforeinstallprompt"), { prompt: vi.fn().mockRejectedValue(new Error("not available")), userChoice: Promise.resolve({ outcome: "dismissed" }) }));
     fireEvent.click(screen.getByRole("button", { name: "安装桌面端" }));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "知道了" }));
     expect(screen.getByRole("button", { name: "安装桌面端" })).not.toBeDisabled();
   });
 });
