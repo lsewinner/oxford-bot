@@ -1,13 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
-import { readShare } from '@/lib/shares.functions';
+import { shareQuery } from '@/lib/share-query';
 import { MessageResponse } from '@/components/ai-elements/message';
 import { MediaCard } from '@/components/chat/media-card';
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.png';
 
-const shareQuery = (token: string) => queryOptions({ queryKey: ['public-share', token], queryFn: () => readShare({ data: { token } }), staleTime: 0, gcTime: 0, retry: false });
 export const Route = createFileRoute('/share/$token')({
   loader: ({ context, params }) => z.string().uuid().safeParse(params.token).success ? context.queryClient.ensureQueryData(shareQuery(params.token)) : null,
   head: () => ({ meta: [
