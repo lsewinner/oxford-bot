@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 // The policy pages only use Link for their footer nav, so stub it and render the
@@ -7,7 +8,7 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
   return {
     ...actual,
-    Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    Link: ({ children, to }: { children: ReactNode; to: string }) => (
       <a href={to}>{children}</a>
     ),
   };
