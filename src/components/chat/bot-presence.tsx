@@ -36,7 +36,7 @@ export function BotPresenceProvider({ children, scope = "guest" }: { children: R
   const update = useCallback((id: string, bot: BotIdentity) => {
     setEntries((previous) => previous.map((entry) => entry.id === id ? { ...entry, bot } : entry));
   }, []);
-  const removeThread = useCallback((id: string) => setEntries((previous) => previous.filter((entry) => entry.threadId !== id)), []);
+  const removeThread = useCallback((id: string) => setEntries((previous) => previous.filter((entry) => entry.conversationId !== id && entry.threadId !== id)), []);
   const linkConversation = useCallback((id: string, conversationId: string) => setEntries((previous) => previous.map((entry) => entry.id === id ? { ...entry, conversationId } : entry)), []);
   const [activities, setActivities] = useState<Record<string, BotActivity>>({});
   const report = useCallback((id: string, activity: BotActivity) => {

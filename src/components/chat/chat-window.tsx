@@ -27,6 +27,7 @@ import { useWebSearch } from "./web-search-context";
 import { useTools } from "./use-tools";
 import { BotAvatar, useBotPresence } from "./bot-presence";
 import { botsFromMessages, type BotIdentity } from "@/lib/bot-presence";
+import { guestMessagesKey, isGuestConversation } from "@/lib/guest-conversations";
 
 function errorText(err: Error) {
   try {
@@ -38,7 +39,7 @@ function errorText(err: Error) {
   return err.message || "出错了，请重试";
 }
 
-export function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMessages: UIMessage[] }) {
+export function ChatWindow({ threadId, initialMessages, activeBot = null }: { threadId: string; initialMessages: UIMessage[]; activeBot?: BotIdentity | null }) {
   const { mode } = useMode();
   const modeRef = useRef(mode);
   modeRef.current = mode;
@@ -59,7 +60,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: () => ({ threadId, mode: modeRef.current, webSearch: webSearchRef.current, demoTools: toolsRef.current }),
+        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, webSearch: webSearchRef.current, demoTools: toolsRef.current }),
       }),
     [threadId],
   );
@@ -94,12 +95,12 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   const requests = useMemo(() => botsFromMessages(threadId, messages), [threadId, messages]);
   useEffect(() => register(requests), [register, requests]);
   useEffect(() => {
-    if (threadId !== "guest") return;
-    try { localStorage.setItem("oxford:guest-messages:v1", JSON.stringify(messages)); }
+    if (!isGuestConversation(threadId)) return;
+    try { localStorage.setItem(guestMessagesKey(threadId), JSON.stringify(messages)); }
     catch { /* Bot provider reports local storage restrictions. */ }
   }, [threadId, messages]);
   const lastRequest = requests.at(-1);
-  const bot = entries.find((entry) => entry.id === lastRequest?.id)?.bot ?? lastRequest?.bot ?? entries.filter((entry) => entry.threadId === threadId).at(-1)?.bot ?? null;
+  const bot = activeBot ?? entries.find((entry) => entry.id === lastRequest?.id)?.bot ?? lastRequest?.bot ?? null;
   useEffect(() => {
     report(threadId, { bot, status });
   }, [threadId, bot, status, report]);
@@ -111,16 +112,17 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      {activeBot && <header className="flex shrink-0 items-center gap-3 border-b border-border px-5 py-3"><BotAvatar bot={activeBot} /><h1 className="min-w-0 truncate text-base font-medium">{activeBot.name}</h1></header>}
       <Conversation className="min-h-0 flex-1">
         <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 pb-10 pt-6">
-          {entries.filter((entry) => entry.threadId === threadId && entry.messageId.startsWith("manual-")).map((entry) => <div key={entry.id} id={`message-${entry.messageId}`} className="flex items-center gap-3"><BotAvatar bot={entry.bot} /><div><p className="text-sm font-medium">{entry.bot.name}</p><p className="text-sm text-muted-foreground">已创建并同步到「我的 Bots」。你需要我为你做什么？</p></div></div>)}
+          {activeBot && messages.length === 0 && <p className="text-sm text-muted-foreground">你需要我为你做什么？</p>}
           {messages.map((m, idx) => (
             <div key={m.id} id={`message-${m.id}`}>
             <ChatMessage
               message={m}
               bot={(() => {
                 const preceding = botsFromMessages(threadId, messages.slice(0, idx + 1)).at(-1);
-                return entries.find((entry) => entry.id === preceding?.id)?.bot ?? preceding?.bot ?? entries.find((entry) => entry.threadId === threadId && entry.messageId.startsWith("manual-"))?.bot ?? null;
+                return activeBot ?? entries.find((entry) => entry.id === preceding?.id)?.bot ?? preceding?.bot ?? null;
               })()}
               streaming={busy && idx === messages.length - 1}
               canRegenerate={!busy && idx === messages.length - 1 && m.role === "assistant"}

@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { messagesQuery } from "@/lib/chat-data";
+import { useBotPresence } from "@/components/chat/bot-presence";
 
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   head: () => ({ meta: [
@@ -20,6 +21,8 @@ export const Route = createFileRoute("/_authenticated/chat/$threadId")({
 function ThreadPage() {
   const { threadId } = Route.useParams();
   const { data } = useSuspenseQuery(messagesQuery(threadId));
+  const { entries } = useBotPresence();
+  const bot = entries.find((entry) => entry.conversationId === threadId || (entry.threadId === threadId && entry.messageId.startsWith("manual-")))?.bot;
   if (!data.exists) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
@@ -30,5 +33,5 @@ function ThreadPage() {
       </div>
     );
   }
-  return <ChatWindow key={threadId} threadId={threadId} initialMessages={data.messages} />;
+  return <ChatWindow key={threadId} threadId={threadId} initialMessages={data.messages} activeBot={bot ?? null} />;
 }
