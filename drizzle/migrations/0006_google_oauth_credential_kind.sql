@@ -1,0 +1,2 @@
+ALTER TABLE public.app_user_connections DROP CONSTRAINT IF EXISTS app_user_connections_credential_kind_check;
+ALTER TABLE public.app_user_connections ADD CONSTRAINT app_user_connections_credential_kind_check CHECK (credential_kind IN ('oauth', 'personal_token', 'google_oauth'));
