@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] GitHub/Slack 个人 Token：按账户加密保存、验证连接、直接 API 调用、状态与断开管理、保留写入确认及测试
+- [x] GitHub/Slack 个人 Token：按账户加密保存、验证后连接、固定服务地址直接调用、状态及断开、保留写入确认；77 项测试通过，未登录入口已实测
 - [ ] 个人 Token 真实账户端到端验证（需要用户登录并在应用内录入自己的 Token）
 
 - [x] 真实个人账户连接流程：GitHub、Gmail、Outlook、Drive、Slack 授权、加密保存、状态检查、启停与重连
