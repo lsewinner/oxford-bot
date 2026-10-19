@@ -1,7 +1,7 @@
 import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 
-/** The always-present default Bot (Oxford), pinned at the top of 「我的 Bots」. */
+/** The always-present default Bot (Oxonian), pinned at the top of 「我的 Bots」. */
 export function MainBotLabel({ active }: { active?: boolean }) {
   return (
     <span className="flex min-w-0 items-center gap-2.5">
@@ -10,7 +10,7 @@ export function MainBotLabel({ active }: { active?: boolean }) {
         <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-sidebar bg-primary" aria-hidden />
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-sm font-medium">Oxford</span>
+        <span className="block truncate text-sm font-medium">Oxonian</span>
         <span className="block truncate text-[11px] text-muted-foreground">主 Bot · 全能助手</span>
       </span>
     </span>
