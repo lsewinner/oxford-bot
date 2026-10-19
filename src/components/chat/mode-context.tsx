@@ -12,13 +12,11 @@ export function ModeProvider({ children }: { children: ReactNode }) {
   const [deepThink,setDeepThinkState]=useState(false);
   const [analysis,setAnalysis]=useState<string|null>(null);
   useEffect(() => {
-    const saved = localStorage.getItem("oxford:mode");
-    if (saved === "fun" || saved === "normal") setModeState(saved);
+    localStorage.removeItem("oxford:mode");
     setDeepThinkState(localStorage.getItem('oxford:deep-think')==='true');
   }, []);
   const setMode = (m: ChatMode) => {
     setModeState(m);
-    localStorage.setItem("oxford:mode", m);
   };
   const setDeepThink=(v:boolean)=>{setDeepThinkState(v);localStorage.setItem('oxford:deep-think',String(v));};
   return <Ctx.Provider value={{ mode, setMode, deepThink, setDeepThink, analysis, requestAnalysis:(text)=>{setDeepThink(true);setAnalysis(text);}, clearAnalysis:()=>setAnalysis(null) }}>{children}</Ctx.Provider>;

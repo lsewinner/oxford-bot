@@ -24,7 +24,7 @@ export function TrendsDrawer({compact=false}:{compact?:boolean}) {
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8">
         {isFetching && !data && <div className="flex items-center gap-2 py-8 text-muted-foreground"><LoaderCircleIcon className="size-4 animate-spin"/>正在读取实时资讯…</div>}
         {error && <p role="alert" className="py-4 text-sm text-destructive">热点暂时加载失败，请稍后点刷新重试。</p>}
-        {data?.errors.map(e=><p key={e} role="alert" className="py-2 text-xs text-destructive">{e}</p>)}
+        {data && data.errors.length>0 && data.items.length>0 && <p className="py-2 text-xs text-muted-foreground">部分来源暂时无法读取，已显示可用资讯。</p>}
         {data?.items.filter(item=>source==='all'||item.source===source).map((item,index)=><article key={item.id} className="border-b border-border py-5">
           <p className="mb-2 font-mono text-[11px] text-muted-foreground">{String(index+1).padStart(2,'0')} · {item.source==='github'?'GitHub Trending':'Hacker News'}</p>
           <a href={item.url} target="_blank" rel="noreferrer" className="flex items-start gap-2 text-sm font-medium break-words">{item.title}<ExternalLinkIcon className="mt-0.5 size-3 shrink-0"/></a>
