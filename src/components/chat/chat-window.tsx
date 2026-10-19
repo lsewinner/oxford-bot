@@ -1,7 +1,7 @@
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { CheckIcon, CopyIcon, RefreshCcwIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, FileTextIcon, GlobeIcon, RefreshCcwIcon, SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { pendingKey } from "@/lib/chat-data";
 import { Composer } from "./composer";
 import { useMode } from "./mode-context";
+import { useWebSearch } from "./web-search-context";
 
 function errorText(err: Error) {
   try {
@@ -37,6 +38,9 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   const { mode } = useMode();
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const { enabled: webSearch } = useWebSearch();
+  const webSearchRef = useRef(webSearch);
+  webSearchRef.current = webSearch;
   const queryClient = useQueryClient();
 
   const transport = useMemo(
@@ -48,7 +52,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: () => ({ threadId, mode: modeRef.current }),
+        body: () => ({ threadId, mode: modeRef.current, webSearch: webSearchRef.current }),
       }),
     [threadId],
   );
