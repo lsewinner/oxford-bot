@@ -17,6 +17,7 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
+import { PublicSummary } from './public-summary';
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -352,6 +353,7 @@ function ChatMessage({
             return <Shimmer key={i}>{`正在调用 ${part.type.replace('tool-service_', '')}…`}</Shimmer>;
           }
           if (part.type === "text") {
+            if(message.role==='assistant' && part.text.includes('<public_summary>'))return <PublicSummary key={i} text={part.text} streaming={streaming}/>;
             return message.role === "user" ? (
               <p key={i} className="whitespace-pre-wrap">
                 {part.text}
