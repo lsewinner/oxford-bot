@@ -226,12 +226,14 @@ function ChatMessage({
     .filter((p) => p.type === "text")
     .map((p) => (p as { text: string }).text)
     .join("\n");
-  const sources = message.parts
-    .filter((p) => p.type === "source-url")
-    .map((p) => {
-      const s = p as { url: string; title?: string };
-      return { url: s.url, title: s.title };
-    });
+  const sources = dedupeSources(
+    message.parts
+      .filter((p) => p.type === "source-url")
+      .map((p) => {
+        const s = p as { url: string; title?: string };
+        return { url: s.url, title: s.title };
+      }),
+  );
 
   return (
     <Message from={message.role}>
