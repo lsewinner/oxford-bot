@@ -36,7 +36,7 @@ export function ToolsCenter(){
  {!signedIn && <div className="flex items-center justify-between gap-3 border-t border-border pt-3 text-sm text-muted-foreground"><span>登录后连接你的个人账户</span><Button asChild size="sm"><Link to="/auth">登录</Link></Button></div>}
  {error && <p role="alert" className="break-words text-sm text-destructive">{error}</p>}
  <Button variant="ghost" size="sm" className="justify-start" disabled={Boolean(busy)} onClick={()=>refresh()}><RefreshCcwIcon/>刷新连接状态</Button>
- {tokenProvider && <section className="space-y-3 border-t border-border pt-4" aria-label={`${PROVIDERS[tokenProvider].name} Token 连接`}>
+ {tokenProvider && <section key={tokenProvider} ref={el=>{if(el)requestAnimationFrame(()=>{el.scrollIntoView({behavior:'smooth',block:'start'});el.querySelector<HTMLInputElement>('#personal-token')?.focus({preventScroll:true});});}} className="scroll-mt-4 space-y-3 rounded-lg border border-primary/40 p-4" aria-label={`${PROVIDERS[tokenProvider].name} Token 连接`}>
    <h2 className="text-sm font-medium">{PROVIDERS[tokenProvider].name} · 个人 Token</h2>
    {signedIn ? <><p className="text-xs text-muted-foreground">Token 仅用于你的账户，加密保存；不会进入聊天或返回浏览器。断开后移除保存的 Token，服务端撤销请前往原服务。</p>
    <label className="block text-sm" htmlFor="personal-token">{tokenProvider==='github'?'Personal Access Token':tokenProvider==='cloudflare'?'API Token':'User / Bot Token'}</label>
