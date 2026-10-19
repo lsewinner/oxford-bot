@@ -137,6 +137,7 @@ function ChatLayout() {
   const [open, setOpen] = useState(false);
   return (
     <ModeProvider>
+      <WebSearchProvider>
       <div className="flex h-dvh overflow-hidden bg-background">
         <aside className="hidden w-64 shrink-0 border-r border-sidebar-border md:block">
           <Sidebar />
@@ -167,6 +168,7 @@ function ChatLayout() {
           </div>
         </main>
       </div>
+      </WebSearchProvider>
     </ModeProvider>
   );
 }
