@@ -17,16 +17,25 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  const {callAsAppUser,appUserReconnectRequired}=await import('@/integrations/lovable/appUserConnector');
  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
  const paths={github:'/user',google_mail:'/gmail/v1/users/me/profile',microsoft_outlook:'/me?$select=displayName',google_drive:'/drive/v3/about?fields=user(displayName)',slack:'/api/auth.test'};
+ const withRetry=async<T>(fn:()=>Promise<T>)=>{try{return await fn();}catch(first){await new Promise(r=>setTimeout(r,800));try{return await fn();}catch{throw first;}}};
  return Promise.all(providerId.options.map(async(id)=>{
-   const configured=Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const row=await getConnection(context.userId,id);
-   let reconnectRequired=row?.reconnect_required ?? false;let connectionError='';
-   if(row && !reconnectRequired){
-     try{
-       if(row.credential_kind==='personal_token'){
-         const {supportsPersonalToken,validatePersonalToken}=await import('./connections/personal-token.server');
-         if(!supportsPersonalToken(id))throw new Error('不支持此服务的个人 Token');
-         await validatePersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'));
-       } else {const response=await callAsAppUser({gatewayBaseUrl:BASE,connectorId:id,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),path:paths[id],requiredScopes:PROVIDERS[id].scopes});
+  const configured=id==='google_mail'||id==='google_drive'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const row=await getConnection(context.userId,id);
+  let reconnectRequired=row?.reconnect_required ?? false;let connectionError='';
+  if(row && !reconnectRequired){
+   try{
+     if(row.credential_kind==='personal_token'){
+       const {supportsPersonalToken,validatePersonalToken}=await import('./connections/personal-token.server');
+       if(!supportsPersonalToken(id))throw new Error('不支持此服务的个人 Token');
+       await withRetry(()=>validatePersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token')));
+     } else if(row.credential_kind==='google_oauth'){
+       const {callWithGoogleToken,GoogleReconnectError,isGoogleProvider}=await import('./connections/google-oauth.server');
+       if(!isGoogleProvider(id))throw new Error('此服务不支持 Google 授权');
+       try{
+         const response=await withRetry(()=>callWithGoogleToken(id,decryptConnectionKey(row.connection_key_ciphertext),paths[id]));
+         if(!response.ok)connectionError=`${PROVIDERS[id].name} (${response.status})`;
+         else await response.arrayBuffer();
+       }catch(e){if(e instanceof GoogleReconnectError){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}else throw e;}
+     } else {const response=await callAsAppUser({gatewayBaseUrl:BASE,connectorId:id,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),path:paths[id],requiredScopes:PROVIDERS[id].scopes});
        if(await appUserReconnectRequired(response)){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}
        else if(!response.ok){connectionError=`${PROVIDERS[id].name} (${response.status}): ${(await response.text()).slice(0,800)}`;}
        else if(id==='slack'){const b=await response.json();if(b.ok===false)connectionError=`Slack: ${b.error}`;}
