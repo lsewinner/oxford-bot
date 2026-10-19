@@ -113,7 +113,9 @@ export async function handleChat(request: Request): Promise<Response> {
         reasoningEffort: "low",
         reasoningSummary: "auto",
         store: false,
-        include: ["reasoning.encrypted_content"],
+        include: webSearch
+          ? ["reasoning.encrypted_content", "web_search_call.action.sources"]
+          : ["reasoning.encrypted_content"],
       },
     },
   } as Parameters<typeof streamText>[0]);
