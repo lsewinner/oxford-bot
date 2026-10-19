@@ -14,6 +14,13 @@ describe("multimodal attachments", () => {
   it("rejects unsupported executable uploads", () => {
     expect(() => validateAttachments(message("application/x-executable", "data:application/x-executable;base64,YQ=="))).toThrow();
   });
+  it("rejects more than four attachments on one message", () => {
+    const messages = message("image/png", "data:image/png;base64,YQ==");
+    const first = messages[0];
+    if (!first) throw new Error("Missing message");
+    first.parts = Array.from({ length: 5 }, () => ({ type: "file", mediaType: "image/png", url: "data:image/png;base64,YQ==" }));
+    expect(() => validateAttachments(messages)).toThrow("4");
+  });
   it("retains attachment-only first sends", () => {
     const input = { text: "", files: [{ type: "file", mediaType: "application/pdf", url: "data:application/pdf;base64,YQ==" }] };
     expect(parsePendingInput(JSON.stringify(input))).toEqual(input);

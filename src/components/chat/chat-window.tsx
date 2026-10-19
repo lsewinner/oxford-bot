@@ -74,6 +74,8 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
     onError: (e) => toast.error(errorText(e)),
     onFinish: () => { queryClient.invalidateQueries({ queryKey: ["threads"] }); queryClient.invalidateQueries({ queryKey: ["bot-history"] }); },
   });
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   const sentPending = useRef(false);
   useEffect(() => {
@@ -99,7 +101,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
   useEffect(() => {
     if (!isGuestConversation(threadId)) return;
     try { localStorage.setItem(guestMessagesKey(threadId), JSON.stringify(messages)); }
-    catch { /* Bot provider reports local storage restrictions. */ }
+    catch { toast.error("本机存储空间不足，请下载图片；当前对话可能无法完整保存"); }
   }, [threadId, messages]);
   const lastRequest = requests.at(-1);
   const bot = activeBot ?? entries.find((entry) => entry.id === lastRequest?.id)?.bot ?? lastRequest?.bot ?? null;
@@ -131,7 +133,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
               onRegenerate={() => regenerate()}
               fresh={!initialMessages.some((message) => message.id === m.id)}
               onImageComplete={(toolCallId, image) => {
-                const updated = messages.map((message) => message.id !== m.id ? message : { ...message, parts: message.parts.map((part) => part.type === "tool-generate_image" && part.toolCallId === toolCallId && part.state === "output-available" ? { ...part, output: { ...(part.output as object), image } } : part) });
+                const updated = messagesRef.current.map((message) => message.id !== m.id ? message : { ...message, parts: message.parts.map((part) => part.type === "tool-generate_image" && part.toolCallId === toolCallId && part.state === "output-available" ? { ...part, output: { ...(part.output as object), image } } : part) });
                 setMessages(updated);
                 if (!isGuestConversation(threadId)) {
                   const saved = updated.find((message) => message.id === m.id);
