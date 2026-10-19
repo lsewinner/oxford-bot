@@ -186,6 +186,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             ),
         )}
       </nav>
+      <AdminEntry />
       <UpgradeEntry />
       <div className="px-3 pb-1"><DesktopInstallButton sidebar /></div>
       <AccountProfile user={user} onSignOut={signOut} />
