@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { botFromMessages, botFromRequest, botsFromMessages, botIsWorking, mergeBotEntries, parseBotEntries } from "@/lib/bot-presence";
+import { botFromMessages, botFromRequest, botsFromMessages, botIsWorking, mergeBotEntries, normalizeBotName, parseBotEntries } from "@/lib/bot-presence";
 
 describe("Bot request identity and execution state", () => {
   it("recognizes a website Bot without requiring GitHub or code keywords", () => {
@@ -7,6 +7,12 @@ describe("Bot request identity and execution state", () => {
   });
   it("recognizes a code-writing Bot", () => {
     expect(botFromRequest("做一个写代码的bot")).toEqual({ name: "开发 Bot", kind: "code" });
+  });
+  it("renames stored Nightwave entries to Oxford Bot on read", () => {
+    expect(normalizeBotName("Nightwave AI Chat")).toBe("Oxford Bot");
+    expect(normalizeBotName("nightwave chat")).toBe("Oxford Bot");
+    expect(normalizeBotName("邮件 Bot")).toBe("邮件 Bot");
+    expect(parseBotEntries('[{"id":"a","threadId":"guest","messageId":"a","bot":{"name":"Nightwave AI Chat","kind":"mail"}}]')[0]?.bot.name).toBe("Oxford Bot");
   });
   it("rejects corrupted stored entries instead of rendering unknown cat breeds", () => {
     expect(parseBotEntries('{"entries":[]}')).toEqual([]);
