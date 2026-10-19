@@ -8,6 +8,11 @@ describe('personal provider tokens', () => {
   expect(fetcher.mock.calls[0]?.[0]).toBe('https://api.github.com/user');
   expect(fetcher.mock.calls[0]?.[1].redirect).toBe('manual');
  });
+ it('turns a provider redirect into an error response instead of following it',async()=>{
+  vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(null,{status:302,headers:{location:'https://evil.example'}})));
+  const res=await callWithPersonalToken('github','test-only-credential','/user');
+  expect(res.status).toBe(502);
+ });
  it('rejects arbitrary hosts and paths before sending credentials',async()=>{
   const fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);
   await expect(callWithPersonalToken('github','test-only-credential','https://other.invalid/user')).rejects.toThrow('不支持');
