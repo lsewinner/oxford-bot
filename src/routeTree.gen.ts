@@ -18,6 +18,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
+import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oauth/return'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const AuthenticatedChatThreadIdRoute =
     path: '/$threadId',
     getParentRoute: () => AuthenticatedChatRoute,
   } as any)
+const ApiPublicOauthReturnRoute = ApiPublicOauthReturnRouteImport.update({
+  id: '/api/public/oauth/return',
+  path: '/api/public/oauth/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
+  '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat': typeof AuthenticatedChatIndexRoute
+  '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
+  '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/chat/$threadId'
     | '/chat/'
+    | '/api/public/oauth/return'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/chat/$threadId'
     | '/chat'
+    | '/api/public/oauth/return'
   id:
     | '__root__'
     | '/'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/chat/'
+    | '/api/public/oauth/return'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -136,6 +148,7 @@ export interface RootRouteChildren {
   GuestRoute: typeof GuestRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
+  ApiPublicOauthReturnRoute: typeof ApiPublicOauthReturnRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -203,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatThreadIdRouteImport
       parentRoute: typeof AuthenticatedChatRoute
     }
+    '/api/public/oauth/return': {
+      id: '/api/public/oauth/return'
+      path: '/api/public/oauth/return'
+      fullPath: '/api/public/oauth/return'
+      preLoaderRoute: typeof ApiPublicOauthReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -237,6 +257,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuestRoute: GuestRoute,
   ApiChatRoute: ApiChatRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
+  ApiPublicOauthReturnRoute: ApiPublicOauthReturnRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
