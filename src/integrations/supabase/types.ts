@@ -47,6 +47,47 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_shares: {
+        Row: {
+          created_at: string
+          id: string
+          messages: Json
+          revoked_at: string | null
+          thread_id: string | null
+          title: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          messages: Json
+          revoked_at?: string | null
+          thread_id?: string | null
+          title: string
+          token?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          messages?: Json
+          revoked_at?: string | null
+          thread_id?: string | null
+          title?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_shares_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           created_at: string
@@ -150,6 +191,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      read_conversation_share: {
+        Args: { p_token: string }
+        Returns: {
+          created_at: string
+          messages: Json
+          title: string
+        }[]
+      }
       thread_previews: {
         Args: { p_thread_ids: string[] }
         Returns: {
