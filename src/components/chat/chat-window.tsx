@@ -33,11 +33,7 @@ function errorText(err: Error) {
   return err.message || "出错了，请重试";
 }
 
-let INSTANCE = 0;
-
 export function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMessages: UIMessage[] }) {
-  const self = useRef(++INSTANCE).current;
-  console.warn("[pd] render", self, threadId.slice(0, 4), "msgs:", initialMessages.length);
   const { mode } = useMode();
   const modeRef = useRef(mode);
   modeRef.current = mode;
@@ -67,24 +63,19 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
 
   const sentPending = useRef(false);
   useEffect(() => {
-    console.warn("[pd] effect", self);
     if (sentPending.current) return;
     sentPending.current = true;
     const key = pendingKey(threadId);
     const pending = sessionStorage.getItem(key);
     if (pending && initialMessages.length === 0) {
       sessionStorage.removeItem(key);
-      const t = setTimeout(() => {
-        console.warn("[pd] send", self);
-        sendMessage({ text: pending });
-      }, 0);
+      // Defer to the next macrotask. Sending synchronously from this effect is
+      // dropped by the chat store before it dispatches, losing the first question.
+      setTimeout(() => sendMessage({ text: pending }), 0);
       const refresh = setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
-      return () => {
-        console.warn("[pd] cleanup", self, "timer", !!t);
-        clearTimeout(refresh);
-      };
+      return () => clearTimeout(refresh);
     }
-  }, [threadId, initialMessages.length, sendMessage, queryClient, self]);
+  }, [threadId, initialMessages.length, sendMessage, queryClient]);
 
   const busy = status === "submitted" || status === "streaming";
   const lastAssistantHasText =
