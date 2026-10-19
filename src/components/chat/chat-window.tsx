@@ -44,6 +44,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
       new DefaultChatTransport({
         api: "/api/chat",
         headers: async (): Promise<Record<string, string>> => {
+          console.warn("[pd] headers");
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
@@ -67,13 +68,16 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     sentPending.current = true;
     const key = pendingKey(threadId);
     const pending = sessionStorage.getItem(key);
+    console.warn("[pd] schedule", JSON.stringify({ pending: !!pending, len: initialMessages.length }));
     if (pending && initialMessages.length === 0) {
       sessionStorage.removeItem(key);
-      // Defer past the commit: sending synchronously from this effect gets the
-      // request aborted before it is issued (the chat is torn down and remounted).
-      const send = setTimeout(() => sendMessage({ text: pending }), 0);
+      const send = setTimeout(() => {
+        console.warn("[pd] fire");
+        sendMessage({ text: pending });
+      }, 0);
       const refresh = setTimeout(() => queryClient.invalidateQueries({ queryKey: ["threads"] }), 1500);
       return () => {
+        console.warn("[pd] cleanup");
         clearTimeout(send);
         clearTimeout(refresh);
       };
