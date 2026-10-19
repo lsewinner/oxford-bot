@@ -17,11 +17,11 @@
 - Do not override Vite’s Rolldown version (why: incompatible versions break diagram initialization).
 - First sends use sessionStorage and post-mount `setTimeout(..., 0)`, never synchronous effects (why: early sends disappear; chat-first-message tests guard this).
 - ChatMessage dedupes citation domains and source-url parts; Streamdown links and cards share superscript numbering (why: models do not reliably emit numbered citations).
-- Chat response headers must never wait for gateway run-ID discovery or acquire a replacement stream reader; forward the original body and attach diagnostics only when already available (why: diagnostic metadata must not block first output, errors, or cancellation).
+- Chat responses forward the original body immediately; never wait on run-ID discovery or re-read the stream (why: must not block output or cancellation).
 - External tool catalog and demo tools share `src/lib/tool-catalog.ts`; demos are explicitly labeled and never claim real account connectivity (why: unconfigured provider OAuth must not expose or fabricate personal data).
 - Real provider writes are immutable server-side proposals claimed atomically by the owning user's confirmation; result cards read persisted action outcomes after refresh (why: model requests are not user approval, and repeated clicks must not repeat writes).
 - Guest chat uses `/guest` with local conversation IDs and storage per Bot; transport maps these IDs to `threadId: guest`, while private thread reads/writes require a verified bearer token (why: independent local histories must not weaken cloud-history ownership).
-- Bot presence uses an account-scoped local registry keyed by source thread/message; explicit overrides beat history parsing and scope changes remount state. Dedicated chats persist conversationId; renames update it (or threadId) through owner RLS; guest IDs are deterministic (why: preserve edits and account isolation).
+- Bot presence: account-scoped local registry keyed by source thread/message; overrides beat history parsing; renames go through owner RLS; guest IDs deterministic (why: preserve edits and isolation).
 - Cat avatar IDs and role categories are separate types; a shared breed catalog drives new/edit pickers and bundled images (why: expanding avatar choices must not change Bot roles or invalidate previous selections).
 - Attachments use AI SDK file parts with inline validated image/PDF data and text extraction before model conversion; pending first sends serialize the complete payload (why: all conversation entry paths must retain attachments without fetching arbitrary URLs).
 - Image creation is an AI-selected generate_image task rendered by the client through a dedicated passthrough SSE image route; completed tool outputs retain the image while model replay strips image bytes (why: previews must not block chat headers or inflate subsequent tool context).
@@ -36,3 +36,4 @@
 - Trends use fixed server-side GitHub Trending/Hacker News feeds and the current composer (why: preserve active-Bot context).
 - Nickname and compact avatar use authenticated owner metadata updates, never roles (why: sync identity without new tables).
 - Pro access: `subscriptions` rows are written only by the signed Stripe webhook; server checks use `has_active_subscription` with the environment derived from the build's client token, and gated server paths (chat Deep Think/persona, connection starts) re-check Pro (why: client gates are UX only).
+- Admin `/admin`: `has_role` check before supabaseAdmin in admin.functions; actions audited. Quotas via `consume_daily_message` RPC; overrides/bans/granted Pro in `account_controls`, honored by `has_active_subscription` (why: server is the only source of truth).
