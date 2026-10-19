@@ -168,20 +168,27 @@ function SearchSteps({ part, streaming }: { part: UIMessage["parts"][number]; st
   );
 }
 
-function SourceCards({ sources }: { sources: { url: string; title?: string | undefined }[] }) {
+type Source = { url: string; title?: string | undefined };
+
+function dedupeSources(sources: Source[]): Source[] {
   const seen = new Set<string>();
-  const unique = sources.filter((s) => {
-    const d = domainOf(s.url);
-    if (seen.has(d)) return false;
-    seen.add(d);
-    return true;
-  }).slice(0, 8);
-  if (unique.length === 0) return null;
+  return sources
+    .filter((s) => {
+      const d = domainOf(s.url);
+      if (seen.has(d)) return false;
+      seen.add(d);
+      return true;
+    })
+    .slice(0, 8);
+}
+
+function SourceCards({ sources }: { sources: Source[] }) {
+  if (sources.length === 0) return null;
   return (
     <div className="mt-3 flex flex-col gap-1.5">
       <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">来源</div>
       <div className="grid gap-1.5 sm:grid-cols-2">
-        {unique.map((s, i) => (
+        {sources.map((s, i) => (
           <a
             key={i}
             href={s.url}
