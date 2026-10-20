@@ -43,17 +43,19 @@ callback or associated-domain entitlement is claimed yet.
 
 Native binaries, microphone playback/recording, actual device upload/sharing,
 keyboard behavior and session persistence still require iPhone/Android testing.
-The existing 512px web icon is reused for development; final store artwork needs
-a high-resolution opaque 1024px source. Do not treat JavaScript export success as
-a successful native build, TestFlight upload, or Apple review.
+The existing 512px web icon is reused for development. Prebuild generated an
+opaque 1024px iOS icon suitable for building; a higher-resolution original is
+recommended for final store artwork. Do not treat JavaScript export or native
+project generation as a successful cloud build, TestFlight upload, or Apple review.
 
 ## Local checks
 
 Preparation validation (2026-10-20): strict TypeScript check and 13 navigation /
 download tests passed. Expo resolved SDK 58 compatible dependencies from its
 bundled version map; online React Native Directory validation was unavailable.
-iOS and Android Hermes bundles exported successfully. No signed native binary or
-device test is represented by these checks.
+iOS and Android Hermes bundles exported successfully, and native project
+generation (Expo prebuild) completed for both platforms. No signed cloud binary,
+TestFlight availability or device test is represented by these checks.
 
 From this directory, with Node 24 and npm:
 
@@ -64,37 +66,49 @@ npx expo install --check
 npx expo export --platform ios --platform android
 ```
 
-## Connect the existing cloud accounts
+## Connected cloud accounts
 
-Use the existing `lsewinner` Expo account. No EAS project ID, Apple team, app ID or
-credentials are invented or borrowed from a different app. Run these from
-`mobile/`, after secure interactive login:
+Oxford Bot is linked to its own Expo and App Store Connect records. The mobile
+configuration is prepared in [PR #1](https://github.com/lsewinner/oxford-bot/pull/1).
+
+| Setting | Connected value |
+| --- | --- |
+| Expo account / project | `lsewinner/oxford-bot` |
+| EAS project ID | `42f5e6d6-6032-4241-a8a6-8f449cd9c9fd` |
+| Apple Developer team | `A2JY8H9J72` |
+| App Store Connect app ID | `6824852336` |
+| iOS bundle / Android package | `com.oxfordintelligence.oxfordbot` |
+| EAS CLI | `25.2.0` |
+
+`app.json` contains the EAS project link, and `eas.json` targets Oxford Bot's
+existing Apple team and App Store Connect app. Use these records for subsequent
+builds. Before signing or submitting, verify the active account, project, team,
+bundle identifier and destination app against this table.
+
+From `mobile/`, use EAS's secure interactive login and complete any device/browser
+authentication prompts when required:
 
 ```sh
-npx eas-cli@latest login
-npx eas-cli@latest whoami
-npx eas-cli@latest init
+npx eas-cli@25.2.0 login
+npx eas-cli@25.2.0 whoami
 ```
 
-Link/create the Oxford Bot project, then commit the generated
-`expo.extra.eas.projectId` in `app.json`. Confirm bundle/package identifier
-`com.oxfordintelligence.oxfordbot` is available. Create/select Oxford Bot's own App
-Store Connect record and add its numeric `ascAppId` to `submit.testflight.ios` in
-`eas.json`. Select the correct existing Apple Developer team and use EAS-managed
-signing. Do not commit `.p8`, certificates, passwords or tokens.
+Use EAS-managed signing for this app. Keep credentials in the secure account or
+credential flow; do not put passwords, verification codes or tokens into chat or
+command arguments. Do not commit `.p8`, certificates, passwords or tokens.
 
 ## First builds
 
 ```sh
-npx eas-cli@latest build --platform android --profile android-preview
-npx eas-cli@latest build --platform ios --profile ios-simulator
-npx eas-cli@latest build --platform ios --profile testflight
+npx eas-cli@25.2.0 build --platform android --profile android-preview
+npx eas-cli@25.2.0 build --platform ios --profile ios-simulator
+npx eas-cli@25.2.0 build --platform ios --profile testflight
 ```
 
 After the signed iOS build succeeds, submit its **specific build ID**:
 
 ```sh
-npx eas-cli@latest submit --platform ios --profile testflight --id BUILD_ID
+npx eas-cli@25.2.0 submit --platform ios --profile testflight --id BUILD_ID
 ```
 
 Start with internal TestFlight testers. Wait for App Store Connect processing;
