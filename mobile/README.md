@@ -111,6 +111,17 @@ After the signed iOS build succeeds, submit its **specific build ID**:
 npx eas-cli@25.2.0 submit --platform ios --profile testflight --id BUILD_ID
 ```
 
+## Verified cloud builds (2026-10-20)
+
+| Platform | Version | EAS build | Result |
+| --- | --- | --- | --- |
+| Android APK | `0.1.0 (3)` | [4b0a5380](https://expo.dev/accounts/lsewinner/projects/oxford-bot/builds/4b0a5380-0ef0-40f3-bf17-414e267a8214) | Succeeded |
+| iOS App Store IPA | `0.1.0 (1)` | [73811502](https://expo.dev/accounts/lsewinner/projects/oxford-bot/builds/73811502-3f14-4c95-ac50-6258f7a6be45) | Succeeded |
+
+Both cloud builds passed the post-install typecheck and test gate. These are
+signed native artifacts; physical-device acceptance remains outstanding.
+The iOS binary uses system HTTPS and declares no non-exempt encryption.
+
 Start with internal TestFlight testers. Wait for App Store Connect processing;
 record the build number and actual TestFlight availability. No tester invitations
 or public release is performed by this repository configuration. Android APKs
