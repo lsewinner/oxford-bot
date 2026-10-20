@@ -31,6 +31,7 @@ function userClient(token: string) {
 export async function handleChat(request: Request): Promise<Response> {
   const providerSecrets = {
     OPENAI_API_KEY: process.env['OPENAI_API_KEY'],
+    OPENAI_MODEL: process.env['OPENAI_MODEL'],
     ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'],
     LOVABLE_API_KEY: process.env['LOVABLE_API_KEY'],
   };
