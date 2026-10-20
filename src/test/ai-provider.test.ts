@@ -36,17 +36,17 @@ describe('own-account AI routing', () => {
       const reader = stream.stream.getReader();
       while (!(await reader.read()).done) { /* consume */ }
       if (!captured) throw new Error('Request was not sent');
-      expect(captured.body.stream).toBe(true);
+      expect(captured.body['stream']).toBe(true);
       if (kind === 'anthropic') {
         expect(captured.url).toBe('https://api.anthropic.com/v1/messages');
         expect(captured.headers.get('x-api-key')).toBe('anthropic-test');
-        expect(captured.body.model).toBe('claude-sonnet-4-6');
-        expect(captured.body.thinking).toEqual({ type: 'adaptive' });
+        expect(captured.body['model']).toBe('claude-sonnet-4-6');
+        expect(captured.body['thinking']).toEqual({ type: 'adaptive' });
       } else {
         expect(captured.url).toBe(kind === 'openai' ? 'https://api.openai.com/v1/responses' : 'https://ai.gateway.lovable.dev/v1/responses');
-        expect(captured.body.model).toBe(kind === 'openai' ? 'gpt-5.6' : 'openai/gpt-6-astra');
-        expect(captured.body.store).toBe(false);
-        expect(captured.body.reasoning).toMatchObject({ effort: 'high', summary: 'detailed' });
+        expect(captured.body['model']).toBe(kind === 'openai' ? 'gpt-5.6' : 'openai/gpt-6-astra');
+        expect(captured.body['store']).toBe(false);
+        expect(captured.body['reasoning']).toMatchObject({ effort: 'high', summary: 'detailed' });
       }
       expect(captured.headers.get('Lovable-API-Key')).toBe(kind === 'gateway' ? 'gateway-test' : null);
       expect(captured.headers.get('X-Lovable-AIG-Run-ID')).toBe(kind === 'gateway' ? 'incoming-run' : null);

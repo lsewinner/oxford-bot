@@ -29,7 +29,7 @@ export function createChatProvider(request: Request, secrets: ChatProviderSecret
       kind: selected.kind,
       model: provider('claude-sonnet-4-6'),
       webSearch: () => provider.tools.webSearch_20260209(),
-      providerOptions: { anthropic: { thinking: { type: 'adaptive' as const }, effort: deepThink ? 'high' as const : 'low' as const } },
+      providerOptions: { anthropic: { sendReasoning: false, thinking: { type: 'adaptive' as const }, effort: deepThink ? 'high' as const : 'low' as const } },
       wrapResponse: (response: Response) => response,
     };
   }
