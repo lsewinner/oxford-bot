@@ -7,6 +7,7 @@ export type ChatProviderSecrets = {
   OPENAI_API_KEY?: string | undefined;
   ANTHROPIC_API_KEY?: string | undefined;
   LOVABLE_API_KEY?: string | undefined;
+  OPENAI_MODEL?: string | undefined;
 };
 
 /** Selection is configuration-only: failures never trigger a billed fallback. */
@@ -37,7 +38,7 @@ export function createChatProvider(request: Request, secrets: ChatProviderSecret
     const provider = createOpenAI({ apiKey: selected.apiKey, baseURL: 'https://api.openai.com/v1' });
     return {
       kind: selected.kind,
-      model: provider.responses('gpt-5.6'),
+      model: provider.responses(secrets.OPENAI_MODEL?.trim() || 'gpt-6-sol'),
       webSearch: () => provider.tools.webSearch(),
       providerOptions: { openai: thinkOptions(deepThink) },
       wrapResponse: (response: Response) => response,
@@ -51,7 +52,7 @@ export function createChatProvider(request: Request, secrets: ChatProviderSecret
   });
   return {
     kind: selected.kind,
-    model: provider.responses('openai/gpt-6-astra'),
+    model: provider.responses('openai/gpt-6-sol'),
     webSearch: () => provider.tools.webSearch(),
     providerOptions: { openai: thinkOptions(deepThink) },
     wrapResponse: (response: Response) => withLovableAiGatewayRunIdHeader(response, runIdFetch),
