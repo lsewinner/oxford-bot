@@ -56,7 +56,7 @@ describe('own-account AI routing', () => {
   }
 
   it('never falls back or retries official credential failures', async () => {
-    const fetchSpy = vi.fn(async () => new Response(JSON.stringify({ error: { message: 'Invalid API key', type: 'invalid_request_error' } }), { status: 401, headers: { 'content-type': 'application/json' } }));
+    const fetchSpy = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({ error: { message: 'Invalid API key', type: 'invalid_request_error' } }), { status: 401, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchSpy);
     const provider = createChatProvider(new Request('http://localhost/api/chat'), { OPENAI_API_KEY: 'invalid-test', LOVABLE_API_KEY: 'gateway-test' }, false);
     if (!provider) throw new Error('Expected provider');

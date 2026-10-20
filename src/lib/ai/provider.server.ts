@@ -4,9 +4,9 @@ import { thinkOptions } from '@/lib/bot-config';
 import { createLovableAiGatewayRunIdFetch, getLovableAiGatewayRunId, withLovableAiGatewayRunIdHeader } from './run-id';
 
 export type ChatProviderSecrets = {
-  OPENAI_API_KEY?: string;
-  ANTHROPIC_API_KEY?: string;
-  LOVABLE_API_KEY?: string;
+  OPENAI_API_KEY?: string | undefined;
+  ANTHROPIC_API_KEY?: string | undefined;
+  LOVABLE_API_KEY?: string | undefined;
 };
 
 /** Selection is configuration-only: failures never trigger a billed fallback. */
