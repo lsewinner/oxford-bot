@@ -122,6 +122,14 @@ Both cloud builds passed the post-install typecheck and test gate. These are
 signed native artifacts; physical-device acceptance remains outstanding.
 The iOS binary uses system HTTPS and declares no non-exempt encryption.
 
+App Store Connect processed iOS `0.1.0 (1)` successfully. The build is linked to
+the `Oxford Bot Internal` TestFlight group, with manual distribution and saved
+test instructions. The group currently has no testers; no invitations or public
+App Store release have been sent.
+
+- [TestFlight group](https://appstoreconnect.apple.com/teams/8ad2cbbd-d559-4740-9d55-62144f46a232/apps/6824852336/testflight/groups/1624c515-1ddb-45cc-8b2a-774f7abd53a9)
+- [Successful EAS submission](https://expo.dev/accounts/lsewinner/projects/oxford-bot/submissions/938dde20-226e-4831-a032-d7535cd55f37)
+
 Start with internal TestFlight testers. Wait for App Store Connect processing;
 record the build number and actual TestFlight availability. No tester invitations
 or public release is performed by this repository configuration. Android APKs
