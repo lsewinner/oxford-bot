@@ -15,7 +15,8 @@
         "NSMicrophoneUsageDescription": "Record a voice message to send to Oxford Bot when you tap the microphone.",
         "NSCameraUsageDescription": "Take a photo to attach to your Oxford Bot conversation.",
         "NSPhotoLibraryUsageDescription": "Choose a photo to attach to your Oxford Bot conversation."
-      }
+      },
+      "appleTeamId": "A2JY8H9J72"
     },
     "android": {
       "package": "com.oxfordintelligence.oxfordbot",
@@ -43,6 +44,11 @@
         }
       ],
       "expo-sharing"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "42f5e6d6-6032-4241-a8a6-8f449cd9c9fd"
+      }
+    }
   }
 }
