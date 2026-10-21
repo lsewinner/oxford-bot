@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { callWithPersonalToken, personalTokenIdentity, validatePersonalToken, parseFlomoWebhook } from '@/lib/connections/personal-token.server';
 import { isWrite, validateOperation } from '@/lib/connections/catalog';
-const mocks=vi.hoisted(()=>({get:vi.fn(),insert:vi.fn()}));
+const mocks=vi.hoisted(()=>({get:vi.fn(),insert:vi.fn(),token:'' as string}));
 vi.mock('@/lib/connections/storage.server',()=>({getConnection:mocks.get,decryptConnectionKey:()=>mocks.token,rotateMicrosoftCredential:vi.fn(),rotateLinearCredential:vi.fn()}));
 vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{from:()=>({insert:mocks.insert})}}));
 import { executeOperation } from '@/lib/connections/execute.server';
 const FLOMO='https://flomoapp.com/iwh/abc123/def456/';
 const fetcher=vi.fn();
-beforeEach(()=>{vi.clearAllMocks();vi.stubGlobal('fetch',fetcher);(mocks as any).token='gitee-token';
+beforeEach(()=>{vi.clearAllMocks();vi.stubGlobal('fetch',fetcher);mocks.token='gitee-token';
  mocks.get.mockResolvedValue({enabled:true,credential_kind:'personal_token',account_key:'gt-7',connection_key_ciphertext:'enc'});
  mocks.insert.mockReturnValue({select:()=>({single:async()=>({data:{id:'p'},error:null})})});});
 afterEach(()=>vi.unstubAllGlobals());
@@ -20,8 +20,8 @@ describe('Gitee',()=>{
   expect(await personalTokenIdentity('gitee','gitee-token',body)).toEqual({account:'gt-7',label:'Michael'});
  });
  it('blocks deletes, other hosts and traversal',async()=>{
-  for(const [path,method] of [['/repos/a/b','DELETE'],['/repos/a/../x/issues?state=open&per_page=20','GET'],['https://evil.example/user','GET']])
-   await expect(callWithPersonalToken('gitee','t',path!,{method})).rejects.toThrow();
+  for(const [path,method] of <[string,string][]>[['/repos/a/b','DELETE'],['/repos/a/../x/issues?state=open&per_page=20','GET'],['https://evil.example/user','GET']])
+   await expect(callWithPersonalToken('gitee','t',path,{method})).rejects.toThrow();
   expect(fetcher).not.toHaveBeenCalled();
  });
  it('requires owner/repo and holds issue creation for confirmation',async()=>{
@@ -43,7 +43,7 @@ describe('Flomo',()=>{
   await validatePersonalToken('flomo',FLOMO);expect(fetcher).not.toHaveBeenCalled();
  });
  it('memo writes need confirmation and post content to the saved URL',async()=>{
-  (mocks as any).token=FLOMO;
+  mocks.token=FLOMO;
   expect(isWrite('create_memo')).toBe(true);
   expect((await executeOperation('owner','flomo',{operation:'create_memo',text:'#idea hi'})).status).toBe('confirmation_required');
   expect(fetcher).not.toHaveBeenCalled();
@@ -52,7 +52,7 @@ describe('Flomo',()=>{
   expect(fetcher.mock.calls[0]?.[0]).toBe(FLOMO);expect(JSON.parse(fetcher.mock.calls[0]?.[1].body)).toEqual({content:'#idea hi'});
  });
  it('reports a flomo refusal instead of success',async()=>{
-  (mocks as any).token=FLOMO;fetcher.mockResolvedValue(Response.json({code:-1,message:'需要会员'}));
+  mocks.token=FLOMO;fetcher.mockResolvedValue(Response.json({code:-1,message:'需要会员'}));
   await expect(executeOperation('owner','flomo',{operation:'create_memo',text:'x'},true)).rejects.toThrow('需要会员');
  });
 });
