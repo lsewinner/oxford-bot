@@ -10,13 +10,13 @@ import { trendAnalysisPrompt } from '@/lib/trends';
 import { useMode } from './mode-context';
 import { useWebSearch } from './web-search-context';
 
-export function TrendsDrawer({compact=false}:{compact?:boolean}) {
-  const [open,setOpen]=useState(false),[source,setSource]=useState('all');
+export function TrendsDrawer({compact=false,open:openProp,onOpenChange}:{compact?:boolean;open?:boolean;onOpenChange?:(v:boolean)=>void}) {
+  const [openState,setOpenState]=useState(false);const controlled=openProp!==undefined;const open=controlled?openProp:openState;const setOpen=(v:boolean)=>{if(!controlled)setOpenState(v);onOpenChange?.(v);},[source,setSource]=useState('all');
   const load=useServerFn(loadTrends);
   const {requestAnalysis}=useMode();
   const {setEnabled}=useWebSearch();
   const {data,isFetching,error,refetch}=useQuery({queryKey:['live-trends'],queryFn:()=>load({data:{force:true}}),enabled:open,staleTime:300000,retry:false});
-  return <Sheet open={open} onOpenChange={setOpen}><SheetTrigger asChild><Button variant="ghost" size="sm" aria-label="实时热点" title="实时热点" className="gap-1.5 text-muted-foreground"><FlameIcon className="size-4"/>{!compact && <span>实时热点</span>}</Button></SheetTrigger>
+  return <Sheet open={open} onOpenChange={setOpen}>{!controlled&&<SheetTrigger asChild><Button variant="ghost" size="sm" aria-label="实时热点" title="实时热点" className="gap-1.5 text-muted-foreground"><FlameIcon className="size-4"/>{!compact && <span>实时热点</span>}</Button></SheetTrigger>}
     <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-lg">
       <div className="border-b border-border p-5 pr-12"><SheetTitle className="flex items-center gap-2"><FlameIcon className="size-5"/>实时热点</SheetTitle><SheetDescription className="mt-1">GitHub Trending · Hacker News 科技头条</SheetDescription></div>
       <div className="flex items-center justify-between gap-2 px-5"><Tabs value={source} onValueChange={setSource}><TabsList><TabsTrigger value="all">全部</TabsTrigger><TabsTrigger value="github">GitHub</TabsTrigger><TabsTrigger value="hn">科技头条</TabsTrigger></TabsList></Tabs><Button variant="ghost" size="icon-sm" aria-label="刷新热点" title="刷新热点" disabled={isFetching} onClick={()=>void refetch()}><RefreshCcwIcon className={isFetching?'animate-spin':''}/></Button></div>

@@ -126,7 +126,6 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-[15px] font-semibold tracking-tight">Oxford Bot</span><ProBadge />
       </div>
       <div className="px-3">
-        <TrendsDrawer />
         <Link
           to="/chat"
           onClick={onNavigate}
@@ -189,10 +188,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             ),
         )}
       </nav>
-      <AdminEntry />
-      <UpgradeEntry />
-      <div className="px-3 pb-1"><DesktopInstallButton sidebar /></div>
-      <AccountProfile user={user} onSignOut={signOut} />
+      <AccountProfile user={user} onSignOut={signOut} isAdmin={useAdminFlag()} />
     </div>
   );
 }
@@ -240,10 +236,14 @@ function ChatLayout() {
   );
 }
 
-function AdminEntry() {
+function useAdminFlag() {
   const check = useServerFn(checkAdmin);
   const { data } = useQuery({ queryKey: ["admin-check"], queryFn: () => check(), staleTime: 300_000 });
-  if (!data?.isAdmin) return null;
+  return Boolean(data?.isAdmin);
+}
+
+function AdminEntry() {
+  if (!useAdminFlag()) return null;
   return (
     <div className="px-3 pb-1">
       <Link to="/admin" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground">
