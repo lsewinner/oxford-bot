@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { TOOL_CATALOG } from '@/lib/tool-catalog';
 import { PROVIDERS,providerId,type ProviderId,type ToolResult } from '@/lib/connections/catalog';
-import { connectionStatus,startConnection,completeConnection,updateConnection,runOperation,connectPersonalToken,startGoogleOAuth,startMicrosoftOAuth,completeMicrosoftOAuth,startNotionOAuth,startGithubOAuth } from '@/lib/connections.functions';
+import { connectionStatus,startConnection,completeConnection,updateConnection,runOperation,connectPersonalToken,startGoogleOAuth,startMicrosoftOAuth,completeMicrosoftOAuth,startNotionOAuth,startGithubOAuth,startSlackOAuth } from '@/lib/connections.functions';
 import { waitForOAuth } from '@/lib/connections/oauth-client';
 import { RealToolResult } from './real-tool-result';
 import { usePro } from '@/components/pro/pro-context';
@@ -23,7 +23,7 @@ export function ToolsCenter(){
  const saveToken=useServerFn(connectPersonalToken);
  const { requirePro } = usePro();
  const gate=()=>{ if(requirePro('tools'))return true; setOpen(false); return false; };
- const status=useServerFn(connectionStatus),start=useServerFn(startConnection),complete=useServerFn(completeConnection),update=useServerFn(updateConnection),run=useServerFn(runOperation),startGoogle=useServerFn(startGoogleOAuth),startMicrosoft=useServerFn(startMicrosoftOAuth),completeMicrosoft=useServerFn(completeMicrosoftOAuth),startNotion=useServerFn(startNotionOAuth),startGithub=useServerFn(startGithubOAuth);
+ const status=useServerFn(connectionStatus),start=useServerFn(startConnection),complete=useServerFn(completeConnection),update=useServerFn(updateConnection),run=useServerFn(runOperation),startGoogle=useServerFn(startGoogleOAuth),startMicrosoft=useServerFn(startMicrosoftOAuth),completeMicrosoft=useServerFn(completeMicrosoftOAuth),startNotion=useServerFn(startNotionOAuth),startGithub=useServerFn(startGithubOAuth),startSlack=useServerFn(startSlackOAuth);
  const refresh=async()=>{setError('');try{const {data}=await supabase.auth.getSession();setSignedIn(Boolean(data.session));setRows(data.session?await status():[]);}catch(e){setError(e instanceof Error?e.message:'无法读取连接');}};
  useEffect(()=>{if(open)void refresh();},[open]);
  useEffect(()=>{const {data}=supabase.auth.onAuthStateChange(()=>{setRows([]);setSignedIn(false);setSelected(null);setResult(null);setToken('');setTokenProvider(null);});return ()=>data.subscription.unsubscribe();},[]);
