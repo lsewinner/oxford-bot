@@ -17,7 +17,7 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  const {getConnections,decryptConnectionKey}=await import('./connections/storage.server');
  const {callAsAppUser,appUserReconnectRequired}=await import('@/integrations/lovable/appUserConnector');
  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
- const paths={github:'/user',google_mail:'/gmail/v1/users/me/profile',microsoft_outlook:'/me?$select=displayName',microsoft_teams:'/me/joinedTeams',microsoft_calendar:'/me?$select=id',google_drive:'/drive/v3/about?fields=user(displayName,emailAddress)',google_calendar:'/calendar/v3/users/me/calendarList/primary',slack:'/api/auth.test',cloudflare:'/zones?per_page=1',supabase:'/projects',notion:'/users/me',yuque:'/user',feishu:'/bot/v3/info'};
+ const paths={github:'/user',google_mail:'/gmail/v1/users/me/profile',microsoft_outlook:'/me?$select=displayName',microsoft_teams:'/me/joinedTeams',microsoft_calendar:'/me/calendars?$top=1',google_drive:'/drive/v3/about?fields=user(displayName,emailAddress)',google_calendar:'/calendar/v3/users/me/calendarList/primary',slack:'/api/auth.test',cloudflare:'/zones?per_page=1',supabase:'/projects',notion:'/users/me',yuque:'/user',feishu:'/bot/v3/info'};
  const withRetry=async<T>(fn:()=>Promise<T>)=>{try{return await fn();}catch(first){await new Promise(r=>setTimeout(r,800));try{return await fn();}catch{throw first;}}};
 
  const perProvider=await Promise.all(providerId.options.map(async(id)=>{
