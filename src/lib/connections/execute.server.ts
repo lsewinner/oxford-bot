@@ -42,6 +42,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
    if(!b)throw new Error('服务返回格式错误');
    if(id==='cloudflare' && b.success!==true)throw new Error(`Cloudflare: ${b.errors?.[0]?.message ?? '请求失败'}`);
    if(id==='feishu' && b.code!==0)throw new Error(`飞书：${b.msg ?? '请求失败'}（请确认应用已开通权限，且文档/知识库/表格已添加该应用）`);
+   if(id==='flomo' && b.code!==0)throw new Error(`Flomo：${b.message ?? '记录失败'}（请检查专属 API 链接，flomo API 需会员）`);
    if(id==='slack' && b.ok!==true)throw new Error(personalTokenError(id,r.status,b.error));
    return b;
  }
@@ -119,6 +120,14 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(o==='bitable_tables'){const b=await request(`/bitable/v1/apps/${r}/tables?page_size=50`);items=(b.data?.items ?? []).map((v:any)=>({title:v.name,id:v.table_id}));more(b,'张数据表');}
  if(o==='bitable_records'){const b=await request(`/bitable/v1/apps/${r}/tables/${input.id}/records?page_size=50`);items=(b.data?.items ?? []).map((v:any)=>({title:v.record_id,id:v.record_id,detail:Object.entries(v.fields ?? {}).map(([k,x]:any)=>`${k}: ${typeof x==='object'?JSON.stringify(x):String(x)}`).join(' · ').slice(0,1500)}));more(b,'条记录');}
  if(o==='add_record'){const b=await request(`/bitable/v1/apps/${r}/tables/${input.id}/records`,'POST',{fields:JSON.parse(input.text ?? '{}')});items=[{title:'已新增记录',id:b.data?.record?.record_id}];}
+ } else if(id==='gitee'){
+ const repo=(input.repo ?? '').split('/').map(enc).join('/');const path=(input.path ?? '').split('/').map(enc).join('/');
+ if(o==='repos'){const b=await request('/user/repos?per_page=20&sort=updated');items=(b ?? []).map((v:any)=>({title:v.full_name,id:v.full_name,url:v.html_url,detail:v.description ?? ''}));}
+ if(o==='issues'){const b=await request(`/repos/${repo}/issues?state=open&per_page=20`);items=(b ?? []).map((v:any)=>({title:v.title,id:String(v.number),url:v.html_url,detail:(v.body ?? '').slice(0,2000)}));}
+ if(o==='read_file'){const b=await request(`/repos/${repo}/contents/${path}`);if(b.encoding!=='base64' || typeof b.content!=='string')throw new Error('请选择一个文本文件');text=Buffer.from(b.content,'base64').toString('utf8').slice(0,30000);items=[{title:b.path ?? input.path ?? '',id:b.sha,url:b.html_url}];}
+ if(o==='create_issue'){const [owner,name]=(input.repo ?? '').split('/');const b=await request(`/repos/${enc(owner ?? '')}/issues`,'POST',{repo:name,title:input.title,body:input.text});if(!b.number)throw new Error('Gitee 未返回 Issue 结果');items=[{title:b.title,id:String(b.number),url:b.html_url}];}
+ } else if(id==='flomo'){
+ if(o==='create_memo'){await request('','POST',{content:input.text});items=[{title:'已记录到 flomo',detail:(input.text ?? '').slice(0,200)}];}
  } else if(id==='yuque'){
  const namespace=input.repo ?? '';const base=`/repos/${namespace}/docs`;const offset=input.offset ?? 0;
  const docItem=(v:any)=>({title:v.title || '未命名',id:String(v.id ?? v.slug),url:`https://www.yuque.com/${namespace}/${enc(v.slug ?? String(v.id))}`,detail:v.description ?? v.updated_at ?? ''});
