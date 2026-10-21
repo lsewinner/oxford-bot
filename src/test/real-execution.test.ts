@@ -61,6 +61,32 @@ describe('personal provider execution',()=>{
   const result=await executeOperation('owner-a','google_drive',{operation:'search',query:'计划'});
   expect(result.items?.[0]?.title).toBe('计划.docx');expect(mocks.call).not.toHaveBeenCalled();
  });
+ it('drive folders lists the chosen folder and names each item type',async()=>{
+  mocks.get.mockResolvedValue({id:'row',enabled:true,reconnect_required:false,credential_kind:'google_oauth',connection_key_ciphertext:'encrypted'});
+  googleMocks.call.mockResolvedValueOnce(Response.json({files:[{id:'fld-2',name:'合同',mimeType:'application/vnd.google-apps.folder',modifiedTime:'2026-10-01T08:00:00Z'},{id:'f-3',name:'预算.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}]}));
+  const result=await executeOperation('owner-a','google_drive',{operation:'folders',id:'fld-1'});
+  expect(result.items?.[0]?.detail).toContain('文件夹');expect(result.items?.[1]?.detail).toContain('sheet');
+  expect(decodeURIComponent(googleMocks.call.mock.calls[0]?.[2] ?? '')).toContain("'fld-1' in parents");
+ });
+ it('drive search matches the file body and refuses an empty keyword',async()=>{
+  mocks.get.mockResolvedValue({id:'row',enabled:true,reconnect_required:false,credential_kind:'google_oauth',connection_key_ciphertext:'encrypted'});
+  googleMocks.call.mockResolvedValueOnce(Response.json({files:[]}));
+  await executeOperation('owner-a','google_drive',{operation:'search',query:'合同'});
+  expect(decodeURIComponent(googleMocks.call.mock.calls[0]?.[2] ?? '')).toContain("fullText contains '合同'");
+  await expect(executeOperation('owner-a','google_drive',{operation:'search',query:'   '})).rejects.toThrow('关键词');
+ });
+ it('drive read exports a spreadsheet as CSV text',async()=>{
+  mocks.get.mockResolvedValue({id:'row',enabled:true,reconnect_required:false,credential_kind:'google_oauth',connection_key_ciphertext:'encrypted'});
+  googleMocks.call.mockResolvedValueOnce(Response.json({id:'s1',name:'预算表',mimeType:'application/vnd.google-apps.spreadsheet'})).mockResolvedValueOnce(new Response('月份,收入\n10月,100'));
+  const result=await executeOperation('owner-a','google_drive',{operation:'read',id:'s1'});
+  expect(result.text).toContain('月份,收入');
+  expect(decodeURIComponent(googleMocks.call.mock.calls[1]?.[2] ?? '')).toContain('mimeType=text/csv');
+ });
+ it('drive file creation stays pending until the owner confirms',async()=>{
+  mocks.get.mockResolvedValue({id:'row',enabled:true,reconnect_required:false,credential_kind:'google_oauth',connection_key_ciphertext:'encrypted'});
+  const result=await executeOperation('owner-a','google_drive',{operation:'create_file',title:'会议纪要',text:'正文'});
+  expect(result.status).toBe('confirmation_required');expect(googleMocks.call).not.toHaveBeenCalled();
+ });
  it('google_oauth sends still require confirmation before any API call',async()=>{
   mocks.get.mockResolvedValue({id:'row',enabled:true,reconnect_required:false,credential_kind:'google_oauth',connection_key_ciphertext:'encrypted'});
   expect((await executeOperation('owner-a','google_mail',{operation:'send',to:'a@b.c',title:'t',text:'x'})).status).toBe('confirmation_required');

@@ -5,7 +5,7 @@ export const TOOL_CATALOG = [
   { id: "yuque", name: "语雀", category: "云盘与文档", detail: "知识库 · 文档 · 新建与更新", action: "查询知识库并整理文档" },
   { id: "google_calendar", name: "Google Calendar", category: "日程与会议", detail: "查看日程 · 创建日程", action: "查看并安排日程" },
   { id: "microsoft_calendar", name: "Outlook 日历", category: "日程与会议", detail: "查看日程 · 创建日程", action: "查看并安排日程" },
-  { id: "google_drive", name: "Google Drive", category: "云盘与文档", detail: "文档检索 · 文件解析", action: "检索并解析文档" },
+  { id: "google_drive", name: "Google 云盘", category: "云盘与文档", detail: "浏览文件夹 · 检索文件 · 读取正文", action: "浏览并读取云盘文件" },
   { id: "github", name: "GitHub", category: "开发与运维", detail: "代码库 · Issue · PR", action: "查询代码库、Issue 和 PR" },
   { id: "cloudflare", name: "Cloudflare", category: "开发与运维", detail: "DNS · 站点管理", action: "查询 DNS 与站点状态" },
   { id: "supabase", name: "Supabase", category: "开发与运维", detail: "项目 · 表结构 · 只读查询 · 健康检查", action: "查询数据库结构与数据" },
