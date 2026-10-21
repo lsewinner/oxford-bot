@@ -29,7 +29,7 @@
 - Query options shared by route loaders and components live outside route modules (why: route code splitting must not depend on unexported shared declarations).
 - Conversation exports use the same safe snapshot serializer; image regeneration replaces both prompt and image only after completion and keeps the last successful image on failure (why: downloads stay predictable and failed redraws cannot destroy existing results).
 
-- Both Bot sidebars share BotListLabel and botListRowClass; actions sit outside label flow (why: keep names and times aligned).
+- Bot sidebars share BotListLabel/botListRowClass; actions outside label flow (why: aligned rows).
 
 - Bot personas/preferences extend the scoped registry and are validated at chat entry; they never grant access (why: preserve identity and authorization).
 - Deep Think uses the existing model and public reasoning summaries only (why: retain model selection and reasoning privacy).
@@ -37,4 +37,4 @@
 - Nickname and compact avatar use authenticated owner metadata updates, never roles (why: sync identity without new tables).
 - Pro access: `subscriptions` rows are written only by the signed Stripe webhook; server checks use `has_active_subscription` with the environment derived from the build's client token, and gated server paths (chat Deep Think/persona, connection starts) re-check Pro (why: client gates are UX only).
 - Admin `/admin`: `has_role` check before supabaseAdmin in admin.functions; actions audited. Quotas via `consume_daily_message` RPC; overrides/bans/granted Pro in `account_controls`, honored by `has_active_subscription` (why: server is the only source of truth).
-- Oxford memory center: admin-only versioned rows (one published per kind) injected server-side into every chat before Bot context (why: stable identity, auditable rollback).
+- Memory center: admin-only versions, one published per kind, injected server-side before Bot context (why: stable identity, rollback).
