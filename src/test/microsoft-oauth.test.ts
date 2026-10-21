@@ -88,7 +88,7 @@ describe('Microsoft direct OAuth',()=>{
   expect(url.searchParams.get('scope')?.split(' ')).toEqual(['openid','profile','email','offline_access','User.Read','Calendars.ReadWrite']);
  });
  it('allows only calendar reads and confirmed event creation on the fixed Graph host',async()=>{
-  const fetcher=vi.fn().mockResolvedValue(Response.json({access_token:'test-access'}));vi.stubGlobal('fetch',fetcher);
+  const fetcher=vi.fn().mockImplementation(() => Response.json({access_token:'test-access'}));vi.stubGlobal('fetch',fetcher);
   const {callWithMicrosoftToken}=await import('@/lib/connections/microsoft-oauth.server');
   expect((await callWithMicrosoftToken('refresh','/me/calendars?$top=50',undefined,undefined,'microsoft_calendar')).ok).toBe(true);
   expect((await callWithMicrosoftToken('refresh','/me/calendarView?startDateTime=2026-10-22T00%3A00%3A00Z&endDateTime=2026-11-05T00%3A00%3A00Z&%24top=50',undefined,undefined,'microsoft_calendar')).ok).toBe(true);
