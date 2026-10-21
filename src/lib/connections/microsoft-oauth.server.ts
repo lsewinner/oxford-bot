@@ -5,8 +5,8 @@ import { encryptConnectionKey, decryptConnectionKey } from './storage.server';
 
 const AUTH_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
 const TOKEN_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
-const stateSchema = z.object({ userId: z.string().uuid(), provider: z.enum(['microsoft_outlook','microsoft_teams']), verifier: z.string().min(43).max(128), redirectUri: z.string().url(), expires: z.number() }).strict();
-export type MicrosoftProvider = 'microsoft_outlook' | 'microsoft_teams';
+const stateSchema = z.object({ userId: z.string().uuid(), provider: z.enum(['microsoft_outlook','microsoft_teams','microsoft_calendar']), verifier: z.string().min(43).max(128), redirectUri: z.string().url(), expires: z.number() }).strict();
+export type MicrosoftProvider = 'microsoft_outlook' | 'microsoft_teams' | 'microsoft_calendar';
 export type MicrosoftState = z.infer<typeof stateSchema>;
 
 function config() {
@@ -77,9 +77,14 @@ export async function callWithMicrosoftToken(refreshToken: string, path: string,
   const url = new URL(`https://graph.microsoft.com/v1.0${path}`);
   const endpoint = url.pathname.slice('/v1.0'.length);
   const teamsPath = /^\/teams\/[0-9a-f-]{36}\/channels(?:\/[^/]+\/messages)?$/i.test(endpoint);
+  const calendarPath = provider === 'microsoft_calendar'
+    ? (method === 'GET' && ['/me/calendars','/me/calendarView'].includes(endpoint)) || (method === 'POST' && endpoint === '/me/events')
+    : false;
   const allowed = provider === 'microsoft_teams'
     ? method === 'GET' ? ['/me','/me/joinedTeams'].includes(endpoint) || teamsPath : method === 'POST' && teamsPath && endpoint.endsWith('/messages')
-    : method === 'GET' ? /^\/me(?:\/messages(?:\/[^/]+)?)?$/.test(endpoint) : method === 'POST' && ['/me/messages', '/me/sendMail'].includes(endpoint);
+    : provider === 'microsoft_calendar'
+      ? calendarPath
+      : method === 'GET' ? /^\/me(?:\/messages(?:\/[^/]+)?)?$/.test(endpoint) : method === 'POST' && ['/me/messages', '/me/sendMail'].includes(endpoint);
   if (!allowed || url.origin !== 'https://graph.microsoft.com') throw new Error('不支持的微软请求路径');
   const result = await tokens({ grant_type: 'refresh_token', refresh_token: refreshToken, scope: PROVIDERS[provider].scopes.join(' ') });
   if (result.refresh_token && result.refresh_token !== refreshToken && rotate) await rotate(result.refresh_token);
