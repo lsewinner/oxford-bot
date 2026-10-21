@@ -1,16 +1,19 @@
 import type { ProviderId } from './catalog';
 
-export type PersonalTokenProvider = 'github' | 'slack' | 'cloudflare';
-export function supportsPersonalToken(id: ProviderId): id is PersonalTokenProvider { return id === 'github' || id === 'slack' || id === 'cloudflare'; }
-const HOSTS = { github: 'https://api.github.com', slack: 'https://slack.com', cloudflare: 'https://api.cloudflare.com/client/v4' } as const;
-const NAMES = { github: 'GitHub', slack: 'Slack', cloudflare: 'Cloudflare' } as const;
-const VALIDATE = { github: '/user', slack: '/api/auth.test', cloudflare: '/zones?per_page=1' } as const;
+export type PersonalTokenProvider = 'github' | 'slack' | 'cloudflare' | 'supabase';
+export function supportsPersonalToken(id: ProviderId): id is PersonalTokenProvider { return id === 'github' || id === 'slack' || id === 'cloudflare' || id === 'supabase'; }
+const HOSTS = { github: 'https://api.github.com', slack: 'https://slack.com', cloudflare: 'https://api.cloudflare.com/client/v4', supabase: 'https://api.supabase.com/v1' } as const;
+const NAMES = { github: 'GitHub', slack: 'Slack', cloudflare: 'Cloudflare', supabase: 'Supabase' } as const;
+const VALIDATE = { github: '/user', slack: '/api/auth.test', cloudflare: '/zones?per_page=1', supabase: '/projects' } as const;
 export async function callWithPersonalToken(id: PersonalTokenProvider, token: string, path: string, init?: RequestInit): Promise<Response> {
   const method = (init?.method ?? 'GET').toUpperCase();
   const allowed = id === 'github'
     ? /^\/(?:user(?:\?|$)|user\/repos(?:\?|$)|repos\/[^/]+\/[^/]+\/(?:issues|pulls|contents)(?:\/|\?|$))/
     : id === 'slack'
       ? /^\/api\/(?:auth\.test|conversations\.list|conversations\.history|users\.info|chat\.postMessage)(?:\?|$)/
+      : id === 'supabase'
+        // Supabase is read-only: project list, health, and the read-only SQL endpoint.
+        ? (method === 'GET' ? /^\/projects(?:$|\/[a-z0-9]{20}\/health\?services=[a-z,]+$)/ : method === 'POST' ? /^\/projects\/[a-z0-9]{20}\/database\/query\/read-only$/ : /$^/)
       // Cloudflare is read-only for now: zone list and DNS record list only.
       : (method === 'GET' ? /^\/zones(?:\?|$|\/[a-f0-9]{32}\/dns_records(?:\?|$))/ : /$^/);
   if (!allowed.test(path) || path.includes('://') || path.includes('..') || path.includes('\\')) throw new Error('不支持的服务请求');
@@ -37,12 +40,18 @@ export async function validatePersonalToken(id: PersonalTokenProvider, token: st
   catch { throw new Error('无法访问服务，请稍后重试'); }
   if (!response.ok) throw new Error(personalTokenError(id, response.status));
   const body = await response.json().catch(() => null);
-  if (!body || (id === 'github' ? !body.id : id === 'cloudflare' ? body.success !== true : body.ok !== true)) throw new Error(personalTokenError(id, response.status, body?.error));
+  if (!body || (id === 'supabase' ? !Array.isArray(body) : id === 'github' ? !body.id : id === 'cloudflare' ? body.success !== true : body.ok !== true)) throw new Error(personalTokenError(id, response.status, body?.error));
   return body as Record<string, unknown>;
 }
 /** Identify which Cloudflare account a token belongs to, so several tokens can be stored side by side. */
 export async function personalTokenIdentity(id: PersonalTokenProvider, token: string, body: Record<string, unknown> | null) {
   if (id === 'cloudflare') return cloudflareAccountIdentity(token, body);
+  if (id === 'supabase') {
+    const projects = Array.isArray(body) ? body as Array<{ organization_id?: string }> : [];
+    const org = typeof projects[0]?.organization_id === 'string' ? projects[0].organization_id : '';
+    const fallback = await cloudflareAccountIdentity(token, null);
+    return { account: org ? `sb-${org}` : fallback.account.replace('token-', 'sb-token-'), label: '' };
+  }
   if (id === 'github' && body && (typeof body["id"] === 'number' || typeof body["id"] === 'string')) return { account: `gh-${body["id"]}`, label: typeof body["login"] === 'string' ? body["login"] : '' };
   return { account: '', label: '' };
 }
