@@ -25,7 +25,7 @@ export function MemoryCenter() {
   const [text, setText] = useState("");
   const [note, setNote] = useState("");
   const [preview, setPreview] = useState(false);
-  const versions = (q.data ?? []).filter((v) => v.kind === kind);
+  const versions = ((q.data ?? []) as MemoryVersion[]).filter((v) => v.kind === kind);
   const live = versions.find((v) => v.published);
 
   useEffect(() => { setText(live?.content ?? versions[0]?.content ?? ""); setNote(""); setPreview(false); }, [kind, q.data]); // eslint-disable-line react-hooks/exhaustive-deps
