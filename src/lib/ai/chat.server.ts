@@ -199,6 +199,8 @@ export async function handleChat(request: Request): Promise<Response> {
       if (status === 402) return "AI 额度已用完，请在设置中充值";
       return "AI 回复出错，请重试";
     },
+    // Give every reply its own stable id so saved replies never overwrite each other.
+    generateMessageId: () => crypto.randomUUID(),
     onFinish: async ({ responseMessage, isAborted }) => {
       if (threadId === "guest" || !supabase || !userId) return;
       if (!responseMessage?.parts?.length) return;
