@@ -2,12 +2,12 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { PROVIDERS, type ProviderId } from './catalog';
 import { resolveConnectionSecret } from './connection-secret.server';
 
-export type GoogleProvider = 'google_mail' | 'google_drive';
-export const isGoogleProvider = (id: ProviderId): id is GoogleProvider => id === 'google_mail' || id === 'google_drive';
+export type GoogleProvider = 'google_mail' | 'google_drive' | 'google_calendar';
+export const isGoogleProvider = (id: ProviderId): id is GoogleProvider => id === 'google_mail' || id === 'google_drive' || id === 'google_calendar';
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const HOSTS: Record<GoogleProvider, string> = { google_mail: 'https://gmail.googleapis.com', google_drive: 'https://www.googleapis.com' };
+const HOSTS: Record<GoogleProvider, string> = { google_mail: 'https://gmail.googleapis.com', google_drive: 'https://www.googleapis.com', google_calendar: 'https://www.googleapis.com' };
 
 function stateKey(): string {
   return resolveConnectionSecret('connection');
