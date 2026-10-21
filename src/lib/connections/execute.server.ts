@@ -39,6 +39,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
    const b=await r.json().catch(()=>null);
    if(!b)throw new Error('服务返回格式错误');
    if(id==='cloudflare' && b.success!==true)throw new Error(`Cloudflare: ${b.errors?.[0]?.message ?? '请求失败'}`);
+   if(id==='feishu' && b.code!==0)throw new Error(`飞书：${b.msg ?? '请求失败'}（请确认应用已开通权限，且文档/知识库/表格已添加该应用）`);
    if(id==='slack' && b.ok!==true)throw new Error(personalTokenError(id,r.status,b.error));
    return b;
  }
@@ -88,6 +89,14 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(o==='zones'){const b=await request(`/zones?per_page=50${input.query?'&name='+enc(input.query.trim().toLowerCase()):''}`);items=(b.result ?? []).map((v:any)=>({title:v.name,id:v.id,detail:`${v.status ?? ''}${v.plan?.name?' · '+v.plan.name:''}${v.name_servers?.length?' · NS '+v.name_servers.join(', '):''}`}));if((b.result_info?.total_count ?? 0)>50)text='仅显示前 50 个 Zone';}
  if(o==='dns_records'){let zone=(input.id ?? '').trim().toLowerCase();if(!/^[a-f0-9]{32}$/.test(zone)){const name=zone || (input.query ?? '').trim().toLowerCase();const z=await request(`/zones?per_page=1&name=${enc(name)}`);zone=z.result?.[0]?.id ?? '';if(!zone)throw new Error(`未找到 Zone：${name}，请确认 Token 有该域名的 Zone Read 权限`);}
   const b=await request(`/zones/${zone}/dns_records?per_page=100`);items=(b.result ?? []).map((v:any)=>({title:`${v.type} ${v.name}`,id:v.id,detail:`${v.content}${v.proxied?' · 已代理':''} · TTL ${v.ttl===1?'自动':v.ttl}`}));if((b.result_info?.total_count ?? 0)>100)text='仅显示前 100 条记录';}
+ } else if(id==='feishu'){
+ const r=input.repo ?? '';const more=(b:any,n:string)=>{if(b.data?.has_more)text=`仅显示前 50 ${n}`;};
+ if(o==='wiki_spaces'){const b=await request('/wiki/v2/spaces?page_size=50');items=(b.data?.items ?? []).map((v:any)=>({title:v.name || '未命名空间',id:v.space_id,detail:v.description ?? ''}));more(b,'个知识空间');}
+ if(o==='wiki_nodes'){const b=await request(`/wiki/v2/spaces/${r}/nodes?page_size=50${input.query?'&parent_node_token='+input.query:''}`);items=(b.data?.items ?? []).map((v:any)=>({title:v.title || '未命名',id:v.obj_token,detail:`${v.obj_type ?? ''}${v.has_child?' · 有子节点 node_token='+v.node_token:''}`}));more(b,'个节点');}
+ if(o==='read_doc'){const b=await request(`/docx/v1/documents/${r}/raw_content`);const c=String(b.data?.content ?? '');text=c.slice(0,30000)+(c.length>30000?'\n[正文超过长度限制，已截断]':'');items=[{title:'飞书文档',id:r,url:`https://feishu.cn/docx/${r}`}];}
+ if(o==='bitable_tables'){const b=await request(`/bitable/v1/apps/${r}/tables?page_size=50`);items=(b.data?.items ?? []).map((v:any)=>({title:v.name,id:v.table_id}));more(b,'张数据表');}
+ if(o==='bitable_records'){const b=await request(`/bitable/v1/apps/${r}/tables/${input.id}/records?page_size=50`);items=(b.data?.items ?? []).map((v:any)=>({title:v.record_id,id:v.record_id,detail:Object.entries(v.fields ?? {}).map(([k,x]:any)=>`${k}: ${typeof x==='object'?JSON.stringify(x):String(x)}`).join(' · ').slice(0,1500)}));more(b,'条记录');}
+ if(o==='add_record'){const b=await request(`/bitable/v1/apps/${r}/tables/${input.id}/records`,'POST',{fields:JSON.parse(input.text ?? '{}')});items=[{title:'已新增记录',id:b.data?.record?.record_id}];}
  } else if(id==='yuque'){
  const namespace=input.repo ?? '';const base=`/repos/${namespace}/docs`;const offset=input.offset ?? 0;
  const docItem=(v:any)=>({title:v.title || '未命名',id:String(v.id ?? v.slug),url:`https://www.yuque.com/${namespace}/${enc(v.slug ?? String(v.id))}`,detail:v.description ?? v.updated_at ?? ''});

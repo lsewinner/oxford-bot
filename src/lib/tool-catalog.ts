@@ -3,6 +3,7 @@ export const TOOL_CATALOG = [
   { id: "microsoft_outlook", name: "Outlook", category: "邮件助手", detail: "邮件检索 · 摘要 · 起草", action: "检索邮件并起草回复" },
   { id: "notion", name: "Notion", category: "云盘与文档", detail: "页面 · 数据库 · 写入笔记", action: "检索并整理 Notion 内容" },
   { id: "yuque", name: "语雀", category: "云盘与文档", detail: "知识库 · 文档 · 新建与更新", action: "查询知识库并整理文档" },
+  { id: "feishu", name: "飞书", category: "云盘与文档", detail: "云文档 · 知识库 · 多维表格", action: "查询飞书文档与多维表格" },
   { id: "google_drive", name: "Google Drive", category: "云盘与文档", detail: "文档检索 · 文件解析", action: "检索并解析文档" },
   { id: "github", name: "GitHub", category: "开发与运维", detail: "代码库 · Issue · PR", action: "查询代码库、Issue 和 PR" },
   { id: "cloudflare", name: "Cloudflare", category: "开发与运维", detail: "DNS · 站点管理", action: "查询 DNS 与站点状态" },
@@ -28,6 +29,7 @@ export function simulateTool(id: ToolId, query: string) {
     sample: id === "google_drive" ? "示例文档：项目计划（演示数据）"
       : id === "github" ? "示例 Issue：完善登录流程（演示数据）"
       : id === "notion" ? "示例页面：项目周报（演示数据）"
+      : id === "feishu" ? "示例文档：飞书项目周报（演示数据）"
       : id === "yuque" ? "示例文档：知识库周报（演示数据）"
       : id === "supabase" ? "示例项目：表结构查询已完成（演示数据）"
       : id === "cloudflare" ? "示例站点：DNS 查询流程已完成（演示数据）"
