@@ -93,3 +93,4 @@ export function DesktopInstallButton({ sidebar = false }: { sidebar?: boolean })
     <DownloadIcon className="size-4" />{installed ? "已安装桌面端" : busy ? "正在安装…" : "安装桌面端"}
   </Button>;
 }
+export function useDesktopInstall() { return useContext(InstallContext); }
