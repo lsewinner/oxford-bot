@@ -21,7 +21,7 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  const withRetry=async<T>(fn:()=>Promise<T>)=>{try{return await fn();}catch(first){await new Promise(r=>setTimeout(r,800));try{return await fn();}catch{throw first;}}};
 
  const perProvider=await Promise.all(providerId.options.map(async(id)=>{
-  const configured=id==='google_mail'||id==='google_drive'||id==='google_calendar'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):id==='notion'?Boolean(process.env['NOTION_OAUTH_CLIENT_ID'] && process.env['NOTION_OAUTH_CLIENT_SECRET']):id==='github'?(Boolean(process.env['GITHUB_OAUTH_CLIENT_ID'] && process.env['GITHUB_OAUTH_CLIENT_SECRET'])||Boolean(process.env['GITHUB_APP_USER_CONNECTOR_CLIENT_API_KEY'])):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
+  const configured=id==='google_mail'||id==='google_drive'||id==='google_calendar'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):id==='notion'?Boolean(process.env['NOTION_OAUTH_CLIENT_ID'] && process.env['NOTION_OAUTH_CLIENT_SECRET']):id==='github'?(Boolean(process.env['GITHUB_OAUTH_CLIENT_ID'] && process.env['GITHUB_OAUTH_CLIENT_SECRET'])||Boolean(process.env['GITHUB_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='slack'?(Boolean(process.env['SLACK_OAUTH_CLIENT_ID'] && process.env['SLACK_OAUTH_CLIENT_SECRET'])||Boolean(process.env['SLACK_APP_USER_CONNECTOR_CLIENT_API_KEY'])):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
   if(!rows.length)return [{id,rowId:null as string|null,account:'',label:'',configured,credentialKind:'oauth',connected:false,enabled:false,reconnectRequired:false,connectionError:''}];
   return Promise.all(rows.map(async(row)=>{let account=row.account_key;
   let reconnectRequired=row?.reconnect_required ?? false;let connectionError='';
@@ -82,6 +82,11 @@ export const startGithubOAuth=createServerFn({method:'POST'}).middleware([requir
  const {buildGithubAuthUrl,signGithubState}=await import('./connections/github-oauth.server');
  const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
  return {authorizationUrl:buildGithubAuthUrl(new URL('/api/oauth/github/callback',origin).toString(),signGithubState(context.userId))};
+});
+export const startSlackOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).handler(async({context})=>{await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
+ const {buildSlackAuthUrl,signSlackState}=await import('./connections/slack-oauth.server');
+ const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
+ return {authorizationUrl:buildSlackAuthUrl(new URL('/api/oauth/slack/callback',origin).toString(),signSlackState(context.userId))};
 });
 export const startMicrosoftOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['microsoft_outlook','microsoft_teams']).default('microsoft_outlook')}).strict().parse(v ?? {})).handler(async({data,context})=>{await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
  const {startMicrosoftAuthorization}=await import('./connections/microsoft-oauth.server');

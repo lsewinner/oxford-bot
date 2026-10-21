@@ -31,6 +31,7 @@ import { Route as ApiOauthGithubCallbackRouteImport } from './routes/api/oauth/g
 import { Route as ApiOauthGoogleCallbackRouteImport } from './routes/api/oauth/google/callback'
 import { Route as ApiOauthMicrosoftCallbackRouteImport } from './routes/api/oauth/microsoft/callback'
 import { Route as ApiOauthNotionCallbackRouteImport } from './routes/api/oauth/notion/callback'
+import { Route as ApiOauthSlackCallbackRouteImport } from './routes/api/oauth/slack/callback'
 import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oauth/return'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
@@ -145,6 +146,11 @@ const ApiOauthNotionCallbackRoute = ApiOauthNotionCallbackRouteImport.update({
   path: '/api/oauth/notion/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOauthSlackCallbackRoute = ApiOauthSlackCallbackRouteImport.update({
+  id: '/api/oauth/slack/callback',
+  path: '/api/oauth/slack/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicOauthReturnRoute = ApiPublicOauthReturnRouteImport.update({
   id: '/api/public/oauth/return',
   path: '/api/public/oauth/return',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
+  '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
+  '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
+  '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/api/oauth/google/callback'
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
+    | '/api/oauth/slack/callback'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/api/oauth/google/callback'
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
+    | '/api/oauth/slack/callback'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
   id:
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/api/oauth/google/callback'
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
+    | '/api/oauth/slack/callback'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
@@ -330,6 +342,7 @@ export interface RootRouteChildren {
   ApiOauthGoogleCallbackRoute: typeof ApiOauthGoogleCallbackRoute
   ApiOauthMicrosoftCallbackRoute: typeof ApiOauthMicrosoftCallbackRoute
   ApiOauthNotionCallbackRoute: typeof ApiOauthNotionCallbackRoute
+  ApiOauthSlackCallbackRoute: typeof ApiOauthSlackCallbackRoute
   ApiPublicOauthReturnRoute: typeof ApiPublicOauthReturnRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
@@ -490,6 +503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOauthNotionCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oauth/slack/callback': {
+      id: '/api/oauth/slack/callback'
+      path: '/api/oauth/slack/callback'
+      fullPath: '/api/oauth/slack/callback'
+      preLoaderRoute: typeof ApiOauthSlackCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/oauth/return': {
       id: '/api/public/oauth/return'
       path: '/api/public/oauth/return'
@@ -552,6 +572,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOauthGoogleCallbackRoute: ApiOauthGoogleCallbackRoute,
   ApiOauthMicrosoftCallbackRoute: ApiOauthMicrosoftCallbackRoute,
   ApiOauthNotionCallbackRoute: ApiOauthNotionCallbackRoute,
+  ApiOauthSlackCallbackRoute: ApiOauthSlackCallbackRoute,
   ApiPublicOauthReturnRoute: ApiPublicOauthReturnRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
