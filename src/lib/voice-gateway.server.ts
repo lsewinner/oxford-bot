@@ -28,7 +28,7 @@ export const OPENAI_SPEECH_VOICE = "alloy";
 export type VoiceCredentials = { apiKey: string; direct: boolean };
 
 /** Own OpenAI key first (no platform credits), otherwise the gateway. */
-export function selectVoiceCredentials(secrets: { OPENAI_API_KEY?: string; LOVABLE_API_KEY?: string }): VoiceCredentials | null {
+export function selectVoiceCredentials(secrets: { OPENAI_API_KEY?: string | undefined; LOVABLE_API_KEY?: string | undefined }): VoiceCredentials | null {
   const own = secrets.OPENAI_API_KEY?.trim();
   if (own) return { apiKey: own, direct: true };
   const gateway = secrets.LOVABLE_API_KEY?.trim();
