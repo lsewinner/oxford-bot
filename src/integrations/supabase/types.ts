@@ -189,6 +189,39 @@ export type Database = {
           },
         ]
       }
+      oxford_memory_versions: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          kind: string
+          note: string | null
+          published: boolean
+          published_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          kind: string
+          note?: string | null
+          published?: boolean
+          published_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          published?: boolean
+          published_at?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
