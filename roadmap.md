@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] 免费账户养猫额度：FREE = Oxonian + 1 只自建 Bot，PRO 不限量（当前免费账户似乎无法新建）
 - [x] Linear 一键 OAuth：微软式只存 refresh token、每次调用换新并比对写回，按工作区区分多账户，团队/问题列表/问题详情与评论只读，新建问题与加评论需确认；256 项测试通过
 - [x] Google Calendar：沿用 Gmail 的一键 Google 授权，支持查看日历/日程与确认后创建日程
 - [ ] Google Calendar 真实账户验证（需在 Google Cloud 启用 Calendar API 并在授权页添加日历权限）
