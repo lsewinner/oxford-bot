@@ -160,6 +160,26 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(o==='query'){let ds=nid;try{const db=await request(`/databases/${nid}`);ds=db.data_sources?.[0]?.id ?? nid;}catch{}const b=await request(`/data_sources/${ds}/query`,'POST',{page_size:50});items=(b.results ?? []).map((v:any)=>({title:titleOf(v),id:v.id,url:v.url,detail:Object.entries(v.properties ?? {}).filter(([,p]:any)=>p.type!=='title').map(([k,p]:any)=>{const val=p[p.type];const s=Array.isArray(val)?val.map((x:any)=>x.plain_text ?? x.name ?? '').join(','):val?.name ?? val?.start ?? (typeof val==='object'?'':String(val ?? ''));return s?`${k}: ${s}`:'';}).filter(Boolean).join(' · ').slice(0,1500)}));if(b.has_more)text='仅显示前 50 条';}
  if(o==='append'){await request(`/blocks/${nid}/children`,'PATCH',{children:paras(input.text ?? '')});items=[{title:'已追加到页面',id:nid}];}
  if(o==='create_page'){const b=await request('/pages','POST',{parent:{page_id:nid},properties:{title:{title:[{text:{content:input.title}}]}},children:paras(input.text ?? '')});items=[{title:input.title ?? '',id:b.id,url:b.url}];}
+ } else if(id==='linear'){
+ const gql=async(query:string,variables?:Record<string,unknown>)=>{
+  let r:Response;
+  try{
+   r=await callLinearGraphQL(decryptConnectionKey(row.connection_key_ciphertext,'linear_oauth'),query,variables,token=>rotateLinearCredential(userId,row.id,row.connection_key_ciphertext,token));
+  }catch(e){
+   if(e instanceof LinearReconnectError)await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);
+   throw e;
+  }
+  if(!r.ok)throw new Error(`Linear (${r.status})`);
+  const b=await r.json() as {data?:any;errors?:{message?:string}[]};
+  if(b.errors?.length)throw new Error(`Linear：${b.errors[0]?.message ?? '请求失败'}`);
+  return b.data ?? {};
+ };
+ const issueItem=(v:any)=>({title:v.title,id:v.identifier ?? v.id,url:v.url,detail:`${v.state?.name ?? ''}${v.assignee?.name?' · '+v.assignee.name:''}${v.priority?` · 优先级 ${v.priority}`:''}`});
+ if(o==='teams'){const b=await gql('query LinearTeams { teams(first: 50) { nodes { id name key } pageInfo { hasNextPage } } }');items=(b.teams?.nodes ?? []).map((v:any)=>({title:v.name,id:v.id,detail:v.key ?? ''}));if(b.teams?.pageInfo?.hasNextPage)text='仅显示前 50 个团队';}
+ if(o==='issues'){const filter:Record<string,unknown>={};if(input.teamId)filter.team={id:{eq:input.teamId}};if(input.query?.trim())filter.title={containsIgnoreCase:input.query.trim()};const b=await gql('query LinearIssues($first: Int, $filter: IssueFilter) { issues(first: $first, filter: $filter, orderBy: updatedAt) { nodes { id identifier title url state { name } assignee { name } priority updatedAt } pageInfo { hasNextPage } } }',{first:25,...(Object.keys(filter).length?{filter}:{})});items=(b.issues?.nodes ?? []).map(issueItem);if(b.issues?.pageInfo?.hasNextPage)text='仅显示前 25 条问题';}
+ if(o==='issue'){const b=await gql('query LinearIssue($id: ID!) { issue(id: $id) { id identifier title url state { name } assignee { name } priority updatedAt description comments(first: 20) { nodes { body createdAt user { name } } } } }',{id:input.id});const v=b.issue;if(!v)throw new Error('未找到该 Linear 问题');text=[`# ${v.identifier} ${v.title}`,`状态：${v.state?.name ?? ''}`,`负责人：${v.assignee?.name ?? '未指派'}`,`更新：${v.updatedAt ?? ''}`,`链接：${v.url ?? ''}`,'','## 描述',String(v.description ?? '（无）'),'','## 评论',...(v.comments?.nodes ?? []).map((c:any)=>`- ${c.user?.name ?? '成员'}：${String(c.body ?? '').slice(0,3000)}`)].join('\n').slice(0,30000);items=[{title:v.title,id:v.identifier ?? v.id,url:v.url}];}
+ if(o==='create_issue'){const b=await gql('mutation LinearCreateIssue($input: IssueCreateInput!) { issueCreate(input: $input) { success issue { id identifier title url } } }',{input:{teamId:input.teamId,title:input.title,description:input.text}});if(!b.issueCreate?.success)throw new Error('Linear 未创建问题');items=[{title:b.issueCreate.issue?.title ?? input.title ?? '',id:b.issueCreate.issue?.identifier,url:b.issueCreate.issue?.url}];}
+ if(o==='create_comment'){const b=await gql('mutation LinearCreateComment($input: CommentCreateInput!) { commentCreate(input: $input) { success comment { id } } }',{input:{issueId:input.id,body:input.text}});if(!b.commentCreate?.success)throw new Error('Linear 未添加评论');items=[{title:'已添加评论',id:b.commentCreate.comment?.id}];}
  } else if(id==='supabase'){
  const ref=input.id ?? '';
  const sql=async(q:string)=>{const b=await request(`/projects/${ref}/database/query/read-only`,'POST',{query:q});return Array.isArray(b)?b:(b.result ?? b.rows ?? []);};
