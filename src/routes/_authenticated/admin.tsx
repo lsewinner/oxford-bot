@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { checkAdmin, loadAdminData, runAdminAction, type AdminAction, type AdminAuditRow } from "@/lib/admin.functions";
 import { FREE_DAILY_MESSAGES, PRO_DAILY_MESSAGES } from "@/lib/quota";
 import { cn } from "@/lib/utils";
+import { MemoryCenter } from "@/components/admin/memory-center";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 const ACTION_LABEL: Record<string, string> = {
+  memory_save: "保存记忆版本", memory_publish: "发布/回滚记忆", memory_unpublish: "停用记忆",
   reset_all: "重置全部今日额度", reset_usage: "重置今日额度", set_limit: "设置每日额度",
   grant_pro: "授予 Pro", revoke_pro: "收回 Pro", ban: "停用账号", unban: "恢复账号",
 };
@@ -42,7 +44,7 @@ function AdminPage() {
   const role = useQuery({ queryKey: ["admin-check"], queryFn: () => check() });
   const data = useQuery({ queryKey: ["admin-data"], queryFn: () => load(), enabled: role.data?.isAdmin === true });
   const [q, setQ] = useState("");
-  const [tab, setTab] = useState<"users" | "audit">("users");
+  const [tab, setTab] = useState<"users" | "audit" | "memory">("users");
   const [editing, setEditing] = useState<AdminUser | null>(null);
   const act = useMutation({
     mutationFn: (a: AdminAction) => run({ data: a }),
@@ -83,9 +85,9 @@ function AdminPage() {
         <p className="mt-3 text-xs text-muted-foreground">默认每日额度：免费 {FREE_DAILY_MESSAGES} 条，Pro {PRO_DAILY_MESSAGES} 条（UTC 0 点重置）。</p>
 
         <div className="mt-6 flex items-center gap-2">
-          {(["users", "audit"] as const).map((t) => (
+          {(["users", "audit", "memory"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={cn("rounded-lg px-3 py-1.5 text-sm", tab === t ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground")}>
-              {t === "users" ? "用户" : "操作日志"}
+              {t === "users" ? "用户" : t === "audit" ? "操作日志" : "记忆中心"}
             </button>
           ))}
           {tab === "users" && (
@@ -96,7 +98,7 @@ function AdminPage() {
           )}
         </div>
 
-        {data.isLoading ? <p className="mt-6 text-sm text-muted-foreground">加载中…</p> : data.error ? <p className="mt-6 text-sm text-destructive">读取失败，请刷新重试</p> : tab === "users" ? (
+        {tab === "memory" ? <MemoryCenter /> : data.isLoading ? <p className="mt-6 text-sm text-muted-foreground">加载中…</p> : data.error ? <p className="mt-6 text-sm text-destructive">读取失败，请刷新重试</p> : tab === "users" ? (
           <div className="mt-4 overflow-x-auto rounded-xl border border-border">
             <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-card text-left text-xs text-muted-foreground">
