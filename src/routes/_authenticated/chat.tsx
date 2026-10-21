@@ -1,6 +1,5 @@
 import { botListRowClass } from "@/components/chat/bot-list-label";
 import { useServerFn } from "@tanstack/react-start";
-import { ShieldCheckIcon } from "lucide-react";
 import { checkAdmin } from "@/lib/admin.functions";
 import { MainBotLabel } from "@/components/chat/main-bot";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
