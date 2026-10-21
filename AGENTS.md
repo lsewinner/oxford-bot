@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Subdirectories may have their own AGENTS.md; read it before changing files there.
+- Read subdirectory AGENTS.md files before editing there.
 - Chat route → `ai/chat.server.ts` verifies bearer/ownership and persists messages. `ai/provider.server.ts` selects OpenAI key, then Anthropic key, then Gateway; no failure fallback; image/voice routing stays separate (why: protect accounts, keys and spending).
 - Threads are DB-backed with per-thread URLs `/chat/$threadId` under `_authenticated`; messages store AI SDK ids in `ui_id`, never in uuid columns (why: SDK ids are not UUIDs).
 - PWA uses only a manifest (why: avoid stale preview caches).
@@ -37,4 +37,4 @@
 - Nickname and compact avatar use authenticated owner metadata updates, never roles (why: sync identity without new tables).
 - Pro access: `subscriptions` rows are written only by the signed Stripe webhook; server checks use `has_active_subscription` with the environment derived from the build's client token, and gated server paths (chat Deep Think/persona, connection starts) re-check Pro (why: client gates are UX only).
 - Admin `/admin`: `has_role` check before supabaseAdmin in admin.functions; actions audited. Quotas via `consume_daily_message` RPC; overrides/bans/granted Pro in `account_controls`, honored by `has_active_subscription` (why: server is the only source of truth).
-- Memory center: admin-only versions, one published per kind, injected server-side before Bot context (why: stable identity, rollback).
+- Memory center: admin-only versions, one published per kind, injected server-side before Bot context.
