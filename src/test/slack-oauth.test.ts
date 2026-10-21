@@ -20,7 +20,7 @@ describe('slack one-click oauth', () => {
   it('exchanges the code and keys the connection by Slack team id', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string | URL, init?: { headers?: Record<string, string> }) => {
       expect(String(url)).toBe('https://slack.com/api/oauth.v2.access');
-      expect(init?.headers?.Authorization?.startsWith('Basic ')).toBe(true);
+      expect(init?.headers?.['Authorization']?.startsWith('Basic ')).toBe(true);
       return new Response(JSON.stringify({ ok: true, access_token: 'xoxb-tok', team: { id: 'T123', name: 'Oxford HQ' } }), { status: 200 });
     }));
     const { exchangeSlackCode } = await import('@/lib/connections/slack-oauth.server');
