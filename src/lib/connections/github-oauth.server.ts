@@ -54,7 +54,7 @@ export async function exchangeGithubCode(code: string, redirectUri: string) {
   const body = (await res.json().catch(() => null)) as { access_token?: string; error?: string; error_description?: string } | null;
   if (!res.ok || !body?.access_token) throw new Error(`GitHub 授权换取失败${body?.error ? `：${body.error_description ?? body.error}` : ''}`);
   const user = await fetch(USER_URL, {
-    headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${body.access_token}`, 'X-GitHub-Api-Version': '2022-11-28', User-Agent: 'Oxford-Bot' },
+    headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${body.access_token}`, 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'Oxford-Bot' },
   });
   const profile = (await user.json().catch(() => null)) as { id?: number | string; login?: string } | null;
   if (!user.ok || !profile?.id) throw new Error('无法获取 GitHub 账户信息，请重试');
