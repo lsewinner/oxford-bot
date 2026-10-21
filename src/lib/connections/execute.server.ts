@@ -17,7 +17,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(isWrite(input.operation) && !confirmed){
  const {data,error}=await supabaseAdmin.from('tool_actions').insert({user_id:userId,connector_id:id,operation:input.operation,payload:row.account_key && !input.account?{...input,account:row.account_key}:input}).select('id').single();
  if(error || !data)throw new Error('无法保存待确认操作');
- return {provider,status:'confirmation_required',actionId:data.id,summary:`${provider} · ${input.operation} · ${row.account_label || row.account_key || ''} · ${input.teamId ? `${input.teamId} / ${input.channelId ?? ''}` : input.to ?? input.repo ?? input.id ?? input.title ?? ''}`,...(input.text?{text:input.text}:{})};
+ return {provider,status:'confirmation_required',actionId:data.id,summary:`${provider} · ${input.operation} · ${row.account_label || row.account_key || ''} · ${input.teamId ? `${input.teamId} / ${input.channelId ?? ''}` : input.to ?? input.repo ?? input.id ?? input.title ?? ''}${input.start?` · ${input.start} → ${input.end ?? ''}`:''}`,...(input.text?{text:input.text}:{})};
  }
  const request=async(path:string,method='GET',body?:unknown,raw=false)=>{
  const init={method,headers:{Accept:id==='github'?'application/vnd.github+json':'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})};
