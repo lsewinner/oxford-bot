@@ -9,6 +9,7 @@ export const TOOL_CATALOG = [
   { id: "github", name: "GitHub", category: "开发与运维", detail: "代码库 · Issue · PR", action: "查询代码库、Issue 和 PR" },
   { id: "cloudflare", name: "Cloudflare", category: "开发与运维", detail: "DNS · 站点管理", action: "查询 DNS 与站点状态" },
   { id: "supabase", name: "Supabase", category: "开发与运维", detail: "项目 · 表结构 · 只读查询 · 健康检查", action: "查询数据库结构与数据" },
+  { id: "linear", name: "Linear", category: "开发与运维", detail: "团队 · 问题 · 评论", action: "查询并整理 Linear 问题" },
   { id: "slack", name: "Slack", category: "即时协作", detail: "频道消息 · 工作简报", action: "检索频道并整理简报" },
   { id: "microsoft_teams", name: "Teams", category: "即时协作", detail: "频道消息 · 工作简报", action: "检索频道并整理简报" },
 ] as const;
@@ -34,6 +35,7 @@ export function simulateTool(id: ToolId, query: string) {
       : id === "yuque" ? "示例文档：知识库周报（演示数据）"
       : id === "supabase" ? "示例项目：表结构查询已完成（演示数据）"
       : id === "cloudflare" ? "示例站点：DNS 查询流程已完成（演示数据）"
+      : id === "linear" ? "示例问题：登录页在 Safari 下偶发报错（演示数据）"
       : id === "slack" || id === "microsoft_teams" ? "示例简报：团队正在准备本周发布（演示数据）"
       : "示例草稿：感谢来信，我们会尽快确认安排。（仅演示，未保存或发送）",
   };

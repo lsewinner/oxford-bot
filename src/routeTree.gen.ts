@@ -29,6 +29,7 @@ import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as ApiOauthGithubCallbackRouteImport } from './routes/api/oauth/github/callback'
 import { Route as ApiOauthGoogleCallbackRouteImport } from './routes/api/oauth/google/callback'
+import { Route as ApiOauthLinearCallbackRouteImport } from './routes/api/oauth/linear/callback'
 import { Route as ApiOauthMicrosoftCallbackRouteImport } from './routes/api/oauth/microsoft/callback'
 import { Route as ApiOauthNotionCallbackRouteImport } from './routes/api/oauth/notion/callback'
 import { Route as ApiOauthSlackCallbackRouteImport } from './routes/api/oauth/slack/callback'
@@ -135,6 +136,11 @@ const ApiOauthGoogleCallbackRoute = ApiOauthGoogleCallbackRouteImport.update({
   path: '/api/oauth/google/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOauthLinearCallbackRoute = ApiOauthLinearCallbackRouteImport.update({
+  id: '/api/oauth/linear/callback',
+  path: '/api/oauth/linear/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOauthMicrosoftCallbackRoute =
   ApiOauthMicrosoftCallbackRouteImport.update({
     id: '/api/oauth/microsoft/callback',
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/api/oauth/github/callback': typeof ApiOauthGithubCallbackRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
+  '/api/oauth/linear/callback': typeof ApiOauthLinearCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
   '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatIndexRoute
   '/api/oauth/github/callback': typeof ApiOauthGithubCallbackRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
+  '/api/oauth/linear/callback': typeof ApiOauthLinearCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
   '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/api/oauth/github/callback': typeof ApiOauthGithubCallbackRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
+  '/api/oauth/linear/callback': typeof ApiOauthLinearCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
   '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/api/oauth/github/callback'
     | '/api/oauth/google/callback'
+    | '/api/oauth/linear/callback'
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
     | '/api/oauth/slack/callback'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/api/oauth/github/callback'
     | '/api/oauth/google/callback'
+    | '/api/oauth/linear/callback'
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
     | '/api/oauth/slack/callback'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/'
     | '/api/oauth/github/callback'
     | '/api/oauth/google/callback'
+    | '/api/oauth/linear/callback'
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
     | '/api/oauth/slack/callback'
@@ -340,6 +352,7 @@ export interface RootRouteChildren {
   ShareTokenRoute: typeof ShareTokenRoute
   ApiOauthGithubCallbackRoute: typeof ApiOauthGithubCallbackRoute
   ApiOauthGoogleCallbackRoute: typeof ApiOauthGoogleCallbackRoute
+  ApiOauthLinearCallbackRoute: typeof ApiOauthLinearCallbackRoute
   ApiOauthMicrosoftCallbackRoute: typeof ApiOauthMicrosoftCallbackRoute
   ApiOauthNotionCallbackRoute: typeof ApiOauthNotionCallbackRoute
   ApiOauthSlackCallbackRoute: typeof ApiOauthSlackCallbackRoute
@@ -489,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOauthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oauth/linear/callback': {
+      id: '/api/oauth/linear/callback'
+      path: '/api/oauth/linear/callback'
+      fullPath: '/api/oauth/linear/callback'
+      preLoaderRoute: typeof ApiOauthLinearCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/oauth/microsoft/callback': {
       id: '/api/oauth/microsoft/callback'
       path: '/api/oauth/microsoft/callback'
@@ -570,6 +590,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareTokenRoute: ShareTokenRoute,
   ApiOauthGithubCallbackRoute: ApiOauthGithubCallbackRoute,
   ApiOauthGoogleCallbackRoute: ApiOauthGoogleCallbackRoute,
+  ApiOauthLinearCallbackRoute: ApiOauthLinearCallbackRoute,
   ApiOauthMicrosoftCallbackRoute: ApiOauthMicrosoftCallbackRoute,
   ApiOauthNotionCallbackRoute: ApiOauthNotionCallbackRoute,
   ApiOauthSlackCallbackRoute: ApiOauthSlackCallbackRoute,
