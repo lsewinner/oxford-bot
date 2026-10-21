@@ -93,6 +93,7 @@ describe('Microsoft direct OAuth',()=>{
   expect((await callWithMicrosoftToken('refresh','/me/calendars?$top=50',undefined,undefined,'microsoft_calendar')).ok).toBe(true);
   expect((await callWithMicrosoftToken('refresh','/me/calendarView?startDateTime=2026-10-22T00%3A00%3A00Z&endDateTime=2026-11-05T00%3A00%3A00Z&%24top=50',undefined,undefined,'microsoft_calendar')).ok).toBe(true);
   expect((await callWithMicrosoftToken('refresh','/me/events',{method:'POST',body:'{}'},undefined,'microsoft_calendar')).ok).toBe(true);
+  fetcher.mockClear();
   await expect(callWithMicrosoftToken('refresh','/me/events/evt-1',{method:'PATCH'},undefined,'microsoft_calendar')).rejects.toThrow('不支持');
   await expect(callWithMicrosoftToken('refresh','/me/events/evt-1',{method:'DELETE'},undefined,'microsoft_calendar')).rejects.toThrow('不支持');
   await expect(callWithMicrosoftToken('refresh','/me/sendMail',{method:'POST'},undefined,'microsoft_calendar')).rejects.toThrow('不支持');
