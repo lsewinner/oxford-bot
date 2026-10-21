@@ -1,10 +1,11 @@
 import { callAsAppUser,appUserReconnectRequired } from '@/integrations/lovable/appUserConnector';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { decryptConnectionKey,getConnection,rotateMicrosoftCredential } from './storage.server';
+import { decryptConnectionKey,getConnection,rotateMicrosoftCredential,rotateLinearCredential } from './storage.server';
 import { PROVIDERS,validateOperation,isWrite,type ProviderId,type OperationInput,type ToolResult } from './catalog';
 import { callWithPersonalToken,supportsPersonalToken,personalTokenError } from './personal-token.server';
 import { callWithMicrosoftToken,MicrosoftReconnectError } from './microsoft-oauth.server';
 import { callWithGoogleToken,isGoogleProvider } from './google-oauth.server';
+import { callLinearGraphQL,LinearReconnectError } from './linear-oauth.server';
 const BASE='https://connector-gateway.lovable.dev';
 const enc=encodeURIComponent;
 const b64=(s:string)=>Buffer.from(s,'utf8').toString('base64');
@@ -25,6 +26,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  const google=row.credential_kind==='google_oauth';
  const microsoft=row.credential_kind==='microsoft_oauth';
  if(microsoft && id!=='microsoft_outlook' && id!=='microsoft_teams' && id!=='microsoft_calendar')throw new Error('此服务不支持微软授权');
+ if(row.credential_kind==='linear_oauth' && id!=='linear')throw new Error('此服务不支持 Linear 授权');
  if(personal && !supportsPersonalToken(id))throw new Error('不支持此服务的个人 Token');
  if(google && !isGoogleProvider(id))throw new Error('此服务不支持 Google 授权');
  let r:Response;
