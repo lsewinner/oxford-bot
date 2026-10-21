@@ -315,6 +315,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_bot_registry: {
+        Row: {
+          entries: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          entries?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          entries?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
