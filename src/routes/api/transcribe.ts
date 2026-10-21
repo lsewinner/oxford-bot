@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MAX_AUDIO_BYTES, isAbort, passthrough, transcribe, verifyOptionalCaller } from "@/lib/voice-gateway.server";
+import { MAX_AUDIO_BYTES, isAbort, passthrough, transcribe, verifyOptionalCaller, voiceCredentialsFromEnv } from "@/lib/voice-gateway.server";
 
 export const Route = createFileRoute("/api/transcribe")({
   server: { handlers: { POST: async ({ request }) => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
+    const apiKey = voiceCredentialsFromEnv();
     if (!apiKey) return Response.json({ error: "AI 服务未配置" }, { status: 500 });
     const denied = await verifyOptionalCaller(request);
     if (denied) return denied;
