@@ -27,6 +27,7 @@ import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
+import { Route as ApiOauthGithubCallbackRouteImport } from './routes/api/oauth/github/callback'
 import { Route as ApiOauthGoogleCallbackRouteImport } from './routes/api/oauth/google/callback'
 import { Route as ApiOauthMicrosoftCallbackRouteImport } from './routes/api/oauth/microsoft/callback'
 import { Route as ApiOauthNotionCallbackRouteImport } from './routes/api/oauth/notion/callback'
@@ -123,6 +124,11 @@ const AuthenticatedChatThreadIdRoute =
     path: '/$threadId',
     getParentRoute: () => AuthenticatedChatRoute,
   } as any)
+const ApiOauthGithubCallbackRoute = ApiOauthGithubCallbackRouteImport.update({
+  id: '/api/oauth/github/callback',
+  path: '/api/oauth/github/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOauthGoogleCallbackRoute = ApiOauthGoogleCallbackRouteImport.update({
   id: '/api/oauth/google/callback',
   path: '/api/oauth/google/callback',
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
+  '/api/oauth/github/callback': typeof ApiOauthGithubCallbackRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/chat': typeof AuthenticatedChatIndexRoute
+  '/api/oauth/github/callback': typeof ApiOauthGithubCallbackRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
+  '/api/oauth/github/callback': typeof ApiOauthGithubCallbackRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/chat/$threadId'
     | '/chat/'
+    | '/api/oauth/github/callback'
     | '/api/oauth/google/callback'
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/chat/$threadId'
     | '/chat'
+    | '/api/oauth/github/callback'
     | '/api/oauth/google/callback'
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/chat/'
+    | '/api/oauth/github/callback'
     | '/api/oauth/google/callback'
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
@@ -314,6 +326,7 @@ export interface RootRouteChildren {
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   ShareTokenRoute: typeof ShareTokenRoute
+  ApiOauthGithubCallbackRoute: typeof ApiOauthGithubCallbackRoute
   ApiOauthGoogleCallbackRoute: typeof ApiOauthGoogleCallbackRoute
   ApiOauthMicrosoftCallbackRoute: typeof ApiOauthMicrosoftCallbackRoute
   ApiOauthNotionCallbackRoute: typeof ApiOauthNotionCallbackRoute
@@ -449,6 +462,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatThreadIdRouteImport
       parentRoute: typeof AuthenticatedChatRoute
     }
+    '/api/oauth/github/callback': {
+      id: '/api/oauth/github/callback'
+      path: '/api/oauth/github/callback'
+      fullPath: '/api/oauth/github/callback'
+      preLoaderRoute: typeof ApiOauthGithubCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/oauth/google/callback': {
       id: '/api/oauth/google/callback'
       path: '/api/oauth/google/callback'
@@ -528,6 +548,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTranscribeRoute: ApiTranscribeRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   ShareTokenRoute: ShareTokenRoute,
+  ApiOauthGithubCallbackRoute: ApiOauthGithubCallbackRoute,
   ApiOauthGoogleCallbackRoute: ApiOauthGoogleCallbackRoute,
   ApiOauthMicrosoftCallbackRoute: ApiOauthMicrosoftCallbackRoute,
   ApiOauthNotionCallbackRoute: ApiOauthNotionCallbackRoute,

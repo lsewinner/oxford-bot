@@ -1,7 +1,9 @@
 # Roadmap
 - [x] Google Calendar：沿用 Gmail 的一键 Google 授权，支持查看日历/日程与确认后创建日程
 - [ ] Google Calendar 真实账户验证（需在 Google Cloud 启用 Calendar API 并在授权页添加日历权限）
-- [ ] 一键授权改造排期：Notion、GitHub、Slack 改为一键授权；飞书商店应用待定
+- [x] GitHub 一键 OAuth：自建授权回调与 HMAC 状态、按 GitHub 用户 ID 多账户、个人 Token 表单保留为开发者备用；221 项测试通过
+- [ ] GitHub 一键授权真实账户验证（需配置 GITHUB_OAUTH_CLIENT_ID/SECRET：github.com/settings/developers 新建 OAuth App，回调 https://oxford.bot/api/oauth/github/callback）
+- [ ] 一键授权改造排期：Slack 改为一键授权；飞书商店应用待定
 - [x] 飞书凭证输入指导：账户名称可选，凭证框填写 App ID 与 App Secret，以英文冒号连接；连接失败仍需真实凭证验证
 - [ ] LinkedIn 接入方式确认（待用户选择各自账户、公司共享账户或仅聊天使用）
 - [x] 第一优先级：Oxford 记忆中心（版本/预览/发布/回滚）+ Supabase/Notion/语雀使用指引
