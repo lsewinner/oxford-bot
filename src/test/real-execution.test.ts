@@ -1,6 +1,6 @@
 import { beforeEach,describe,it,expect,vi } from 'vitest';
 const mocks=vi.hoisted(()=>({get:vi.fn(),call:vi.fn(),insert:vi.fn(),decrypt:vi.fn()}));
-vi.mock('@/lib/connections/storage.server',()=>({getConnection:mocks.get,decryptConnectionKey:mocks.decrypt,rotateMicrosoftCredential:vi.fn()}));
+vi.mock('@/lib/connections/storage.server',()=>({getConnection:mocks.get,decryptConnectionKey:mocks.decrypt,rotateMicrosoftCredential:vi.fn(),rotateLinearCredential:vi.fn()}));
 vi.mock('@/integrations/lovable/appUserConnector',()=>({callAsAppUser:mocks.call,appUserReconnectRequired:async()=>false}));
 vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{from:()=>({insert:mocks.insert,update:()=>({eq:()=>({eq:async()=>({error:null})})})})}}));
 const googleMocks=vi.hoisted(()=>({call:vi.fn()}));
@@ -8,6 +8,8 @@ vi.mock('@/lib/connections/google-oauth.server',()=>({callWithGoogleToken:google
 import { executeOperation } from '@/lib/connections/execute.server';
 const microsoftMocks=vi.hoisted(()=>({call:vi.fn()}));
 vi.mock('@/lib/connections/microsoft-oauth.server',()=>({callWithMicrosoftToken:microsoftMocks.call,MicrosoftReconnectError:class extends Error{}}));
+const linearMocks=vi.hoisted(()=>({call:vi.fn()}));
+vi.mock('@/lib/connections/linear-oauth.server',()=>({callLinearGraphQL:linearMocks.call,LinearReconnectError:class extends Error{}}));
 describe('personal provider execution',()=>{
  beforeEach(()=>{vi.clearAllMocks();mocks.get.mockResolvedValue({id:'row',enabled:true,reconnect_required:false,connection_key_ciphertext:'encrypted'});mocks.decrypt.mockReturnValue('private-test-handle');mocks.insert.mockReturnValue({select:()=>({single:async()=>({data:{id:'proposal'},error:null})})});});
  it('a model mail send stores a proposal for its authenticated owner, never sends',async()=>{
@@ -109,5 +111,29 @@ describe('personal provider execution',()=>{
   microsoftMocks.call.mockResolvedValue(new Response(null,{status:202}));
   const result=await executeOperation('owner-a','microsoft_outlook',{operation:'send',to:'r@example.com',title:'t',text:'x'},true);
   expect(result.status).toBe('completed');expect(microsoftMocks.call.mock.calls[0]?.[1]).toBe('/me/sendMail');expect(mocks.call).not.toHaveBeenCalled();
+ });
+ it('Linear comments stay a proposal until the owner confirms',async()=>{
+  mocks.get.mockResolvedValue({id:'row',enabled:true,credential_kind:'linear_oauth',connection_key_ciphertext:'encrypted'});
+  const result=await executeOperation('owner-a','linear',{operation:'create_comment',id:'ENG-1',text:'已确认，今天修复'});
+  expect(result.status).toBe('confirmation_required');expect(linearMocks.call).not.toHaveBeenCalled();
+ });
+ it('Linear issue reads come from GraphQL with the requested team filter',async()=>{
+  mocks.get.mockResolvedValue({id:'row',enabled:true,credential_kind:'linear_oauth',connection_key_ciphertext:'encrypted'});
+  linearMocks.call.mockResolvedValue(Response.json({data:{issues:{nodes:[{identifier:'ENG-1',title:'登录页偶发报错',url:'https://linear.app/oxford/issue/ENG-1',state:{name:'In Progress'},assignee:{name:'Michael'},priority:2}]}}}));
+  const result=await executeOperation('owner-a','linear',{operation:'issues',teamId:'2b4c8e6a-9e3a-4c1a-9a1a-1f2e3d4c5b6a'});
+  expect(result.items).toEqual([{title:'登录页偶发报错',id:'ENG-1',url:'https://linear.app/oxford/issue/ENG-1',detail:'In Progress · Michael · 优先级 2'}]);
+  expect(linearMocks.call.mock.calls[0]?.[2]).toEqual({first:25,filter:{team:{id:{eq:'2b4c8e6a-9e3a-4c1a-9a1a-1f2e3d4c5b6a'}}}});
+ });
+ it('a Linear GraphQL error array never reports completed',async()=>{
+  mocks.get.mockResolvedValue({id:'row',enabled:true,credential_kind:'linear_oauth',connection_key_ciphertext:'encrypted'});
+  linearMocks.call.mockResolvedValue(Response.json({errors:[{message:'Field "title" cannot be filtered here'}]}));
+  await expect(executeOperation('owner-a','linear',{operation:'issues'})).rejects.toThrow('Linear：');
+ });
+ it('confirmed Linear issue creation sends the team and body once',async()=>{
+  mocks.get.mockResolvedValue({id:'row',enabled:true,credential_kind:'linear_oauth',connection_key_ciphertext:'encrypted'});
+  linearMocks.call.mockResolvedValue(Response.json({data:{issueCreate:{success:true,issue:{id:'i1',identifier:'ENG-7',title:'新增问题',url:'https://linear.app/oxford/issue/ENG-7'}}}}));
+  const result=await executeOperation('owner-a','linear',{operation:'create_issue',teamId:'2b4c8e6a-9e3a-4c1a-9a1a-1f2e3d4c5b6a',title:'新增问题',text:'描述'},true);
+  expect(result.status).toBe('completed');
+  expect(linearMocks.call.mock.calls[0]?.[2]).toEqual({input:{teamId:'2b4c8e6a-9e3a-4c1a-9a1a-1f2e3d4c5b6a',title:'新增问题',description:'描述'}});
  });
 });

@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import { validateOperation, PROVIDERS } from '@/lib/connections/catalog';
 const m=vi.hoisted(()=>({get:vi.fn(),decrypt:vi.fn(),insert:vi.fn(),call:vi.fn()}));
-vi.mock('@/lib/connections/storage.server',()=>({getConnection:m.get,decryptConnectionKey:m.decrypt,rotateMicrosoftCredential:vi.fn(),encryptConnectionKey:(x:string)=>Buffer.from(x).toString('base64')}));
+vi.mock('@/lib/connections/storage.server',()=>({getConnection:m.get,decryptConnectionKey:m.decrypt,rotateMicrosoftCredential:vi.fn(),rotateLinearCredential:vi.fn(),encryptConnectionKey:(x:string)=>Buffer.from(x).toString('base64')}));
 vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{from:()=>({insert:m.insert})}}));
 import { executeOperation } from '@/lib/connections/execute.server';
 import { startMicrosoftAuthorization,callWithMicrosoftToken } from '@/lib/connections/microsoft-oauth.server';

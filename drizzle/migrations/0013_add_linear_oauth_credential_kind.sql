@@ -1,0 +1,2 @@
+ALTER TABLE public.app_user_connections DROP CONSTRAINT app_user_connections_credential_kind_check;
+ALTER TABLE public.app_user_connections ADD CONSTRAINT app_user_connections_credential_kind_check CHECK (credential_kind = ANY (ARRAY['oauth'::text, 'personal_token'::text, 'google_oauth'::text, 'microsoft_oauth'::text, 'linear_oauth'::text]));
