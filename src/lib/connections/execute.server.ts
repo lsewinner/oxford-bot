@@ -81,6 +81,13 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
    const b=await request(messages,'POST',{body:{contentType:'text',content:input.text}});
    items=[{title:input.text?.slice(0,100) ?? '消息',id:b.id,...(b.webUrl?{url:b.webUrl}:{})}];
   }
+ } else if(id==='microsoft_calendar'){
+ const zone=(v?:string)=>v && /^[\w/+-]+$/.test(v) ? v : undefined;
+ const dt=(v:any)=>`${v?.dateTime ?? v?.date ?? ''}${v?.date?'（全天）':''}`;
+ const toIso=(v:string)=>/^\d{4}-\d{2}-\d{2}$/.test(v)?`${v}T00:00:00Z`:new Date(v).toISOString();
+ if(o==='calendars'){const b=await request('/me/calendars?$top=50');items=(b.value ?? []).map((v:any)=>({title:v.name ?? '未命名',id:v.id,detail:v.isDefaultCalendar?'默认日历':''}));if(b.value?.length>=50)text='仅显示前 50 个日历';}
+ if(o==='events'){const start=input.start?toIso(input.start):new Date().toISOString();const end=input.end?toIso(input.end):new Date(Date.parse(start)+14*86400000).toISOString();const p=new URLSearchParams({startDateTime:start,endDateTime:end,'$top':'50','\$orderby':'start/dateTime'});const b=await request(`/me/calendarView?${p}`);items=(b.value ?? []).map((v:any)=>({title:v.subject ?? '（无标题）',id:v.id,url:v.webLink,detail:`${dt(v.start)} → ${dt(v.end)}${v.location?.displayName?` · ${v.location.displayName}`:''}${v.isAllDay?' · 全天':''}`}));if(b.value?.length>=50)text='仅显示前 50 条日程';}
+ if(o==='create_event'){const allDay=/^\d{4}-\d{2}-\d{2}$/.test(input.start ?? '');const t=(v:string)=>allDay?{date:v}:{dateTime:v,...(zone(input.timeZone)?{timeZone:input.timeZone}:{})};const b=await request('/me/events','POST',{subject:input.title,...(input.text?{body:{contentType:'text',content:input.text}}:{}),isAllDay:allDay,start:t(input.start!),end:t(input.end!)});items=[{title:b.subject ?? input.title ?? '',id:b.id,...(b.webLink?{url:b.webLink}:{}),detail:`${dt(b.start)} → ${dt(b.end)}`}];}
  } else if(id==='google_calendar'){
  const cal=enc(input.id || 'primary');
  const when=(v:any)=>v?.dateTime ?? v?.date ?? '';
