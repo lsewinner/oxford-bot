@@ -29,6 +29,6 @@ describe('github one-click oauth', () => {
   it('surfaces GitHub token exchange errors', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: 'bad_verification_code', error_description: 'The code passed is incorrect.' }), { status: 400 })));
     const { exchangeGithubCode } = await import('@/lib/connections/github-oauth.server');
-    await expect(exchangeGithubCode('bad', 'https://oxford.bot/api/oauth/github/callback')).rejects.toThrow('bad_verification_code');
+    await expect(exchangeGithubCode('bad', 'https://oxford.bot/api/oauth/github/callback')).rejects.toThrow('The code passed is incorrect');
   });
 });
