@@ -34,7 +34,7 @@ export function validateOperation(provider:ProviderId,input:OperationInput) {
    if (['read','update_doc'].includes(input.operation) && !/^[\w-]+$/.test(input.id ?? '')) throw new Error('请指定文档 ID 或 slug（来自文档列表）');
    if (['create_doc','update_doc'].includes(input.operation) && (!input.title?.trim() || !input.text?.trim())) throw new Error('请提供文档标题和完整正文');
   }
- if (provider==='google_calendar') {
+ if (provider==='google_calendar' || provider==='microsoft_calendar') {
   if (input.id && !/^[\w.@#-]{1,200}$/.test(input.id)) throw new Error('日历标识格式无效');
   const ok=(v?:string)=>Boolean(v && (/^\d{4}-\d{2}-\d{2}$/.test(v) || !Number.isNaN(Date.parse(v))));
   if (input.operation==='events' && ((input.start && !ok(input.start)) || (input.end && !ok(input.end)))) throw new Error('时间范围格式无效');
