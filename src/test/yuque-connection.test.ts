@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { callWithPersonalToken, personalTokenIdentity, validatePersonalToken } from '@/lib/connections/personal-token.server';
 import { isWrite, validateOperation, operationInput } from '@/lib/connections/catalog';
 const mocks=vi.hoisted(()=>({get:vi.fn(),insert:vi.fn()}));
-vi.mock('@/lib/connections/storage.server',()=>({getConnection:mocks.get,decryptConnectionKey:()=> 'test-token',rotateMicrosoftCredential:vi.fn()}));
+vi.mock('@/lib/connections/storage.server',()=>({getConnection:mocks.get,decryptConnectionKey:()=> 'test-token',rotateMicrosoftCredential:vi.fn(),rotateLinearCredential:vi.fn()}));
 vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{from:()=>({insert:mocks.insert})}}));
 import { executeOperation } from '@/lib/connections/execute.server';
 const fetcher=vi.fn();
