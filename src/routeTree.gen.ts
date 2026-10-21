@@ -35,6 +35,7 @@ import { Route as ApiOauthNotionCallbackRouteImport } from './routes/api/oauth/n
 import { Route as ApiOauthSlackCallbackRouteImport } from './routes/api/oauth/slack/callback'
 import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oauth/return'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicWechatKfAccountIdRouteImport } from './routes/api/public/wechat-kf/$accountId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -168,6 +169,12 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWechatKfAccountIdRoute =
+  ApiPublicWechatKfAccountIdRouteImport.update({
+    id: '/api/public/wechat-kf/$accountId',
+    path: '/api/public/wechat-kf/$accountId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -195,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -221,6 +229,7 @@ export interface FileRoutesByTo {
   '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -250,6 +259,7 @@ export interface FileRoutesById {
   '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/api/oauth/slack/callback'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
+    | '/api/public/wechat-kf/$accountId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/api/oauth/slack/callback'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
+    | '/api/public/wechat-kf/$accountId'
   id:
     | '__root__'
     | '/'
@@ -333,6 +345,7 @@ export interface FileRouteTypes {
     | '/api/oauth/slack/callback'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
+    | '/api/public/wechat-kf/$accountId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -358,6 +371,7 @@ export interface RootRouteChildren {
   ApiOauthSlackCallbackRoute: typeof ApiOauthSlackCallbackRoute
   ApiPublicOauthReturnRoute: typeof ApiPublicOauthReturnRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicWechatKfAccountIdRoute: typeof ApiPublicWechatKfAccountIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -544,6 +558,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/wechat-kf/$accountId': {
+      id: '/api/public/wechat-kf/$accountId'
+      path: '/api/public/wechat-kf/$accountId'
+      fullPath: '/api/public/wechat-kf/$accountId'
+      preLoaderRoute: typeof ApiPublicWechatKfAccountIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -596,6 +617,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOauthSlackCallbackRoute: ApiOauthSlackCallbackRoute,
   ApiPublicOauthReturnRoute: ApiPublicOauthReturnRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicWechatKfAccountIdRoute: ApiPublicWechatKfAccountIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
