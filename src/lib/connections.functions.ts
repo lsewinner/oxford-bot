@@ -17,11 +17,11 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  const {getConnections,decryptConnectionKey}=await import('./connections/storage.server');
  const {callAsAppUser,appUserReconnectRequired}=await import('@/integrations/lovable/appUserConnector');
  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
- const paths={github:'/user',google_mail:'/gmail/v1/users/me/profile',microsoft_outlook:'/me?$select=displayName',microsoft_teams:'/me/joinedTeams',google_drive:'/drive/v3/about?fields=user(displayName,emailAddress)',slack:'/api/auth.test',cloudflare:'/zones?per_page=1',supabase:'/projects',notion:'/users/me',yuque:'/user',feishu:'/bot/v3/info'};
+ const paths={github:'/user',google_mail:'/gmail/v1/users/me/profile',microsoft_outlook:'/me?$select=displayName',microsoft_teams:'/me/joinedTeams',google_drive:'/drive/v3/about?fields=user(displayName,emailAddress)',google_calendar:'/calendar/v3/users/me/calendarList/primary',slack:'/api/auth.test',cloudflare:'/zones?per_page=1',supabase:'/projects',notion:'/users/me',yuque:'/user',feishu:'/bot/v3/info'};
  const withRetry=async<T>(fn:()=>Promise<T>)=>{try{return await fn();}catch(first){await new Promise(r=>setTimeout(r,800));try{return await fn();}catch{throw first;}}};
 
  const perProvider=await Promise.all(providerId.options.map(async(id)=>{
-  const configured=id==='google_mail'||id==='google_drive'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
+  const configured=id==='google_mail'||id==='google_drive'||id==='google_calendar'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
   if(!rows.length)return [{id,rowId:null as string|null,account:'',label:'',configured,credentialKind:'oauth',connected:false,enabled:false,reconnectRequired:false,connectionError:''}];
   return Promise.all(rows.map(async(row)=>{let account=row.account_key;
   let reconnectRequired=row?.reconnect_required ?? false;let connectionError='';
@@ -67,7 +67,7 @@ export const startConnection=createServerFn({method:'POST'}).middleware([require
  const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
  return authorizeAppUserOAuth({gatewayBaseUrl:BASE,connectorId:data.id,appUserId:context.userId,clientAPIKey:client,returnUrl:new URL('/api/public/oauth/return',origin).toString(),...(row && row.credential_kind!=='personal_token'?{connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext)}:{}),credentialsConfiguration:{scopes:PROVIDERS[data.id].scopes,...(data.id==='microsoft_outlook'?{domain_hint:'none',prompt:'select_account'}:{})}});
 });
-export const startGoogleOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['google_mail','google_drive'])}).strict().parse(v)).handler(async({data,context})=>{await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
+export const startGoogleOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['google_mail','google_drive','google_calendar'])}).strict().parse(v)).handler(async({data,context})=>{await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
  const {buildGoogleAuthUrl,signState}=await import('./connections/google-oauth.server');
  const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
  const redirectUri=new URL('/api/oauth/google/callback',origin).toString();

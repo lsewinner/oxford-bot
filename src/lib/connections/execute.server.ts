@@ -17,7 +17,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(isWrite(input.operation) && !confirmed){
  const {data,error}=await supabaseAdmin.from('tool_actions').insert({user_id:userId,connector_id:id,operation:input.operation,payload:row.account_key && !input.account?{...input,account:row.account_key}:input}).select('id').single();
  if(error || !data)throw new Error('无法保存待确认操作');
- return {provider,status:'confirmation_required',actionId:data.id,summary:`${provider} · ${input.operation} · ${row.account_label || row.account_key || ''} · ${input.teamId ? `${input.teamId} / ${input.channelId ?? ''}` : input.to ?? input.repo ?? input.id ?? input.title ?? ''}`,...(input.text?{text:input.text}:{})};
+ return {provider,status:'confirmation_required',actionId:data.id,summary:`${provider} · ${input.operation} · ${row.account_label || row.account_key || ''} · ${input.teamId ? `${input.teamId} / ${input.channelId ?? ''}` : input.to ?? input.repo ?? input.id ?? input.title ?? ''}${input.start?` · ${input.start} → ${input.end ?? ''}`:''}`,...(input.text?{text:input.text}:{})};
  }
  const request=async(path:string,method='GET',body?:unknown,raw=false)=>{
  const init={method,headers:{Accept:id==='github'?'application/vnd.github+json':'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})};
@@ -81,6 +81,12 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
    const b=await request(messages,'POST',{body:{contentType:'text',content:input.text}});
    items=[{title:input.text?.slice(0,100) ?? '消息',id:b.id,...(b.webUrl?{url:b.webUrl}:{})}];
   }
+ } else if(id==='google_calendar'){
+ const cal=enc(input.id || 'primary');
+ const when=(v:any)=>v?.dateTime ?? v?.date ?? '';
+ if(o==='calendars'){const b=await request('/calendar/v3/users/me/calendarList?maxResults=50');items=(b.items ?? []).map((v:any)=>({title:v.summary,id:v.id,detail:`${v.primary?'主日历 · ':''}${v.accessRole ?? ''} · ${v.timeZone ?? ''}`}));}
+ if(o==='events'){const toIso=(v:string)=>/^\d{4}-\d{2}-\d{2}$/.test(v)?`${v}T00:00:00Z`:new Date(v).toISOString();const min=input.start?toIso(input.start):new Date().toISOString();const max=input.end?toIso(input.end):new Date(Date.parse(min)+14*86400000).toISOString();const p=new URLSearchParams({singleEvents:'true',orderBy:'startTime',maxResults:'50',timeMin:min,timeMax:max});if(input.query)p.set('q',input.query);if(input.timeZone)p.set('timeZone',input.timeZone);const b=await request(`/calendar/v3/calendars/${cal}/events?${p}`);items=(b.items ?? []).map((v:any)=>({title:v.summary ?? '（无标题）',id:v.id,url:v.htmlLink,detail:`${when(v.start)} → ${when(v.end)}${v.start?.date?'（全天，结束日期不含当天）':''}${v.location?` · ${v.location}`:''}`}));}
+ if(o==='create_event'){const allDay=/^\d{4}-\d{2}-\d{2}$/.test(input.start ?? '');const t=(v:string)=>allDay?{date:v}:{dateTime:v,...(input.timeZone?{timeZone:input.timeZone}:{})};const b=await request(`/calendar/v3/calendars/${cal}/events`,'POST',{summary:input.title,...(input.text?{description:input.text}:{}),start:t(input.start!),end:t(input.end!)});items=[{title:b.summary,id:b.id,url:b.htmlLink,detail:`${when(b.start)} → ${when(b.end)}`}];}
  } else if(id==='google_drive'){
  if(o==='search'){const q=`trashed = false${input.query?" and name contains '"+input.query.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'":''}`;const b=await request(`/drive/v3/files?pageSize=20&fields=files(id,name,mimeType,webViewLink)&q=${enc(q)}`);items=(b.files ?? []).map((v:any)=>({title:v.name,id:v.id,url:v.webViewLink,detail:v.mimeType}));}
  if(o==='read'){const file=enc(input.id ?? '');const b=await request(`/drive/v3/files/${file}?fields=id,name,mimeType,size`);if(Number(b.size)>1000000)throw new Error('文件过大，请上传附件进行分析');if(b.mimeType==='application/vnd.google-apps.document')text=await request(`/drive/v3/files/${file}/export?mimeType=text/plain`,'GET',undefined,true);else if(b.mimeType.startsWith('text/') || b.mimeType==='application/json')text=await request(`/drive/v3/files/${file}?alt=media`,'GET',undefined,true);else throw new Error('此类型请下载后上传至对话分析');text=text?.slice(0,30000);items=[{title:b.name,id:b.id}];}
