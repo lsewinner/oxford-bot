@@ -21,7 +21,7 @@ export const threadsQuery = () =>
 export const messagesQuery = (threadId: string) =>
   queryOptions({
     queryKey: ["messages", threadId],
-    staleTime: Infinity,
+    staleTime: 0,
     queryFn: async (): Promise<{ exists: boolean; messages: UIMessage[] }> => {
       const { data: thread, error: tErr } = await supabase
         .from("threads")
