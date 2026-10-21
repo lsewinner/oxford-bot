@@ -28,6 +28,7 @@ export function BotPresenceProvider({ children, scope = "guest" }: { children: R
 function ScopedBotPresenceProvider({ children, scope }: { children: ReactNode; scope: string }) {
   const [entries, setEntries] = useState<BotEntry[]>([]);
   const [restored, setRestored] = useState(false);
+  const [cloudReady, setCloudReady] = useState(false);
   const cloud = scope !== "guest";
   useEffect(() => {
     let cancelled = false;
@@ -35,30 +36,33 @@ function ScopedBotPresenceProvider({ children, scope }: { children: ReactNode; s
       const saved = parseBotEntries(localStorage.getItem(botStorageKey(scope)));
       setEntries((current) => mergeBotEntries(saved, current));
     } catch { toast.error("无法保存 Bot，请允许浏览器使用本地存储"); }
-    if (!cloud) { setRestored(true); return; }
+    setRestored(true);
+    if (!cloud) return;
     // Signed-in Bots sync across devices; local copies migrate up on first load.
-    void supabase.from("user_bot_registry" as never).select("entries").eq("user_id", scope).maybeSingle()
+    void Promise.resolve(supabase.from("user_bot_registry" as never).select("entries").eq("user_id", scope).maybeSingle())
       .then(({ data, error }) => {
         if (cancelled) return;
-        if (error) toast.error("云端 Bot 同步失败，先使用本机记录");
+        if (error) { console.error("bot cloud load failed", error); return; }
         const remote = parseBotEntries(JSON.stringify((data as { entries?: unknown } | null)?.entries ?? []));
         setEntries((current) => mergeBotEntries(remote, current));
-        setRestored(true);
-      });
+        setCloudReady(true);
+      }, () => {});
     return () => { cancelled = true; };
   }, [scope, cloud]);
   useEffect(() => {
     if (!restored) return;
     try { localStorage.setItem(botStorageKey(scope), JSON.stringify(entries)); }
     catch { toast.error("Bot 暂未保存，请检查浏览器存储空间"); }
-    if (!cloud) return;
+  }, [entries, restored, scope]);
+  useEffect(() => {
+    if (!cloudReady) return;
     const timer = setTimeout(() => {
       void supabase.from("user_bot_registry" as never)
         .upsert({ user_id: scope, entries, updated_at: new Date().toISOString() } as never, { onConflict: "user_id" })
         .then(({ error }) => { if (error) console.error("bot cloud sync failed", error); });
     }, 600);
     return () => clearTimeout(timer);
-  }, [entries, restored, scope, cloud]);
+  }, [entries, cloudReady, scope]);
   const register = useCallback((incoming: BotEntry[]) => {
     setEntries((previous) => {
       return mergeBotEntries(previous, incoming);
