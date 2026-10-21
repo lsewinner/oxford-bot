@@ -48,6 +48,17 @@ function Index() {
       <Button asChild variant="ghost" className="mt-3"><Link to="/guest">游客对话</Link></Button>
       <p className="mt-6 font-mono text-xs text-muted-foreground">在手机浏览器中「添加到主屏幕」即可像 App 一样使用</p>
       <Link to="/pricing" className="mt-6 text-sm text-muted-foreground underline-offset-4 hover:underline">查看价格与权益</Link>
+      <section aria-labelledby="about-heading" className="mt-16 w-full max-w-2xl border-t border-border pt-10 text-left text-sm leading-7 text-muted-foreground">
+        <h2 id="about-heading" className="text-base font-semibold text-foreground">About Oxford Bot · 关于 Oxford Bot</h2>
+        <p className="mt-3">Oxford Bot is an AI work assistant by OXFORD INTELLIGENCE LIMITED. It answers questions, searches the web, analyses files and images, and — only when you choose to connect them — works with your own tools such as Gmail, Google Calendar, Google Drive, Outlook, Notion and GitHub.</p>
+        <p className="mt-3">Oxford Bot 是 Oxford Intelligence 推出的 AI 工作助手：回答问题、联网搜索、分析文件与图片；在你主动授权后，帮你查阅邮件、日程和文档。任何发送邮件、创建日程或修改文档的操作，都必须由你在确认卡片中点击确认后才会执行。</p>
+        <ul className="mt-4 list-disc space-y-1 pl-5">
+          <li>Google Calendar: view your events and create events you confirm.</li>
+          <li>Gmail: search and read messages, draft or send replies you confirm.</li>
+          <li>Google Drive: find and read files you ask about, create files you confirm.</li>
+        </ul>
+        <p className="mt-3">You can use guest chat without an account. Learn how we handle your data in our <Link to="/privacy" className="text-foreground underline">Privacy Policy</Link>.</p>
+      </section>
       <div className="mt-6"><LegalLinks /></div>
     </div>
   );
