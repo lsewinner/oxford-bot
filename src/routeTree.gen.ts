@@ -29,6 +29,7 @@ import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as ApiOauthGoogleCallbackRouteImport } from './routes/api/oauth/google/callback'
 import { Route as ApiOauthMicrosoftCallbackRouteImport } from './routes/api/oauth/microsoft/callback'
+import { Route as ApiOauthNotionCallbackRouteImport } from './routes/api/oauth/notion/callback'
 import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oauth/return'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
@@ -133,6 +134,11 @@ const ApiOauthMicrosoftCallbackRoute =
     path: '/api/oauth/microsoft/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiOauthNotionCallbackRoute = ApiOauthNotionCallbackRouteImport.update({
+  id: '/api/oauth/notion/callback',
+  path: '/api/oauth/notion/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicOauthReturnRoute = ApiPublicOauthReturnRouteImport.update({
   id: '/api/public/oauth/return',
   path: '/api/public/oauth/return',
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
+  '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatIndexRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
+  '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/api/oauth/google/callback': typeof ApiOauthGoogleCallbackRoute
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
+  '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/api/oauth/google/callback'
     | '/api/oauth/microsoft/callback'
+    | '/api/oauth/notion/callback'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/api/oauth/google/callback'
     | '/api/oauth/microsoft/callback'
+    | '/api/oauth/notion/callback'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
   id:
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/'
     | '/api/oauth/google/callback'
     | '/api/oauth/microsoft/callback'
+    | '/api/oauth/notion/callback'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
@@ -304,6 +316,7 @@ export interface RootRouteChildren {
   ShareTokenRoute: typeof ShareTokenRoute
   ApiOauthGoogleCallbackRoute: typeof ApiOauthGoogleCallbackRoute
   ApiOauthMicrosoftCallbackRoute: typeof ApiOauthMicrosoftCallbackRoute
+  ApiOauthNotionCallbackRoute: typeof ApiOauthNotionCallbackRoute
   ApiPublicOauthReturnRoute: typeof ApiPublicOauthReturnRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
@@ -450,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOauthMicrosoftCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oauth/notion/callback': {
+      id: '/api/oauth/notion/callback'
+      path: '/api/oauth/notion/callback'
+      fullPath: '/api/oauth/notion/callback'
+      preLoaderRoute: typeof ApiOauthNotionCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/oauth/return': {
       id: '/api/public/oauth/return'
       path: '/api/public/oauth/return'
@@ -510,6 +530,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareTokenRoute: ShareTokenRoute,
   ApiOauthGoogleCallbackRoute: ApiOauthGoogleCallbackRoute,
   ApiOauthMicrosoftCallbackRoute: ApiOauthMicrosoftCallbackRoute,
+  ApiOauthNotionCallbackRoute: ApiOauthNotionCallbackRoute,
   ApiPublicOauthReturnRoute: ApiPublicOauthReturnRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
