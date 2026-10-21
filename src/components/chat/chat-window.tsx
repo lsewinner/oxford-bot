@@ -77,7 +77,11 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
     messages: initialMessages,
     transport,
     onError: (e) => toast.error(errorText(e)),
-    onFinish: () => { queryClient.invalidateQueries({ queryKey: ["threads"] }); queryClient.invalidateQueries({ queryKey: ["bot-history"] }); queryClient.invalidateQueries({ queryKey: ["thread-previews"] }); },
+    onFinish: ({ messages: finished }) => {
+      // Keep the cached thread current so reopening it after switching Bots shows the replies.
+      if (!isGuestConversation(threadId)) queryClient.setQueryData(["messages", threadId], { exists: true, messages: finished });
+      queryClient.invalidateQueries({ queryKey: ["threads"] }); queryClient.invalidateQueries({ queryKey: ["bot-history"] }); queryClient.invalidateQueries({ queryKey: ["thread-previews"] });
+    },
   });
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
