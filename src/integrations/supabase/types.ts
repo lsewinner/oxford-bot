@@ -384,6 +384,57 @@ export type Database = {
         }
         Relationships: []
       }
+      wechat_kf_accounts: {
+        Row: {
+          aes_key_ciphertext: string
+          bot_name: string
+          bot_prompt: string
+          corp_id: string
+          created_at: string
+          cursor: string
+          enabled: boolean
+          id: string
+          label: string
+          open_kfid: string
+          secret_ciphertext: string
+          token_ciphertext: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aes_key_ciphertext: string
+          bot_name?: string
+          bot_prompt?: string
+          corp_id: string
+          created_at?: string
+          cursor?: string
+          enabled?: boolean
+          id?: string
+          label?: string
+          open_kfid?: string
+          secret_ciphertext: string
+          token_ciphertext: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aes_key_ciphertext?: string
+          bot_name?: string
+          bot_prompt?: string
+          corp_id?: string
+          created_at?: string
+          cursor?: string
+          enabled?: boolean
+          id?: string
+          label?: string
+          open_kfid?: string
+          secret_ciphertext?: string
+          token_ciphertext?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

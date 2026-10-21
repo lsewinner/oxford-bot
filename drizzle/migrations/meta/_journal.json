@@ -99,6 +99,13 @@
       "when": 1792605706509,
       "tag": "0013_add_linear_oauth_credential_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792607810662,
+      "tag": "0014_wechat_kf_accounts",
+      "breakpoints": true
     }
   ]
 }
