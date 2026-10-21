@@ -29,7 +29,7 @@ export function AccountProfile({user,onSignOut,isAdmin=false}:{user:User;onSignO
   {isAdmin&&<DropdownMenuItem asChild><Link to="/admin"><ShieldCheckIcon/>管理后台</Link></DropdownMenuItem>}
   <DropdownMenuItem disabled={desk.installed||desk.busy} onSelect={()=>desk.install()}><DownloadIcon/>{desk.installed?'已安装桌面端':'安装桌面端'}</DropdownMenuItem>
   <DropdownMenuItem onSelect={()=>{setDraft(profile);setOpen(true);}}><PencilIcon/>修改资料</DropdownMenuItem><DropdownMenuSeparator/>
-  <DropdownMenuItem variant="destructive" onSelect={()=>void onSignOut()}><LogOutIcon/>退出登录</DropdownMenuItem>
+  <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={()=>void onSignOut()}><LogOutIcon/>退出登录</DropdownMenuItem>
  </DropdownMenuContent></DropdownMenu></div>
  <TrendsDrawer open={trends} onOpenChange={setTrends}/>
  <Dialog open={open} onOpenChange={v=>{if(!saving&&!processing)setOpen(v);}}><DialogContent className="w-[calc(100%-2rem)] max-w-sm"><DialogTitle>个人资料</DialogTitle><DialogDescription className="sr-only">更改你的头像与昵称</DialogDescription>

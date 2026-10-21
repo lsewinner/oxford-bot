@@ -17,12 +17,10 @@ import { threadsQuery, botHistoryQuery, threadPreviewsQuery, createThread, renam
 import { cn } from "@/lib/utils";
 import { BotPresenceLabel, BotPresenceProvider, BotSettings, NewBot, useBotPresence } from "@/components/chat/bot-presence";
 import { Button } from "@/components/ui/button";
-import { TrendsDrawer } from '@/components/chat/trends-drawer';
 import { AccountProfile } from '@/components/chat/account-profile';
-import { UpgradeEntry, ProBadge } from '@/components/pro/upgrade-dialog';
+import { ProBadge } from '@/components/pro/upgrade-dialog';
 import { usePro } from '@/components/pro/pro-context';
 import { LockIcon } from 'lucide-react';
-import { DesktopInstallButton } from "@/components/desktop-install";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -70,6 +68,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   const { isPro, openUpgrade } = usePro();
+  const isAdmin = useAdminFlag();
   const [opening, setOpening] = useState<string | null>(null);
   const openBot = async (entry: (typeof entries)[number]) => {
     if (opening) return;
@@ -188,7 +187,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             ),
         )}
       </nav>
-      <AccountProfile user={user} onSignOut={signOut} isAdmin={useAdminFlag()} />
+      <AccountProfile user={user} onSignOut={signOut} isAdmin={isAdmin} />
     </div>
   );
 }
@@ -242,13 +241,3 @@ function useAdminFlag() {
   return Boolean(data?.isAdmin);
 }
 
-function AdminEntry() {
-  if (!useAdminFlag()) return null;
-  return (
-    <div className="px-3 pb-1">
-      <Link to="/admin" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground">
-        <ShieldCheckIcon className="size-4" />管理后台
-      </Link>
-    </div>
-  );
-}
