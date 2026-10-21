@@ -1,5 +1,5 @@
 import { z } from 'zod';
-export const providerId = z.enum(['github','google_mail','microsoft_outlook','google_drive','google_calendar','slack','cloudflare','microsoft_teams','supabase','notion','yuque','feishu']);
+export const providerId = z.enum(['github','google_mail','microsoft_outlook','google_drive','google_calendar','microsoft_calendar','slack','cloudflare','microsoft_teams','supabase','notion','yuque','feishu']);
 export type ProviderId = z.infer<typeof providerId>;
 export const PROVIDERS = {
  github: { name:'GitHub', scopes:['read:user','repo'], setup:'https://github.com/settings/developers', operations:['repos','issues','pulls','read_file','create_issue','write_file'] },
@@ -8,6 +8,7 @@ export const PROVIDERS = {
  microsoft_teams: { name:'Teams', scopes:['openid','profile','email','offline_access','User.Read','Team.ReadBasic.All','Channel.ReadBasic.All','ChannelMessage.Read.All','ChannelMessage.Send'], setup:'https://entra.microsoft.com/', operations:['teams','channels','messages','send'] },
  google_drive: { name:'Google Drive', scopes:['https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/drive.readonly','https://www.googleapis.com/auth/drive.file'], setup:'https://console.cloud.google.com/apis/credentials', operations:['search','read','create_file'] },
  google_calendar: { name:'Google Calendar', scopes:['https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/calendar.readonly','https://www.googleapis.com/auth/calendar.events'], setup:'https://console.cloud.google.com/apis/credentials', operations:['calendars','events','create_event'] },
+ microsoft_calendar: { name:'Outlook 日历', scopes:['openid','profile','email','offline_access','User.Read','Calendars.ReadWrite'], setup:'https://entra.microsoft.com/', operations:['calendars','events','create_event'] },
  cloudflare: { name:'Cloudflare', scopes:[], setup:'https://dash.cloudflare.com/profile/api-tokens', operations:['zones','dns_records'] },
  supabase: { name:'Supabase', scopes:[], setup:'https://supabase.com/dashboard/account/tokens', operations:['projects','tables','query','health'] },
  notion: { name:'Notion', scopes:[], setup:'https://www.notion.so/profile/integrations', operations:['search','read','query','append','create_page'] },
@@ -33,7 +34,7 @@ export function validateOperation(provider:ProviderId,input:OperationInput) {
    if (['read','update_doc'].includes(input.operation) && !/^[\w-]+$/.test(input.id ?? '')) throw new Error('请指定文档 ID 或 slug（来自文档列表）');
    if (['create_doc','update_doc'].includes(input.operation) && (!input.title?.trim() || !input.text?.trim())) throw new Error('请提供文档标题和完整正文');
   }
- if (provider==='google_calendar') {
+ if (provider==='google_calendar' || provider==='microsoft_calendar') {
   if (input.id && !/^[\w.@#-]{1,200}$/.test(input.id)) throw new Error('日历标识格式无效');
   const ok=(v?:string)=>Boolean(v && (/^\d{4}-\d{2}-\d{2}$/.test(v) || !Number.isNaN(Date.parse(v))));
   if (input.operation==='events' && ((input.start && !ok(input.start)) || (input.end && !ok(input.end)))) throw new Error('时间范围格式无效');

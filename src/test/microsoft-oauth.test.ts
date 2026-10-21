@@ -82,4 +82,22 @@ describe('Microsoft direct OAuth',()=>{
   const {callWithMicrosoftToken,MicrosoftReconnectError}=await import('@/lib/connections/microsoft-oauth.server');
   await expect(callWithMicrosoftToken('revoked','/me')).rejects.toBeInstanceOf(MicrosoftReconnectError);
  });
+ it('requests the calendar scope only for the Outlook calendar connection',async()=>{
+  const {startMicrosoftAuthorization}=await import('@/lib/connections/microsoft-oauth.server');
+  const url=new URL(startMicrosoftAuthorization(owner,'https://app.example/api/oauth/microsoft/callback','microsoft_calendar').authorizationUrl);
+  expect(url.searchParams.get('scope')?.split(' ')).toEqual(['openid','profile','email','offline_access','User.Read','Calendars.ReadWrite']);
+ });
+ it('allows only calendar reads and confirmed event creation on the fixed Graph host',async()=>{
+  const fetcher=vi.fn().mockImplementation(() => Response.json({access_token:'test-access'}));vi.stubGlobal('fetch',fetcher);
+  const {callWithMicrosoftToken}=await import('@/lib/connections/microsoft-oauth.server');
+  expect((await callWithMicrosoftToken('refresh','/me/calendars?$top=50',undefined,undefined,'microsoft_calendar')).ok).toBe(true);
+  expect((await callWithMicrosoftToken('refresh','/me/calendarView?startDateTime=2026-10-22T00%3A00%3A00Z&endDateTime=2026-11-05T00%3A00%3A00Z&%24top=50',undefined,undefined,'microsoft_calendar')).ok).toBe(true);
+  expect((await callWithMicrosoftToken('refresh','/me/events',{method:'POST',body:'{}'},undefined,'microsoft_calendar')).ok).toBe(true);
+  fetcher.mockClear();
+  await expect(callWithMicrosoftToken('refresh','/me/events/evt-1',{method:'PATCH'},undefined,'microsoft_calendar')).rejects.toThrow('不支持');
+  await expect(callWithMicrosoftToken('refresh','/me/events/evt-1',{method:'DELETE'},undefined,'microsoft_calendar')).rejects.toThrow('不支持');
+  await expect(callWithMicrosoftToken('refresh','/me/sendMail',{method:'POST'},undefined,'microsoft_calendar')).rejects.toThrow('不支持');
+  await expect(callWithMicrosoftToken('refresh','/me/messages',undefined,undefined,'microsoft_calendar')).rejects.toThrow('不支持');
+  expect(fetcher).not.toHaveBeenCalled();
+ });
 });

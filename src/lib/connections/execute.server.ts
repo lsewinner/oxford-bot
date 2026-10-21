@@ -24,11 +24,11 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  const personal=row.credential_kind==='personal_token';
  const google=row.credential_kind==='google_oauth';
  const microsoft=row.credential_kind==='microsoft_oauth';
- if(microsoft && id!=='microsoft_outlook' && id!=='microsoft_teams')throw new Error('此服务不支持微软授权');
+ if(microsoft && id!=='microsoft_outlook' && id!=='microsoft_teams' && id!=='microsoft_calendar')throw new Error('此服务不支持微软授权');
  if(personal && !supportsPersonalToken(id))throw new Error('不支持此服务的个人 Token');
  if(google && !isGoogleProvider(id))throw new Error('此服务不支持 Google 授权');
  let r:Response;
-  try{r=microsoft?await callWithMicrosoftToken(decryptConnectionKey(row.connection_key_ciphertext,'microsoft_oauth'),path,init,token=>rotateMicrosoftCredential(userId,row.id,row.connection_key_ciphertext,token),id==='microsoft_teams'?'microsoft_teams':'microsoft_outlook'):personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):google && isGoogleProvider(id)?await callWithGoogleToken(id,decryptConnectionKey(row.connection_key_ciphertext),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});}catch(e){if(e instanceof MicrosoftReconnectError){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);return Promise.reject(e);}throw e;}
+  try{r=microsoft?await callWithMicrosoftToken(decryptConnectionKey(row.connection_key_ciphertext,'microsoft_oauth'),path,init,token=>rotateMicrosoftCredential(userId,row.id,row.connection_key_ciphertext,token),id==='microsoft_teams'?'microsoft_teams':id==='microsoft_calendar'?'microsoft_calendar':'microsoft_outlook'):personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):google && isGoogleProvider(id)?await callWithGoogleToken(id,decryptConnectionKey(row.connection_key_ciphertext),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});}catch(e){if(e instanceof MicrosoftReconnectError){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);return Promise.reject(e);}throw e;}
  if(microsoft && r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new MicrosoftReconnectError();}
  if(google && isGoogleProvider(id)){
    if(!r.ok){if(r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new Error('授权需要更新，请重新连接');}throw new Error(`${provider} (${r.status})`);}
@@ -81,6 +81,13 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
    const b=await request(messages,'POST',{body:{contentType:'text',content:input.text}});
    items=[{title:input.text?.slice(0,100) ?? '消息',id:b.id,...(b.webUrl?{url:b.webUrl}:{})}];
   }
+ } else if(id==='microsoft_calendar'){
+ const zone=(v?:string)=>v && /^[\w/+-]+$/.test(v) ? v : undefined;
+ const dt=(v:any)=>`${v?.dateTime ?? v?.date ?? ''}${v?.date?'（全天）':''}`;
+ const toIso=(v:string)=>/^\d{4}-\d{2}-\d{2}$/.test(v)?`${v}T00:00:00Z`:new Date(v).toISOString();
+ if(o==='calendars'){const b=await request('/me/calendars?$top=50');items=(b.value ?? []).map((v:any)=>({title:v.name ?? '未命名',id:v.id,detail:v.isDefaultCalendar?'默认日历':''}));if(b.value?.length>=50)text='仅显示前 50 个日历';}
+ if(o==='events'){const start=input.start?toIso(input.start):new Date().toISOString();const end=input.end?toIso(input.end):new Date(Date.parse(start)+14*86400000).toISOString();const p=new URLSearchParams({startDateTime:start,endDateTime:end,'$top':'50','\$orderby':'start/dateTime'});const b=await request(`/me/calendarView?${p}`);items=(b.value ?? []).map((v:any)=>({title:v.subject ?? '（无标题）',id:v.id,url:v.webLink,detail:`${dt(v.start)} → ${dt(v.end)}${v.location?.displayName?` · ${v.location.displayName}`:''}${v.isAllDay?' · 全天':''}`}));if(b.value?.length>=50)text='仅显示前 50 条日程';}
+ if(o==='create_event'){const allDay=/^\d{4}-\d{2}-\d{2}$/.test(input.start ?? '');const t=(v:string)=>allDay?{date:v}:{dateTime:v,...(zone(input.timeZone)?{timeZone:input.timeZone}:{})};const b=await request('/me/events','POST',{subject:input.title,...(input.text?{body:{contentType:'text',content:input.text}}:{}),isAllDay:allDay,start:t(input.start!),end:t(input.end!)});items=[{title:b.subject ?? input.title ?? '',id:b.id,...(b.webLink?{url:b.webLink}:{}),detail:`${dt(b.start)} → ${dt(b.end)}`}];}
  } else if(id==='google_calendar'){
  const cal=enc(input.id || 'primary');
  const when=(v:any)=>v?.dateTime ?? v?.date ?? '';
