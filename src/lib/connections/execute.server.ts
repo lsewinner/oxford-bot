@@ -88,6 +88,37 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(o==='zones'){const b=await request(`/zones?per_page=50${input.query?'&name='+enc(input.query.trim().toLowerCase()):''}`);items=(b.result ?? []).map((v:any)=>({title:v.name,id:v.id,detail:`${v.status ?? ''}${v.plan?.name?' · '+v.plan.name:''}${v.name_servers?.length?' · NS '+v.name_servers.join(', '):''}`}));if((b.result_info?.total_count ?? 0)>50)text='仅显示前 50 个 Zone';}
  if(o==='dns_records'){let zone=(input.id ?? '').trim().toLowerCase();if(!/^[a-f0-9]{32}$/.test(zone)){const name=zone || (input.query ?? '').trim().toLowerCase();const z=await request(`/zones?per_page=1&name=${enc(name)}`);zone=z.result?.[0]?.id ?? '';if(!zone)throw new Error(`未找到 Zone：${name}，请确认 Token 有该域名的 Zone Read 权限`);}
   const b=await request(`/zones/${zone}/dns_records?per_page=100`);items=(b.result ?? []).map((v:any)=>({title:`${v.type} ${v.name}`,id:v.id,detail:`${v.content}${v.proxied?' · 已代理':''} · TTL ${v.ttl===1?'自动':v.ttl}`}));if((b.result_info?.total_count ?? 0)>100)text='仅显示前 100 条记录';}
+ } else if(id==='yuque'){
+ const namespace=input.repo ?? '';const base=`/repos/${namespace}/docs`;const offset=input.offset ?? 0;
+ const docItem=(v:any)=>({title:v.title || '未命名',id:String(v.id ?? v.slug),url:`https://www.yuque.com/${namespace}/${enc(v.slug ?? String(v.id))}`,detail:v.description ?? v.updated_at ?? ''});
+ if(o==='repos'){
+  const user=await request('/user');const login=input.query || user.data?.login;
+  if(!login || !/^[\w-]+$/.test(login))throw new Error('无法识别语雀用户或团队');
+  const b=await request(`/users/${login}/repos?offset=${offset}&limit=50`);
+  if(!Array.isArray(b.data))throw new Error('语雀知识库返回格式错误');
+  items=b.data.map((v:any)=>({title:v.name,id:v.namespace,url:`https://www.yuque.com/${v.namespace}`,detail:v.description ?? ''}));
+  if(b.data.length===50)text=`当前页 50 个知识库；继续查询请使用 offset=${offset+50}`;
+ }
+ if(o==='docs'){
+  const b=await request(`${base}?offset=${offset}&limit=50`);
+  if(!Array.isArray(b.data))throw new Error('语雀文档列表返回格式错误');
+  items=b.data.map(docItem);if(b.data.length===50)text=`当前页 50 篇文档；继续查询请使用 offset=${offset+50}`;
+ }
+ if(o==='read'){
+  const b=await request(`${base}/${enc(input.id ?? '')}`);if(!b.data?.id)throw new Error('语雀文档返回格式错误');
+  const content=b.data.body ?? b.data.body_draft ?? '';text=String(content).slice(0,30000);items=[docItem(b.data)];
+  if(String(content).length>30000)text+='\n[正文超过长度限制，已截断]';
+ }
+ if(o==='create_doc' || o==='update_doc'){
+  let visibility=0;
+  if(o==='update_doc'){
+   const previous=await request(`${base}/${enc(input.id ?? '')}`);
+   if(![0,1,2].includes(previous.data?.public))throw new Error('无法确认原文档可见性，未更新');
+   visibility=previous.data.public;
+  }
+  const b=await request(o==='create_doc'?base:`${base}/${enc(input.id ?? '')}`,o==='create_doc'?'POST':'PUT',{title:input.title,body:input.text,format:'markdown',public:visibility});
+  if(!b.data?.id)throw new Error('语雀未返回文档结果，请检查原文档后再操作');items=[docItem(b.data)];
+ }
  } else if(id==='notion'){
  const nid=(input.id ?? '').toLowerCase();
  const plain=(rt:any[])=>(rt ?? []).map((t:any)=>t.plain_text ?? '').join('');

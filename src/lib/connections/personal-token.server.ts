@@ -1,13 +1,17 @@
 import type { ProviderId } from './catalog';
 
-export type PersonalTokenProvider = 'github' | 'slack' | 'cloudflare' | 'supabase' | 'notion';
-export function supportsPersonalToken(id: ProviderId): id is PersonalTokenProvider { return id === 'github' || id === 'slack' || id === 'cloudflare' || id === 'supabase' || id === 'notion'; }
-const HOSTS = { github: 'https://api.github.com', slack: 'https://slack.com', cloudflare: 'https://api.cloudflare.com/client/v4', supabase: 'https://api.supabase.com/v1', notion: 'https://api.notion.com/v1' } as const;
-const NAMES = { github: 'GitHub', slack: 'Slack', cloudflare: 'Cloudflare', supabase: 'Supabase', notion: 'Notion' } as const;
-const VALIDATE = { github: '/user', slack: '/api/auth.test', cloudflare: '/zones?per_page=1', supabase: '/projects', notion: '/users/me' } as const;
+export type PersonalTokenProvider = 'github' | 'slack' | 'cloudflare' | 'supabase' | 'notion' | 'yuque';
+export function supportsPersonalToken(id: ProviderId): id is PersonalTokenProvider { return id === 'github' || id === 'slack' || id === 'cloudflare' || id === 'supabase' || id === 'notion' || id === 'yuque'; }
+const HOSTS = { github: 'https://api.github.com', slack: 'https://slack.com', cloudflare: 'https://api.cloudflare.com/client/v4', supabase: 'https://api.supabase.com/v1', notion: 'https://api.notion.com/v1', yuque: 'https://www.yuque.com/api/v2' } as const;
+const NAMES = { github: 'GitHub', slack: 'Slack', cloudflare: 'Cloudflare', supabase: 'Supabase', notion: 'Notion', yuque: '语雀' } as const;
+const VALIDATE = { github: '/user', slack: '/api/auth.test', cloudflare: '/zones?per_page=1', supabase: '/projects', notion: '/users/me', yuque: '/user' } as const;
 export async function callWithPersonalToken(id: PersonalTokenProvider, token: string, path: string, init?: RequestInit): Promise<Response> {
   const method = (init?.method ?? 'GET').toUpperCase();
-  const allowed = id === 'github'
+  const allowed = id === 'yuque'
+    ? (method === 'GET' ? /^\/(?:user|users\/[\w-]+\/repos\?offset=\d+&limit=\d+|repos\/[\w-]+\/[\w-]+\/docs(?:\?offset=\d+&limit=\d+|\/[\w-]+))$/
+      : method === 'POST' ? /^\/repos\/[\w-]+\/[\w-]+\/docs$/
+      : method === 'PUT' ? /^\/repos\/[\w-]+\/[\w-]+\/docs\/[\w-]+$/ : /$^/)
+    : id === 'github'
     ? /^\/(?:user(?:\?|$)|user\/repos(?:\?|$)|repos\/[^/]+\/[^/]+\/(?:issues|pulls|contents)(?:\/|\?|$))/
     : id === 'slack'
       ? /^\/api\/(?:auth\.test|conversations\.list|conversations\.history|users\.info|chat\.postMessage)(?:\?|$)/
@@ -22,7 +26,8 @@ export async function callWithPersonalToken(id: PersonalTokenProvider, token: st
       : (method === 'GET' ? /^\/zones(?:\?|$|\/[a-f0-9]{32}\/dns_records(?:\?|$))/ : /$^/);
   if (!allowed.test(path) || path.includes('://') || path.includes('..') || path.includes('\\')) throw new Error('不支持的服务请求');
   const headers = new Headers(init?.headers);
-  headers.set('Authorization', `Bearer ${token}`);
+  if (id === 'yuque') { headers.delete('Authorization'); headers.set('X-Auth-Token', token); headers.set('User-Agent', 'Oxford-Bot'); }
+  else headers.set('Authorization', `Bearer ${token}`);
   if (id === 'notion') headers.set('Notion-Version', '2025-09-03');
   if (id === 'github') { headers.set('Accept', 'application/vnd.github+json'); headers.set('X-GitHub-Api-Version', '2022-11-28'); headers.set('User-Agent', 'Oxford-Bot'); }
   const res = await fetch(`${HOSTS[id]}${path}`, { ...init, headers, redirect: 'manual' });
@@ -35,6 +40,7 @@ export function personalTokenError(id: PersonalTokenProvider, status: number, sl
   if (status === 401 || (id === 'cloudflare' && status === 400) || ['invalid_auth','token_revoked','token_expired','not_authed','account_inactive'].includes(String(slackError))) return `${name} Token 已失效，请重新输入`;
   if (status === 403 || slackError === 'missing_scope' || slackError === 'no_permission') return `${name} Token 权限不足，请检查所需权限`;
   if (status === 429 || slackError === 'ratelimited') return `${name} 请求过于频繁，请稍后再试`;
+  if (id === 'yuque' && status === 404) return '语雀知识库或文档不存在，或当前 Token 无权访问';
   if (slackError === 'not_in_channel') return '请先将此 Slack 账户或 Bot 加入目标频道';
   if (slackError === 'channel_not_found') return 'Slack 频道不存在或当前 Token 无权访问';
   return `${name} 请求失败（${status}），请检查服务状态与 Token 权限`;
@@ -45,12 +51,17 @@ export async function validatePersonalToken(id: PersonalTokenProvider, token: st
   catch { throw new Error('无法访问服务，请稍后重试'); }
   if (!response.ok) throw new Error(personalTokenError(id, response.status));
   const body = await response.json().catch(() => null);
-  if (!body || (id === 'supabase' ? !Array.isArray(body) : id === 'notion' ? body.object !== 'user' : id === 'github' ? !body.id : id === 'cloudflare' ? body.success !== true : body.ok !== true)) throw new Error(personalTokenError(id, response.status, body?.error));
+  if (!body || (id === 'yuque' ? !body.data?.id || typeof body.data?.login !== 'string' : id === 'supabase' ? !Array.isArray(body) : id === 'notion' ? body.object !== 'user' : id === 'github' ? !body.id : id === 'cloudflare' ? body.success !== true : body.ok !== true)) throw new Error(personalTokenError(id, response.status, body?.error));
   return body as Record<string, unknown>;
 }
 /** Identify which Cloudflare account a token belongs to, so several tokens can be stored side by side. */
 export async function personalTokenIdentity(id: PersonalTokenProvider, token: string, body: Record<string, unknown> | null) {
   if (id === 'cloudflare') return cloudflareAccountIdentity(token, body);
+  if (id === 'yuque') {
+    const user = body?.['data'] as { id?: number; login?: string; name?: string } | undefined;
+    if (!user?.id || !user.login) throw new Error('无法识别语雀账户');
+    return { account: `yq-${user.id}`, label: user.name || user.login };
+  }
   if (id === 'notion' && body && typeof body["id"] === 'string') {
     const bot = body["bot"] as { workspace_name?: string } | undefined;
     return { account: `nt-${body["id"]}`, label: typeof bot?.workspace_name === 'string' ? bot.workspace_name : '' };
