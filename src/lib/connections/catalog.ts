@@ -13,12 +13,13 @@ export const PROVIDERS = {
   yuque: { name:'语雀', scopes:[], setup:'https://www.yuque.com/settings/tokens', operations:['repos','docs','read','create_doc','update_doc'] },
  slack: { name:'Slack', scopes:['channels:read','channels:history','chat:write','users:read'], setup:'https://api.slack.com/apps', operations:['channels','history','send'] },
 } as const;
-export const operationInput = z.object({ operation:z.string(), account:z.string().max(320).optional(), teamId:z.string().uuid().optional(), channelId:z.string().min(1).max(500).regex(/^[\w:@.-]+$/).optional(), query:z.string().max(8000).optional(), id:z.string().max(500).optional(), repo:z.string().max(200).optional(), path:z.string().max(500).optional(), title:z.string().max(300).optional(), text:z.string().max(30000).optional(), to:z.string().email().optional(), sha:z.string().max(100).optional() }).strict();
+export const operationInput = z.object({ operation:z.string(), offset:z.number().int().min(0).max(100000).optional(), account:z.string().max(320).optional(), teamId:z.string().uuid().optional(), channelId:z.string().min(1).max(500).regex(/^[\w:@.-]+$/).optional(), query:z.string().max(8000).optional(), id:z.string().max(500).optional(), repo:z.string().max(200).optional(), path:z.string().max(500).optional(), title:z.string().max(300).optional(), text:z.string().max(30000).optional(), to:z.string().email().optional(), sha:z.string().max(100).optional() }).strict();
 export type OperationInput = z.infer<typeof operationInput>;
 export function isWrite(operation:string) { return ['draft','send','create_issue','write_file','create_file','append','create_page','create_doc','update_doc'].includes(operation); }
 export function validateOperation(provider:ProviderId,input:OperationInput) {
  if (!(PROVIDERS[provider].operations as readonly string[]).includes(input.operation)) throw new Error('不支持的操作');
   if (provider==='yuque') {
+   if (input.operation==='repos' && input.query && !/^[\w-]+$/.test(input.query)) throw new Error('请指定语雀用户或团队 login');
    if (input.operation!=='repos' && !/^[\w-]+\/[\w-]+$/.test(input.repo ?? '')) throw new Error('请指定语雀知识库 namespace（来自知识库列表）');
    if (['read','update_doc'].includes(input.operation) && !/^[\w-]+$/.test(input.id ?? '')) throw new Error('请指定文档 ID 或 slug（来自文档列表）');
    if (['create_doc','update_doc'].includes(input.operation) && (!input.title?.trim() || !input.text?.trim())) throw new Error('请提供文档标题和完整正文');
