@@ -72,3 +72,36 @@ export const deleteBrainDocument = createServerFn({ method: "POST" })
     if (error) throw new Error("删除失败");
     return { ok: true };
   });
+
+const BRAIN_SOURCES = { google_drive: "Google 云盘", notion: "Notion", yuque: "语雀" } as const;
+const sourceId = z.enum(["google_drive", "notion", "yuque"]);
+
+/** Read-only browse of the caller's own connected source; nothing is imported until they pick an item. */
+export const browseBrainSource = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ source: sourceId, query: z.string().max(200).default(""), repo: z.string().max(200).optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { getConnection } = await import("./connections/storage.server");
+    if (!(await getConnection(context.userId, data.source))) return { connected: false, items: [] as { title: string; id: string; detail: string; kind: "doc" | "repo" }[] };
+    const { executeOperation } = await import("./connections/execute.server");
+    const yuqueRepos = data.source === "yuque" && !data.repo;
+    if (data.source === "google_drive" && !data.query.trim()) return { connected: true, items: [] };
+    const op = data.source === "yuque" ? (yuqueRepos ? { operation: "repos" } : { operation: "docs", repo: data.repo }) : { operation: "search", query: data.query };
+    const r = await executeOperation(context.userId, data.source, op as never);
+    if (r.status !== "completed") throw new Error(r.summary || "读取失败，请到「工具与连接」检查授权");
+    return { connected: true, items: (r.items ?? []).filter((i) => i.id).slice(0, 50).map((i) => ({ title: i.title, id: i.id!, detail: i.detail ?? "", kind: (yuqueRepos ? "repo" : "doc") as "doc" | "repo" })) };
+  });
+
+export const importBrainSource = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ source: sourceId, id: z.string().min(1).max(200), repo: z.string().max(200).optional(), title: z.string().trim().min(1).max(180) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { executeOperation } = await import("./connections/execute.server");
+    const r = await executeOperation(context.userId, data.source, { operation: "read", id: data.id, ...(data.repo ? { repo: data.repo } : {}) } as never);
+    if (r.status !== "completed") throw new Error(r.summary || "读取失败");
+    const text = (r.text ?? "").trim();
+    if (text.length < 20) throw new Error("这份资料没有可导入的正文");
+    const { ingestBrainText } = await import("./brain.server");
+    const documentId = await ingestBrainText(context.supabase, context.userId, `${BRAIN_SOURCES[data.source]} · ${data.title}`, text.slice(0, BRAIN_MAX_CHARS));
+    return { documentId };
+  });
