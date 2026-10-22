@@ -128,3 +128,5 @@
 - [x] 实时语音地区受限时自动切换兼容模式（按轮次语音）
 - [x] 文字聊天主模型地区拒绝时切换国内 Qwen 通道（需 DASHSCOPE_API_KEY）
 - [ ] 用户提供阿里云百炼 API Key 后、大陆无 VPN 网络实测
+- [ ] DeepSeek 接入：国内 Deep Think 自动切 deepseek-reasoner（等用户提供 DEEPSEEK_API_KEY；代码先行，测试通过）
+- [ ] 排查语音兼容模式「识别后消失」反馈：自动切换兼容模式时无任何提示，需补可见提示；并请朋友复测确认具体环节
