@@ -17,7 +17,7 @@ export const PROVIDERS = {
  slack: { name:'Slack', scopes:['channels:read','channels:history','chat:write','users:read'], setup:'https://api.slack.com/apps', operations:['channels','history','send'] },
  gitee: { name:'Gitee', scopes:[], setup:'https://gitee.com/profile/personal_access_tokens', operations:['repos','issues','read_file','create_issue'] },
  airtable: { name:'Airtable', scopes:['data.records:read','data.records:write','schema.bases:read'], setup:'https://airtable.com/create/tokens', operations:['bases','tables','records','create_record'] },
- clickup: { name:'ClickUp', scopes:[], setup:'https://app.clickup.com/settings/apps', operations:['teams','tasks','create_task'] },
+ clickup: { name:'ClickUp', scopes:[], setup:'https://app.clickup.com/settings/apps', operations:['teams','spaces','folders','lists','tasks','create_task'] },
  telegram: { name:'Telegram', scopes:[], setup:'https://t.me/BotFather', operations:['updates','send_message'] },
  asana: { name:'Asana', scopes:[], setup:'https://app.asana.com/0/my-apps', operations:['workspaces','projects','tasks','create_task'] },
  jira: { name:'Jira', scopes:[], setup:'https://id.atlassian.com/manage-profile/security/api-tokens', operations:['projects','issues','issue','create_issue'] },
@@ -60,7 +60,8 @@ export function validateOperation(provider:ProviderId,input:OperationInput) {
   if (input.operation==='create_record') { let f:unknown; try { f=JSON.parse(input.text ?? ''); } catch { f=null; } if (!f || typeof f!=='object' || Array.isArray(f)) throw new Error('请在 text 中提供记录字段 JSON 对象'); }
  }
  if (provider==='clickup') {
-  if (['tasks','create_task'].includes(input.operation) && !/^\d{1,20}$/.test(input.id ?? '')) throw new Error('请指定 ClickUp 团队 ID（来自工作区列表）');
+  if (['spaces','folders','lists','tasks','create_task'].includes(input.operation) && !/^\d{1,20}$/.test(input.id ?? '')) throw new Error(input.operation==='create_task'?'请指定 ClickUp 列表 ID（来自列表查询）':'请指定 ClickUp 资源 ID（来自实际查询）');
+  if (input.operation==='lists' && input.repo && input.repo!=='space' && input.repo!=='folder') throw new Error('lists 的 repo 仅支持 space 或 folder');
   if (input.operation==='create_task' && !input.title?.trim()) throw new Error('请提供任务标题');
  }
  if (provider==='telegram' && input.operation==='send_message') {

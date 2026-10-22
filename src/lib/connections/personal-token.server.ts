@@ -21,9 +21,9 @@ export async function callWithPersonalToken(id: PersonalTokenProvider, token: st
     ? (method === 'GET' ? /^\/v0\/(?:meta\/whoami|meta\/bases(?:\?[\w%&=.+-]{0,300})?|meta\/bases\/app[A-Za-z0-9]{14}\/tables|app[A-Za-z0-9]{14}\/[\w%~.+-]{1,170}(?:\?[\w%&=.+-]{0,300})?)$/
       : method === 'POST' ? /^\/v0\/app[A-Za-z0-9]{14}\/[\w%~.+-]{1,170}$/ : /$^/)
     : id === 'clickup'
-    // ClickUp: user, workspace and task lists; confirmed task creation only.
-    ? (method === 'GET' ? /^\/api\/v2\/(?:user|team|team\/\d{1,20}\/task(?:\?[\w%&=.+-]{0,300})?)$/
-      : method === 'POST' ? /^\/api\/v2\/team\/\d{1,20}\/task$/ : /$^/)
+    // ClickUp: bounded workspace hierarchy reads; only confirmed list-level task creation.
+    ? (method === 'GET' ? /^\/api\/v2\/(?:user|team|team\/\d{1,20}\/(?:task|space)(?:\?[\w%&=.+-]{0,300})?|space\/\d{1,20}\/(?:folder|list)(?:\?[\w%&=.+-]{0,300})?|folder\/\d{1,20}\/list(?:\?[\w%&=.+-]{0,300})?)$/
+      : method === 'POST' ? /^\/api\/v2\/list\/\d{1,20}\/task$/ : /$^/)
     : id === 'telegram'
     // Telegram Bot: identity, recent updates; confirmed sendMessage only.
     ? (method === 'GET' ? /^\/(?:getMe|getUpdates\?limit=\d{1,3})$/ : method === 'POST' ? /^\/sendMessage$/ : /$^/)
