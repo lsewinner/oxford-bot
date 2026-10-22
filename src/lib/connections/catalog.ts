@@ -1,5 +1,5 @@
 import { z } from 'zod';
-export const providerId = z.enum(['github','google_mail','microsoft_outlook','google_drive','google_calendar','microsoft_calendar','slack','cloudflare','microsoft_teams','supabase','notion','yuque','feishu','linear','gitee','airtable','clickup','telegram','asana','jira']);
+export const providerId = z.enum(['github','google_mail','microsoft_outlook','google_drive','google_calendar','microsoft_calendar','slack','cloudflare','microsoft_teams','supabase','notion','yuque','feishu','linear','gitee','airtable','clickup','telegram','asana','jira','oanda']);
 export type ProviderId = z.infer<typeof providerId>;
 export const PROVIDERS = {
  github: { name:'GitHub', scopes:['read:user','repo'], setup:'https://github.com/settings/developers', operations:['repos','issues','pulls','read_file','create_issue','write_file'] },
@@ -21,11 +21,12 @@ export const PROVIDERS = {
  telegram: { name:'Telegram', scopes:[], setup:'https://t.me/BotFather', operations:['updates','send_message'] },
  asana: { name:'Asana', scopes:[], setup:'https://app.asana.com/0/my-apps', operations:['workspaces','projects','tasks','create_task'] },
  jira: { name:'Jira', scopes:[], setup:'https://id.atlassian.com/manage-profile/security/api-tokens', operations:['projects','issues','issue','create_issue'] },
+ oanda: { name:'OANDA', scopes:[], setup:'https://www.oanda.com/account/tpa/personal_token', operations:['accounts','summary','positions','trades','orders','prices','create_order','close_position','close_trade','cancel_order'] },
  linear: { name:'Linear', scopes:['read','write','issues:create','comments:create'], setup:'https://linear.app/settings/api', operations:['teams','issues','issue','create_issue','create_comment'] },
 } as const;
-export const operationInput = z.object({ operation:z.string(), offset:z.number().int().min(0).max(100000).optional(), account:z.string().max(320).optional(), teamId:z.string().uuid().optional(), channelId:z.string().min(1).max(500).regex(/^[\w:@.-]+$/).optional(), query:z.string().max(8000).optional(), id:z.string().max(500).optional(), repo:z.string().max(200).optional(), path:z.string().max(500).optional(), title:z.string().max(300).optional(), text:z.string().max(30000).optional(), to:z.string().email().optional(), sha:z.string().max(100).optional(), start:z.string().max(40).optional(), end:z.string().max(40).optional(), timeZone:z.string().max(60).regex(/^[\w/+-]+$/).optional() }).strict();
+export const operationInput = z.object({ operation:z.string(), offset:z.number().int().min(0).max(100000).optional(), account:z.string().max(320).optional(), teamId:z.string().uuid().optional(), channelId:z.string().min(1).max(500).regex(/^[\w:@.-]+$/).optional(), query:z.string().max(8000).optional(), id:z.string().max(500).optional(), repo:z.string().max(200).optional(), path:z.string().max(500).optional(), title:z.string().max(300).optional(), text:z.string().max(30000).optional(), to:z.string().email().optional(), sha:z.string().max(100).optional(), start:z.string().max(40).optional(), end:z.string().max(40).optional(), timeZone:z.string().max(60).regex(/^[\w/+-]+$/).optional(), units:z.string().regex(/^-?\d{1,9}$/).optional(), orderType:z.enum(['MARKET','LIMIT']).optional(), price:z.string().regex(/^\d{1,7}(?:\.\d{1,6})?$/).optional(), stopLoss:z.string().regex(/^\d{1,7}(?:\.\d{1,6})?$/).optional(), takeProfit:z.string().regex(/^\d{1,7}(?:\.\d{1,6})?$/).optional(), side:z.enum(['long','short','all']).optional(), ref:z.string().regex(/^\d{1,20}$/).optional() }).strict();
 export type OperationInput = z.infer<typeof operationInput>;
-export function isWrite(operation:string) { return ['draft','send','create_issue','write_file','create_file','append','create_page','create_doc','update_doc','add_record','create_event','create_comment','create_memo','create_record','create_task','send_message'].includes(operation); }
+export function isWrite(operation:string) { return ['draft','send','create_issue','write_file','create_file','append','create_page','create_doc','update_doc','add_record','create_event','create_comment','create_memo','create_record','create_task','send_message','create_order','close_position','close_trade','cancel_order'].includes(operation); }
 export function validateOperation(provider:ProviderId,input:OperationInput) {
  if (!(PROVIDERS[provider].operations as readonly string[]).includes(input.operation)) throw new Error('不支持的操作');
   if (provider==='feishu') {
@@ -73,6 +74,22 @@ export function validateOperation(provider:ProviderId,input:OperationInput) {
   if (['tasks','create_task'].includes(input.operation) && !/^\d{1,20}$/.test(input.id ?? '')) throw new Error('请指定 Asana 项目 ID（来自项目列表）');
   if (input.operation==='create_task' && !input.title?.trim()) throw new Error('请提供任务标题');
  }
+ if (provider==='oanda') {
+  if (input.operation!=='accounts' && !OANDA_ACCOUNT.test(input.id ?? '')) throw new Error('请指定 OANDA 账户 ID（来自 accounts 列表，如 101-004-1234567-001）');
+  if (['prices','create_order','close_position'].includes(input.operation) && !OANDA_INSTRUMENTS.test(input.repo ?? '')) throw new Error('请指定交易品种（repo，如 EUR_USD、XAU_USD；prices 可用逗号分隔多个）');
+  if (['create_order','close_position'].includes(input.operation) && (input.repo ?? '').includes(',')) throw new Error('下单/平仓一次只能指定一个品种');
+  if (input.operation==='create_order') {
+   const u=Number(input.units ?? '0');
+   if (!input.units || !Number.isInteger(u) || u===0) throw new Error('请提供下单数量 units（正数买入/做多，负数卖出/做空，单位为基础货币单位，非“手”）');
+   if ((input.orderType ?? 'MARKET')==='LIMIT' && !input.price) throw new Error('限价单需要提供 price');
+   const ref=Number(input.price ?? 0), sl=input.stopLoss?Number(input.stopLoss):null, tp=input.takeProfit?Number(input.takeProfit):null;
+   if (ref && sl!==null && (u>0 ? sl>=ref : sl<=ref)) throw new Error('止损价方向错误：做多止损需低于开仓价，做空止损需高于开仓价');
+   if (ref && tp!==null && (u>0 ? tp<=ref : tp>=ref)) throw new Error('止盈价方向错误：做多止盈需高于开仓价，做空止盈需低于开仓价');
+  }
+  if (input.operation==='close_position' && !input.side) throw new Error('请指定平仓方向 side：long、short 或 all');
+  if (['close_trade','cancel_order'].includes(input.operation) && !input.ref) throw new Error(input.operation==='close_trade'?'请指定交易编号 ref（来自 trades 列表）':'请指定挂单编号 ref（来自 orders 列表）');
+  if (input.operation==='close_trade' && input.units && Number(input.units)<=0) throw new Error('部分平仓 units 需为正数');
+ }
  if (provider==='jira') {
   if (input.operation==='issues' && !input.repo && !input.query?.trim()) throw new Error('请指定 Jira 项目 Key（repo）或 JQL（query）');
   if (input.repo && !/^[A-Z][A-Z0-9_]{0,20}$/.test(input.repo)) throw new Error('Jira 项目 Key 格式无效（如 ENG）');
@@ -105,4 +122,6 @@ export function validateOperation(provider:ProviderId,input:OperationInput) {
  if (input.operation==='write_file' && (!input.text || !input.title)) throw new Error('请提供文件内容和提交说明');
  return input;
 }
+const OANDA_ACCOUNT=/^\d{3}-\d{3}-\d{1,12}-\d{3}$/;
+const OANDA_INSTRUMENTS=/^[A-Z0-9]{2,10}_[A-Z0-9]{2,10}(?:,[A-Z0-9]{2,10}_[A-Z0-9]{2,10}){0,9}$/;
 export type ToolResult = { provider:string; status:'completed'|'confirmation_required'|'reconnect_required'|'error'|'cancelled'; summary:string; actionId?:string; items?:{ title:string; detail?:string; id?:string; url?:string }[]; text?:string };
