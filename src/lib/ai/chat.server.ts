@@ -3,7 +3,7 @@ import { convertToModelMessages, jsonSchema, tool, stepCountIs, streamText, type
 import { validateAttachments } from "@/lib/chat-attachments";
 
 import type { Database } from "@/integrations/supabase/types";
-import { createChatProvider, selectChatProvider } from './provider.server';
+import { createChatProvider, isRegionBlocked, selectChatProvider } from './provider.server';
 import { buildInstructions, type ChatMode } from "./modes";
 import { createDemoTools, createRealTools } from "./tools.server";
 import { botConfigSchema, botInstructions } from '@/lib/bot-config';
@@ -35,6 +35,8 @@ export async function handleChat(request: Request): Promise<Response> {
     OPENAI_MODEL: process.env['OPENAI_MODEL'],
     ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'],
     LOVABLE_API_KEY: process.env['LOVABLE_API_KEY'],
+    DASHSCOPE_API_KEY: process.env['DASHSCOPE_API_KEY'],
+    DASHSCOPE_MODEL: process.env['DASHSCOPE_MODEL'],
   };
   if (!selectChatProvider(providerSecrets)) return json(500, "AI 服务未配置");
 
@@ -212,6 +214,7 @@ export async function handleChat(request: Request): Promise<Response> {
       console.error("chat stream error", error);
       const status = (error as { statusCode?: number })?.statusCode;
       if (status === 429) return "请求太频繁，请稍后再试";
+      if (isRegionBlocked(error)) return '当前网络地区暂不支持主 AI 服务，国内通道尚未开通，请联系管理员';
       if (provider.kind !== 'gateway') {
         if (status === 401) return '官方 AI 密钥无效，请联系管理员检查配置';
         if (status === 402) return '官方 AI 账户余额不足，请联系管理员充值';

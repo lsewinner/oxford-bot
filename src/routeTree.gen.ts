@@ -28,6 +28,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as ApiSpeechRouteImport } from './routes/api/speech'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
+import { Route as ApiVoiceReplyRouteImport } from './routes/api/voice-reply'
 import { Route as BTokenRouteImport } from './routes/b.$token'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
@@ -142,6 +143,11 @@ const ApiSpeechRoute = ApiSpeechRouteImport.update({
 const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   id: '/api/transcribe',
   path: '/api/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVoiceReplyRoute = ApiVoiceReplyRouteImport.update({
+  id: '/api/voice-reply',
+  path: '/api/voice-reply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BTokenRoute = BTokenRouteImport.update({
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/voice-reply': typeof ApiVoiceReplyRoute
   '/b/$token': typeof BTokenRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/share/$token': typeof ShareTokenRoute
@@ -317,6 +324,7 @@ export interface FileRoutesByTo {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/voice-reply': typeof ApiVoiceReplyRoute
   '/b/$token': typeof BTokenRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/share/$token': typeof ShareTokenRoute
@@ -360,6 +368,7 @@ export interface FileRoutesById {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/voice-reply': typeof ApiVoiceReplyRoute
   '/b/$token': typeof BTokenRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/share/$token': typeof ShareTokenRoute
@@ -403,6 +412,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/speech'
     | '/api/transcribe'
+    | '/api/voice-reply'
     | '/b/$token'
     | '/checkout/return'
     | '/share/$token'
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/speech'
     | '/api/transcribe'
+    | '/api/voice-reply'
     | '/b/$token'
     | '/checkout/return'
     | '/share/$token'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/speech'
     | '/api/transcribe'
+    | '/api/voice-reply'
     | '/b/$token'
     | '/checkout/return'
     | '/share/$token'
@@ -522,6 +534,7 @@ export interface RootRouteChildren {
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
   ApiSpeechRoute: typeof ApiSpeechRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
+  ApiVoiceReplyRoute: typeof ApiVoiceReplyRoute
   BTokenRoute: typeof BTokenRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   ShareTokenRoute: typeof ShareTokenRoute
@@ -676,6 +689,13 @@ declare module '@tanstack/react-router' {
       path: '/api/transcribe'
       fullPath: '/api/transcribe'
       preLoaderRoute: typeof ApiTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/voice-reply': {
+      id: '/api/voice-reply'
+      path: '/api/voice-reply'
+      fullPath: '/api/voice-reply'
+      preLoaderRoute: typeof ApiVoiceReplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/b/$token': {
@@ -876,6 +896,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGenerateImageRoute: ApiGenerateImageRoute,
   ApiSpeechRoute: ApiSpeechRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
+  ApiVoiceReplyRoute: ApiVoiceReplyRoute,
   BTokenRoute: BTokenRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   ShareTokenRoute: ShareTokenRoute,
