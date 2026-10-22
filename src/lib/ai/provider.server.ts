@@ -34,9 +34,19 @@ export function selectDomesticModel(secrets: ChatProviderSecrets, deepThink: boo
   return null;
 }
 
+export function needsLiveSearch(text: string): boolean {
+  return /天气|气温|下雨|新闻|最新|今天|今日|明天|昨天|现在|实时|股价|汇率|比分|weather|news|today|latest|price/i.test(text);
+}
+
 export const withQwenSearch: typeof fetch = (input, init) => {
   if (typeof init?.body === 'string') {
-    try { init = { ...init, body: JSON.stringify({ ...JSON.parse(init.body), enable_search: true }) }; } catch { /* non-JSON body */ }
+    try {
+      const body = JSON.parse(init.body);
+      // Qwen skips search when tools are present, so time-sensitive questions force it.
+      const last = [...(body.messages ?? [])].reverse().find((m: { role?: string }) => m.role === 'user');
+      const text = typeof last?.content === 'string' ? last.content : JSON.stringify(last?.content ?? '');
+      init = { ...init, body: JSON.stringify({ ...body, enable_search: true, ...(needsLiveSearch(text) ? { search_options: { forced_search: true } } : {}) }) };
+    } catch { /* non-JSON body */ }
   }
   return fetch(input, init);
 };
