@@ -1,7 +1,7 @@
 import { BRAIN_EMBED_MODEL, type BrainHit } from "./brain";
 
 export async function embedTexts(input: string[]): Promise<number[][]> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env['LOVABLE_API_KEY'];
   if (!key) throw new Error("AI 服务未配置");
   const out: number[][] = [];
   for (let i = 0; i < input.length; i += 32) {
