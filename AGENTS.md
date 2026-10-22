@@ -39,3 +39,4 @@
 - Admin `/admin`: `has_role` check before supabaseAdmin in admin.functions; actions audited. Quotas via `consume_daily_message` RPC; overrides/bans/granted Pro in `account_controls`, honored by `has_active_subscription` (why: server is the only source of truth).
 - Memory center: admin-only versions, one published per kind, injected server-side before Bot context.
 - A provider stays in 工具与连接 only if a normal customer can connect it alone, in one step, with no signup wall, paid tier, or hand-built app; Feishu and Flomo were removed on this rule (why: if the owner cannot self-serve, customers cannot either).
+- Airtable one-click authorization completes through authenticated opener server functions and a verified public callback; connection-specific credential/rotation rules live in src/lib/connections/AGENTS.md (why: public redirects must never save credentials for an unverified caller).

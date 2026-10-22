@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Airtable 一键授权：已启用开发者凭证、PKCE、自动续期、保留令牌账户；自动测试通过
+- [ ] Airtable 一键授权真实验收：需登记 https://oxford.bot/api/public/connections/airtable/callback 并在预览登录后授权；当前无法恢复本人登录
 - [x] 免费账户养猫额度：FREE = Oxonian + 1 只自建 Bot，PRO 不限量；已用真实免费账户验证第 1 只可建、第 2 只引导升级
 - [x] Linear 一键 OAuth：微软式只存 refresh token、每次调用换新并比对写回，按工作区区分多账户，团队/问题列表/问题详情与评论只读，新建问题与加评论需确认；256 项测试通过
 - [x] Google Calendar：沿用 Gmail 的一键 Google 授权，支持查看日历/日程与确认后创建日程
