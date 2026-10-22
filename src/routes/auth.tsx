@@ -78,13 +78,13 @@ function AuthPage() {
     return `+86${digits.replace(/^0+/, "")}`;
   };
 
-  const sendCode = async (): Promise<unknown> => {
+  const sendCode = async () => {
     const p = normalizedPhone();
-    if (!/^\+\d{8,15}$/.test(p)) return toast.error("请输入正确的手机号");
+    if (!/^\+\d{8,15}$/.test(p)) { toast.error("请输入正确的手机号"); return; }
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({ phone: p });
     setLoading(false);
-    if (error) return toast.error("验证码发送失败，请稍后重试");
+    if (error) { toast.error("验证码发送失败，请稍后重试"); return; }
     setCodeSent(true);
     toast.success("验证码已发送");
   };
