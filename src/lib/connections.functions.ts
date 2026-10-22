@@ -21,7 +21,7 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  const withRetry=async<T>(fn:()=>Promise<T>)=>{try{return await fn();}catch(first){await new Promise(r=>setTimeout(r,800));try{return await fn();}catch{throw first;}}};
 
  const perProvider=await Promise.all(providerId.options.map(async(id)=>{
-  const configured=id==='google_mail'||id==='google_drive'||id==='google_calendar'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'||id==='microsoft_calendar'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):id==='notion'?Boolean(process.env['NOTION_OAUTH_CLIENT_ID'] && process.env['NOTION_OAUTH_CLIENT_SECRET']):id==='github'?(Boolean(process.env['GITHUB_OAUTH_CLIENT_ID'] && process.env['GITHUB_OAUTH_CLIENT_SECRET'])||Boolean(process.env['GITHUB_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='slack'?(Boolean(process.env['SLACK_OAUTH_CLIENT_ID'] && process.env['SLACK_OAUTH_CLIENT_SECRET'])||Boolean(process.env['SLACK_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='airtable'?Boolean(process.env['AIRTABLE_OAUTH_CLIENT_ID'] && process.env['AIRTABLE_OAUTH_CLIENT_SECRET']):id==='linear'?Boolean(process.env['LINEAR_OAUTH_CLIENT_ID'] && process.env['LINEAR_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
+  const configured=id==='google_mail'||id==='google_drive'||id==='google_calendar'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'||id==='microsoft_calendar'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):id==='notion'?Boolean(process.env['NOTION_OAUTH_CLIENT_ID'] && process.env['NOTION_OAUTH_CLIENT_SECRET']):id==='github'?(Boolean(process.env['GITHUB_OAUTH_CLIENT_ID'] && process.env['GITHUB_OAUTH_CLIENT_SECRET'])||Boolean(process.env['GITHUB_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='slack'?(Boolean(process.env['SLACK_OAUTH_CLIENT_ID'] && process.env['SLACK_OAUTH_CLIENT_SECRET'])||Boolean(process.env['SLACK_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='airtable'?Boolean(process.env['AIRTABLE_OAUTH_CLIENT_ID'] && process.env['AIRTABLE_OAUTH_CLIENT_SECRET']):id==='clickup'?Boolean(process.env['CLICKUP_OAUTH_CLIENT_ID'] && process.env['CLICKUP_OAUTH_CLIENT_SECRET']):id==='linear'?Boolean(process.env['LINEAR_OAUTH_CLIENT_ID'] && process.env['LINEAR_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
   if(!rows.length)return [{id,rowId:null as string|null,account:'',label:'',configured,credentialKind:'oauth',connected:false,enabled:false,reconnectRequired:false,connectionError:''}];
   return Promise.all(rows.map(async(row)=>{let account=row.account_key;
   let reconnectRequired=row?.reconnect_required ?? false;let connectionError='';
@@ -157,3 +157,22 @@ export const completeAirtableOAuth=createServerFn({method:'POST'}).middleware([r
  await saveConnection(context.userId,'airtable',result.credential,'personal_token',result.account,result.label);
  return {ok:true};
 });
+export const startClickUpOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).handler(async({context})=>{
+ await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
+ const {startClickUpAuthorization,CLICKUP_CALLBACK}=await import('./connections/clickup-oauth.server');
+ const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
+ return startClickUpAuthorization(context.userId,new URL(CLICKUP_CALLBACK,origin).toString());
+});
+export const completeClickUpOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({code:z.string().min(1).max(8192),state:z.string().min(1).max(4096)}).strict().parse(v)).handler(async({data,context})=>{
+ await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
+ const {verifyClickUpState,exchangeClickUpCode,CLICKUP_CALLBACK}=await import('./connections/clickup-oauth.server');
+ const payload=verifyClickUpState(data.state);
+ if(payload.userId!==context.userId)throw new Error('授权不属于当前账户');
+ const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
+ if(payload.redirectUri!==new URL(CLICKUP_CALLBACK,origin).toString())throw new Error('授权地址不匹配');
+ const result=await exchangeClickUpCode(data.code,payload);
+ const {saveConnection}=await import('./connections/storage.server');
+ await saveConnection(context.userId,'clickup',result.credential,'personal_token',result.account,result.label);
+ return {ok:true};
+});
+
