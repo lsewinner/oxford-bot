@@ -65,6 +65,7 @@ function VoicePage() {
   useEffect(() => {
     if (call.error && /country|region|territory|not supported|不支持/i.test(call.error)) {
       void call.stop(); setCompat(true); localStorage.setItem("oxford-voice-compat", "1");
+      setCompatError("当前网络暂不支持实时对讲，已切换为兼容模式");
     }
   }, [call.error]);
   useEffect(() => () => { recorder.current?.cancel(); player.current?.stop(); }, []);

@@ -37,6 +37,8 @@ export async function handleChat(request: Request): Promise<Response> {
     LOVABLE_API_KEY: process.env['LOVABLE_API_KEY'],
     DASHSCOPE_API_KEY: process.env['DASHSCOPE_API_KEY'],
     DASHSCOPE_MODEL: process.env['DASHSCOPE_MODEL'],
+    DEEPSEEK_API_KEY: process.env['DEEPSEEK_API_KEY'],
+    DEEPSEEK_MODEL: process.env['DEEPSEEK_MODEL'],
   };
   if (!selectChatProvider(providerSecrets)) return json(500, "AI 服务未配置");
 
@@ -214,7 +216,7 @@ export async function handleChat(request: Request): Promise<Response> {
       console.error("chat stream error", error);
       const status = (error as { statusCode?: number })?.statusCode;
       if (status === 429) return "请求太频繁，请稍后再试";
-      if (isRegionBlocked(error)) return '当前网络地区暂不支持主 AI 服务，国内通道尚未开通，请联系管理员';
+      if (isRegionBlocked(error)) return '当前网络地区暂不支持主 AI 服务，国内备用通道也未配置，请联系管理员';
       if (provider.kind !== 'gateway') {
         if (status === 401) return '官方 AI 密钥无效，请联系管理员检查配置';
         if (status === 402) return '官方 AI 账户余额不足，请联系管理员充值';

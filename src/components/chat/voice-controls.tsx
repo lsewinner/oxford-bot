@@ -63,10 +63,10 @@ export function VoiceInputButton({
     try {
       const file = await r.stop();
       const text = await transcribeFile(file);
-      if (!text) toast.error("没有听清，请再说一次");
+      if (!text) toast.error("没有听清，请再说一次", { duration: 8000 });
       else onTranscript(text, autoSend);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "语音识别失败");
+      toast.error(e instanceof Error ? e.message : "语音识别失败", { duration: 8000 });
     } finally {
       setState("idle");
     }

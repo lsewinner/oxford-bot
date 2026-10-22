@@ -55,6 +55,29 @@ describe('own-account AI routing', () => {
     });
   }
 
+  it('routes domestic Deep Think to DeepSeek reasoner on region refusal, without tools', async () => {
+    const calls: { url: string; body: Record<string, unknown> }[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+      calls.push({ url: String(url), body: JSON.parse(init.body) });
+      if (calls.length === 1) return new Response(JSON.stringify({ error: { code: 'unsupported_country_region_territory' } }), { status: 403, headers: { 'content-type': 'application/json' } });
+      return new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    }));
+    const provider = createChatProvider(new Request('http://localhost/api/chat'), { OPENAI_API_KEY: 'openai-test', DEEPSEEK_API_KEY: 'deepseek-test', DASHSCOPE_API_KEY: 'dash-test' }, true);
+    if (!provider) throw new Error('Expected provider');
+    const stream = await provider.model.doStream({
+      prompt: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }],
+      providerOptions: provider.providerOptions,
+      tools: [{ type: 'function', name: 'demo_tool', description: 'demo', inputSchema: { type: 'object', properties: {}, additionalProperties: false } }],
+    } as never);
+    const reader = stream.stream.getReader();
+    while (!(await reader.read()).done) { /* consume */ }
+    expect(calls).toHaveLength(2);
+    expect(calls[1]!.url).toBe('https://api.deepseek.com/v1/chat/completions');
+    expect(calls[1]!.body['model']).toBe('deepseek-reasoner');
+    expect(calls[1]!.body['tools']).toBeUndefined();
+    expect((calls[1]!.body['messages'] as { role: string }[]).at(-1)?.role).toBe('user');
+  });
+
   it('never falls back or retries official credential failures', async () => {
     const fetchSpy = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({ error: { message: 'Invalid API key', type: 'invalid_request_error' } }), { status: 401, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchSpy);
