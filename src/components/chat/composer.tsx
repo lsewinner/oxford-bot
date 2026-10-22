@@ -20,6 +20,7 @@ import { BrainIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TrendsDrawer } from './trends-drawer';
 import { usePro } from '@/components/pro/pro-context';
+import { WorkflowsDrawer } from './workflows-drawer';
 
 export function Composer({
   onSend,
@@ -93,6 +94,7 @@ export function Composer({
           <WebSearchToggle />
           <Button type="button" variant={deepOn?'secondary':'ghost'} size="sm" aria-label="Deep Think 深度思考" aria-pressed={deepOn} title="深度思考 · 推理摘要与核查" disabled={busy} className="gap-1.5 px-2" onClick={()=>{ if(!requirePro('deep_think'))return; setDeepThink(!deepThink); }}><BrainIcon className="size-4"/><span className="text-xs">Deep Think</span></Button>
           <TrendsDrawer compact />
+          <WorkflowsDrawer busy={busy} onRun={onSend} />
           <ToolsCenter />
         </PromptInputTools>
         <AttachmentSubmit text={text} busy={busy}>{(disabled) => <PromptInputSubmit
