@@ -121,7 +121,7 @@ export async function personalTokenIdentity(id: PersonalTokenProvider, token: st
   if (id === 'jira') {
     if (typeof body?.['accountId'] !== 'string') throw new Error('无法识别 Jira 账户');
     const site = parseJiraCredential(token).site;
-    return { account: `jr-${site.split('.')[0]}-${body['accountId']}`.slice(0, 300), label: `${typeof body['emailAddress'] === 'string' ? body['emailAddress'] : (body['displayName'] ?? '')} @ ${site}` };
+    return { account: `jr-${body['accountId']}@${site.split('.')[0]}`.slice(0, 300), label: `${typeof body['emailAddress'] === 'string' ? body['emailAddress'] : (body['displayName'] ?? '')} @ ${site}` };
   }
   if (id === 'feishu') {
     const bot = body?.['bot'] as { app_name?: string } | undefined;

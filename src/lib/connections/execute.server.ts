@@ -146,7 +146,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(o==='tasks'){const b=await request(`/tasks?project=${gid}&limit=50&opt_fields=name,completed,due_on,assignee.name,permalink_url`);items=(b.data ?? []).map((v:any)=>({title:v.name,id:v.gid,url:v.permalink_url,detail:`${v.completed?'已完成':'进行中'}${v.assignee?.name?' · '+v.assignee.name:''}${v.due_on?' · 截止 '+v.due_on:''}`}));if(b.next_page)text='仅显示前 50 条任务';}
  if(o==='create_task'){const b=await request('/tasks','POST',{data:{name:input.title,notes:input.text ?? '',projects:[input.id]}});items=[{title:b.data?.name ?? input.title ?? '',id:b.data?.gid,url:b.data?.permalink_url}];}
  } else if(id==='jira'){
- const site=String(row.account_label ?? '').split(' @ ').pop() ?? '';
+ const sub=String(row.account_key ?? '').split('@').pop() ?? '';const site=/^[a-z0-9-]+$/.test(sub)?`${sub}.atlassian.net`:'';
  const link=(key:string)=>/\.atlassian\.net$/.test(site)?`https://${site}/browse/${key}`:undefined;
  const adfText=(n:any):string=>!n?'':typeof n.text==='string'?n.text:Array.isArray(n.content)?n.content.map(adfText).join(n.type==='doc'?'\n':['paragraph','heading','listItem'].includes(n.type)?'':' ')+(['paragraph','heading','listItem'].includes(n.type)?'\n':''):'';
  if(o==='projects'){const b=await request('/rest/api/3/project/search?maxResults=50');items=(b.values ?? []).map((v:any)=>({title:v.name,id:v.key,detail:v.projectTypeKey ?? ''}));if(b.isLast===false)text='仅显示前 50 个项目';}
