@@ -21,7 +21,7 @@ export const Route = createFileRoute("/")({
 });
 
 const COPY = {
-  zh: { nav: "主导航", tagline: <>直接、机智、偶尔叛逆的 AI。正经问题用 Normal，想找乐子切<span className="whitespace-nowrap"> Fun。</span></>, login: "登录并开始对话", guest: "游客对话", pwa: "{t.pwa}", pricing: "查看价格与权益", about: "关于 Oxford Bot", body: <>Oxford Bot 是 Oxford Intelligence 推出的 AI 工作助手：回答问题、联网搜索、分析文件，并在你授权后连接常用工具。任何写入操作都需你确认后才会执行。详见<Link to="/privacy" className="text-foreground underline">隐私政策</Link>。</>, toggle: "EN" },
+  zh: { nav: "主导航", tagline: <>直接、机智、偶尔叛逆的 AI。正经问题用 Normal，想找乐子切<span className="whitespace-nowrap"> Fun。</span></>, login: "登录并开始对话", guest: "游客对话", pwa: "在手机浏览器中「添加到主屏幕」即可像 App 一样使用", pricing: "查看价格与权益", about: "关于 Oxford Bot", body: <>Oxford Bot 是 Oxford Intelligence 推出的 AI 工作助手：回答问题、联网搜索、分析文件，并在你授权后连接常用工具。任何写入操作都需你确认后才会执行。详见<Link to="/privacy" className="text-foreground underline">隐私政策</Link>。</>, toggle: "EN" },
   en: { nav: "Main navigation", tagline: <>A direct, witty, occasionally rebellious AI. Use Normal for serious questions, switch to<span className="whitespace-nowrap"> Fun for laughs.</span></>, login: "Sign in and start chatting", guest: "Chat as guest", pwa: "Tap “Add to Home Screen” in your mobile browser to use it like an app", pricing: "See pricing and plans", about: "About Oxford Bot", body: <>Oxford Bot is an AI work assistant by Oxford Intelligence: it answers questions, searches the web, analyses files and, once you authorise it, connects to the tools you use. Nothing is ever written without your confirmation. See our <Link to="/privacy" className="text-foreground underline">privacy policy</Link>.</>, toggle: "中文" },
 } as const;
 type Lang = keyof typeof COPY;
