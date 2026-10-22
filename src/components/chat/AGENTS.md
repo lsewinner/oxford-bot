@@ -1,1 +1,3 @@
 - Bot sidebars share BotListLabel/botListRowClass (why: aligned rows).
+- ChatMessage dedupes citation domains and source-url parts; Streamdown links and cards share superscript numbering (why: models do not reliably emit numbered citations).
+- Cat avatar IDs and role categories are separate types; a shared breed catalog drives new/edit pickers and bundled images (why: expanding avatar choices must not change Bot roles or invalidate previous selections).
