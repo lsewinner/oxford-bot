@@ -120,6 +120,13 @@
       "when": 1792658913994,
       "tag": "0016_daily_briefing",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792665769290,
+      "tag": "0017_meeting_records",
+      "breakpoints": true
     }
   ]
 }

@@ -279,6 +279,45 @@ export type Database = {
           },
         ]
       }
+      meeting_records: {
+        Row: {
+          brain_document_id: string | null
+          calendar_event: string
+          created_at: string
+          id: string
+          source: string
+          started_at: string | null
+          summary: Json
+          title: string
+          transcript: string
+          user_id: string
+        }
+        Insert: {
+          brain_document_id?: string | null
+          calendar_event?: string
+          created_at?: string
+          id?: string
+          source?: string
+          started_at?: string | null
+          summary?: Json
+          title: string
+          transcript?: string
+          user_id: string
+        }
+        Update: {
+          brain_document_id?: string | null
+          calendar_event?: string
+          created_at?: string
+          id?: string
+          source?: string
+          started_at?: string | null
+          summary?: Json
+          title?: string
+          transcript?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           created_at: string
