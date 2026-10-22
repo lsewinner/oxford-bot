@@ -35,13 +35,13 @@ function VoicePage() {
     else if (t === "app.delegation.pending") setPhase("thinking");
     else if (t === "session.input_transcript.delta" || t === "session.output_transcript.delta") {
       const role = t === "session.input_transcript.delta" ? "user" : "assistant";
-      const delta = typeof event.delta === "string" ? event.delta : "";
+      const delta = typeof event["delta"] === "string" ? event["delta"] : "";
       if (!delta) return;
       setPhase(role === "user" ? "listening" : "speaking");
       setLines((prev) => {
         const next = [...prev];
         if (lastRole.current === role && next.length) {
-          next[next.length - 1] = { role, text: next[next.length - 1].text + delta };
+          next[next.length - 1] = { role, text: (next[next.length - 1]?.text ?? "") + delta };
         } else next.push({ role, text: delta });
         lastRole.current = role;
         return next.slice(-6);

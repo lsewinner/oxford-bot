@@ -124,7 +124,7 @@ export function useLiveVoice(
 type LiveOptions = {
   url: string;
   audio: HTMLAudioElement;
-  getToken?: () => Promise<string | undefined>;
+  getToken?: (() => Promise<string | undefined>) | undefined;
   onEvent: (event: LiveEvent) => void;
 };
 
