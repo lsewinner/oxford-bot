@@ -30,34 +30,34 @@ export const EmailChangeEmail = ({
   newEmail,
   confirmationUrl,
 }: EmailChangeEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="zh-CN" dir="ltr">
     <Head>
       <style>{darkModeCss}</style>
     </Head>
-    <Preview>Confirm your email change for {siteName}</Preview>
+    <Preview>确认更换邮箱 · {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email change</Heading>
+        <Text style={brand}>Oxford Bot</Text>
+        <Heading style={h1}>确认更换邮箱</Heading>
         <Text style={text}>
-          You requested to change your email address for {siteName} from{' '}
+          你申请将 {siteName} 的邮箱从{' '}
           <Link href={`mailto:${oldEmail}`} style={link}>
             {oldEmail}
           </Link>{' '}
-          to{' '}
+          更换为{' '}
           <Link href={`mailto:${newEmail}`} style={link}>
             {newEmail}
           </Link>
           .
         </Text>
         <Text style={text}>
-          Click the button below to confirm this change:
+          点击下方按钮确认此更改：
         </Text>
         <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Confirm Email Change
+          确认更换邮箱
         </Button>
         <Text style={footer}>
-          If you didn't request this change, please secure your account
-          immediately.
+          如果不是你申请的更改，请立即检查账户安全并修改密码。
         </Text>
       </Container>
     </Body>
@@ -66,8 +66,9 @@ export const EmailChangeEmail = ({
 
 export default EmailChangeEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Geist, Arial, PingFang SC, Microsoft YaHei, sans-serif' }
+const brand = { fontSize: '14px', fontWeight: 'bold' as const, color: '#000000', margin: '0 0 32px' }
+const container = { maxWidth: '520px', padding: '40px 25px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,

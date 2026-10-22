@@ -15,17 +15,17 @@ interface ReauthenticationEmailProps {
 }
 
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="zh-CN" dir="ltr">
     <Head />
-    <Preview>Your verification code</Preview>
+    <Preview>Oxford Bot 身份验证码</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm reauthentication</Heading>
-        <Text style={text}>Use the code below to confirm your identity:</Text>
+        <Text style={brand}>Oxford Bot</Text>
+        <Heading style={h1}>确认你的身份</Heading>
+        <Text style={text}>请使用以下验证码确认你的身份：</Text>
         <Text style={codeStyle}>{token}</Text>
         <Text style={footer}>
-          This code will expire shortly. If you didn't request this, you can
-          safely ignore this email.
+          请尽快使用此验证码，切勿与他人分享。如果不是你申请的，请忽略这封邮件。
         </Text>
       </Container>
     </Body>
@@ -34,8 +34,9 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
 
 export default ReauthenticationEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Geist, Arial, PingFang SC, Microsoft YaHei, sans-serif' }
+const brand = { fontSize: '14px', fontWeight: 'bold' as const, color: '#000000', margin: '0 0 32px' }
+const container = { maxWidth: '520px', padding: '40px 25px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,

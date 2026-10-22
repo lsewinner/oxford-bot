@@ -25,33 +25,34 @@ export const SignupEmail = ({
   recipient,
   confirmationUrl,
 }: SignupEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="zh-CN" dir="ltr">
     <Head>
       <style>{darkModeCss}</style>
     </Head>
-    <Preview>Confirm your email for {siteName}</Preview>
+    <Preview>确认邮箱 · {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email</Heading>
+        <Text style={brand}>Oxford Bot</Text>
+        <Heading style={h1}>确认你的邮箱</Heading>
         <Text style={text}>
-          Thanks for signing up for{' '}
+          感谢注册{' '}
           <Link href={siteUrl} style={link}>
             <strong>{siteName}</strong>
           </Link>
           !
         </Text>
         <Text style={text}>
-          Please confirm your email address (
+          请确认你的邮箱地址（
           <Link href={`mailto:${recipient}`} style={link}>
             {recipient}
           </Link>
-          ) by clicking the button below:
+          ），点击下方按钮完成注册：
         </Text>
         <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Verify Email
+          验证邮箱
         </Button>
         <Text style={footer}>
-          If you didn't create an account, you can safely ignore this email.
+          如果你没有注册此账户，请忽略这封邮件。
         </Text>
       </Container>
     </Body>
@@ -60,8 +61,9 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Geist, Arial, PingFang SC, Microsoft YaHei, sans-serif' }
+const brand = { fontSize: '14px', fontWeight: 'bold' as const, color: '#000000', margin: '0 0 32px' }
+const container = { maxWidth: '520px', padding: '40px 25px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,

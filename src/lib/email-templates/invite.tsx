@@ -23,28 +23,27 @@ export const InviteEmail = ({
   siteUrl,
   confirmationUrl,
 }: InviteEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="zh-CN" dir="ltr">
     <Head>
       <style>{darkModeCss}</style>
     </Head>
-    <Preview>You've been invited to join {siteName}</Preview>
+    <Preview>邀请你加入 {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>You've been invited</Heading>
+        <Text style={brand}>Oxford Bot</Text>
+        <Heading style={h1}>你收到了一份邀请</Heading>
         <Text style={text}>
-          You've been invited to join{' '}
+          邀请你加入{' '}
           <Link href={siteUrl} style={link}>
             <strong>{siteName}</strong>
           </Link>
-          . Click the button below to accept the invitation and create your
-          account.
+          。点击下方按钮接受邀请并创建账户。
         </Text>
         <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Accept Invitation
+          接受邀请
         </Button>
         <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
+          如果你不认识此邀请，请忽略这封邮件。
         </Text>
       </Container>
     </Body>
@@ -53,8 +52,9 @@ export const InviteEmail = ({
 
 export default InviteEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Geist, Arial, PingFang SC, Microsoft YaHei, sans-serif' }
+const brand = { fontSize: '14px', fontWeight: 'bold' as const, color: '#000000', margin: '0 0 32px' }
+const container = { maxWidth: '520px', padding: '40px 25px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,

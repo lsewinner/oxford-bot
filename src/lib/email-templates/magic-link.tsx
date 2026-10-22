@@ -20,23 +20,23 @@ export const MagicLinkEmail = ({
   siteName,
   confirmationUrl,
 }: MagicLinkEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="zh-CN" dir="ltr">
     <Head>
       <style>{darkModeCss}</style>
     </Head>
-    <Preview>Your login link for {siteName}</Preview>
+    <Preview>登录链接 · {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Your login link</Heading>
+        <Text style={brand}>Oxford Bot</Text>
+        <Heading style={h1}>登录 Oxford Bot</Heading>
         <Text style={text}>
-          Click the button below to log in to {siteName}. This link will expire
-          shortly.
+          点击下方按钮登录 {siteName}，请尽快使用此链接。
         </Text>
         <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Log In
+          登录
         </Button>
         <Text style={footer}>
-          If you didn't request this link, you can safely ignore this email.
+          如果你没有申请登录链接，请忽略这封邮件。
         </Text>
       </Container>
     </Body>
@@ -45,8 +45,9 @@ export const MagicLinkEmail = ({
 
 export default MagicLinkEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Geist, Arial, PingFang SC, Microsoft YaHei, sans-serif' }
+const brand = { fontSize: '14px', fontWeight: 'bold' as const, color: '#000000', margin: '0 0 32px' }
+const container = { maxWidth: '520px', padding: '40px 25px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,

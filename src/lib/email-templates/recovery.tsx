@@ -20,24 +20,23 @@ export const RecoveryEmail = ({
   siteName,
   confirmationUrl,
 }: RecoveryEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="zh-CN" dir="ltr">
     <Head>
       <style>{darkModeCss}</style>
     </Head>
-    <Preview>Reset your password for {siteName}</Preview>
+    <Preview>重置密码 · {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Reset your password</Heading>
+        <Text style={brand}>Oxford Bot</Text>
+        <Heading style={h1}>重置你的密码</Heading>
         <Text style={text}>
-          We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
+          我们收到了你的 {siteName} 密码重置申请。点击下方按钮设置新密码。
         </Text>
         <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Reset Password
+          重置密码
         </Button>
         <Text style={footer}>
-          If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
+          如果你没有申请重置密码，请忽略这封邮件；你的密码不会改变。
         </Text>
       </Container>
     </Body>
@@ -46,8 +45,9 @@ export const RecoveryEmail = ({
 
 export default RecoveryEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Geist, Arial, PingFang SC, Microsoft YaHei, sans-serif' }
+const brand = { fontSize: '14px', fontWeight: 'bold' as const, color: '#000000', margin: '0 0 32px' }
+const container = { maxWidth: '520px', padding: '40px 25px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,
