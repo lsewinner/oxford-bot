@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { AccountProfile } from '@/components/chat/account-profile';
 import { ProBadge } from '@/components/pro/upgrade-dialog';
 import { usePro } from '@/components/pro/pro-context';
-import { LockIcon } from 'lucide-react';
+import { LockIcon, BrainCircuitIcon } from 'lucide-react';
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -186,6 +186,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             ),
         )}
       </nav>
+      <Link to="/brain" onClick={onNavigate} className="mx-2 mb-1 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-foreground"><BrainCircuitIcon className="size-4" />Smart Brain</Link>
       <AccountProfile user={user} onSignOut={signOut} isAdmin={isAdmin} />
     </div>
   );
