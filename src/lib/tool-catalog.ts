@@ -47,6 +47,7 @@ export function simulateTool(id: ToolId, query: string) {
       : id === "airtable" ? "示例记录：客户跟进表最新 5 条（演示数据）"
       : id === "asana" ? "示例任务：准备季度复盘材料（演示数据）"
       : id === "jira" ? "示例 Issue：ENG-42 支付页超时（演示数据）"
+      : id === "oanda" ? "示例持仓：EUR_USD 多单 1,000 单位（演示数据，未下单）"
       : id === "telegram" ? "示例消息：今晚 8 点上线提醒（演示数据，未发送）"
       : id === "clickup" ? "示例任务：整理本周待办清单（演示数据）"
       : id === "slack" || id === "microsoft_teams" ? "示例简报：团队正在准备本周发布（演示数据）"
