@@ -78,7 +78,7 @@ function AuthPage() {
     return `+86${digits.replace(/^0+/, "")}`;
   };
 
-  const sendCode = async () => {
+  const sendCode = async (): Promise<unknown> => {
     const p = normalizedPhone();
     if (!/^\+\d{8,15}$/.test(p)) return toast.error("请输入正确的手机号");
     setLoading(true);
