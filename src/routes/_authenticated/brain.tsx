@@ -40,7 +40,7 @@ function BrainPage() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["smart-brain"] });
 
   async function upload(file: File) {
-    if (file.size > 10 * 1024 * 1024) return toast.error("单个文件不超过 10MB");
+    if (file.size > 10 * 1024 * 1024) { toast.error("单个文件不超过 10MB"); return; }
     setBusy(file.name);
     try {
       const name = file.name.replace(/\.[^.]+$/, "").slice(0, 200);
@@ -58,7 +58,7 @@ function BrainPage() {
   }
 
   async function savePaste() {
-    if (!title.trim() || !text.trim()) return toast.error("请填写标题和内容");
+    if (!title.trim() || !text.trim()) { toast.error("请填写标题和内容"); return; }
     setBusy("paste");
     try { await add({ data: { title: title.trim(), text } }); setTitle(""); setText(""); toast.success("已加入 Smart Brain"); refresh(); }
     catch (e) { toast.error(e instanceof Error ? e.message : "保存失败"); }

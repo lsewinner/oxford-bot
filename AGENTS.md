@@ -40,3 +40,5 @@
 - Memory center: admin-only versions, one published per kind, injected server-side before Bot context.
 - A provider stays in 工具与连接 only if a normal customer can connect it alone, in one step, with no signup wall, paid tier, or hand-built app; Feishu and Flomo were removed on this rule (why: if the owner cannot self-serve, customers cannot either).
 - Airtable one-click authorization completes through authenticated opener server functions and a verified public callback; connection-specific credential/rotation rules live in src/lib/connections/AGENTS.md (why: public redirects must never save credentials for an unverified caller).
+
+- Smart Brain (private RAG): user docs are chunked and embedded server-side into brain_chunks (service-role only, searched via match_brain_chunks with the verified userId) and injected into chat as reference data (why: private knowledge must never be readable across accounts or treated as instructions).
