@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 - Read subdirectory AGENTS.md files before editing there.
+- Phone authentication uses managed Auth OTP calls; classify failures without exposing provider payloads and bind verification to the successfully requested number (why: actionable errors without bypassing SMS verification or leaking credentials).
 - Auth emails use six scaffolded templates and managed /lovable/email/auth handlers; preserve SDK verification and entities v4 aliases (why: secure, compatible sending).
 - Chat route → `ai/chat.server.ts` verifies bearer/ownership and persists messages. `ai/provider.server.ts` selects OpenAI key, then Anthropic key, then Gateway; no failure fallback; image/voice routing stays separate (why: protect accounts, keys and spending).
 - Threads are DB-backed with per-thread URLs `/chat/$threadId` under `_authenticated`; messages store AI SDK ids in `ui_id`, never in uuid columns (why: SDK ids are not UUIDs).
