@@ -36,7 +36,8 @@ async function requestTokens(fields: Record<string, string>): Promise<Credential
   const { clientId, clientSecret } = config();
   const response = await fetch('https://airtable.com/oauth2/v1/token', {
     method: 'POST', redirect: 'manual',
-    headers: { Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64url')}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    // HTTP Basic auth requires standard base64 (with padding), not base64url.
+    headers: { Authorization: `Basic ${Buffer.from(`${clientId.trim()}:${clientSecret.trim()}`).toString('base64')}`, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(fields),
   });
   const body = await response.json().catch(() => null) as { access_token?: string; refresh_token?: string; expires_in?: number; error?: string } | null;
