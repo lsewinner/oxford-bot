@@ -113,6 +113,13 @@
       "when": 1792655473215,
       "tag": "0015_smart_brain",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792658913994,
+      "tag": "0016_daily_briefing",
+      "breakpoints": true
     }
   ]
 }
