@@ -10,6 +10,8 @@ export type ChatProviderSecrets = {
   OPENAI_MODEL?: string | undefined;
   DASHSCOPE_API_KEY?: string | undefined;
   DASHSCOPE_MODEL?: string | undefined;
+  DEEPSEEK_API_KEY?: string | undefined;
+  DEEPSEEK_MODEL?: string | undefined;
 };
 
 /** Only an explicit region/territory refusal counts; auth, quota and outages never switch providers. */
@@ -20,12 +22,26 @@ export function isRegionBlocked(error: unknown): boolean {
 }
 
 export const DOMESTIC_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+export const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1';
 
-/** Domestic (Qwen) model used only after a confirmed region refusal from the primary model. */
-function createDomesticModel(secrets: ChatProviderSecrets) {
-  const key = secrets.DASHSCOPE_API_KEY?.trim();
-  if (!key) return null;
-  return createOpenAI({ name: 'dashscope', apiKey: key, baseURL: DOMESTIC_BASE_URL }).chat(secrets.DASHSCOPE_MODEL?.trim() || 'qwen-plus');
+export type DomesticChoice = { provider: 'dashscope' | 'deepseek'; stripTools: boolean };
+
+/** Deep Think reasons on DeepSeek's reasoner when configured; quick answers stay on Qwen. */
+export function selectDomesticModel(secrets: ChatProviderSecrets, deepThink: boolean): DomesticChoice | null {
+  const deepseek = deepThink ? secrets.DEEPSEEK_API_KEY?.trim() : undefined;
+  if (deepseek) return { provider: 'deepseek', stripTools: true };
+  if (secrets.DASHSCOPE_API_KEY?.trim()) return { provider: 'dashscope', stripTools: false };
+  return null;
+}
+
+/** Domestic (Qwen/DeepSeek) model used only after a confirmed region refusal from the primary model. */
+function createDomesticModel(secrets: ChatProviderSecrets, domestic: DomesticChoice) {
+  if (domestic.provider === 'deepseek') {
+    const provider = createOpenAI({ name: 'deepseek', apiKey: secrets.DEEPSEEK_API_KEY?.trim()!, baseURL: DEEPSEEK_BASE_URL });
+    return { model: provider.chat(secrets.DEEPSEEK_MODEL?.trim() || 'deepseek-reasoner'), stripTools: domestic.stripTools };
+  }
+  const provider = createOpenAI({ name: 'dashscope', apiKey: secrets.DASHSCOPE_API_KEY?.trim()!, baseURL: DOMESTIC_BASE_URL });
+  return { model: provider.chat(secrets.DASHSCOPE_MODEL?.trim() || 'qwen-plus'), stripTools: domestic.stripTools };
 }
 
 type AnyModel = Record<string, any>;
