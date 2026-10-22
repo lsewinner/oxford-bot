@@ -47,7 +47,7 @@ export async function handleChat(request: Request): Promise<Response> {
     userId = userData.user.id;
   }
 
-  let body: { messages?: UIMessage[]; threadId?: string; mode?: ChatMode; webSearch?: boolean; deepThink?:boolean; demoTools?: unknown; bot?: unknown };
+  let body: { messages?: UIMessage[]; threadId?: string; mode?: ChatMode; webSearch?: boolean; deepThink?:boolean; demoTools?: unknown; bot?: unknown; botShare?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -61,7 +61,17 @@ export async function handleChat(request: Request): Promise<Response> {
   const { isProUser } = await import('@/lib/pro.server');
   const pro = threadId !== 'guest' && await isProUser(supabase as never, userId);
   const deepThink=pro && body.deepThink===true;
-  if(!pro && body.bot && typeof body.bot==='object'){ const { systemPrompt: _p, preferredTools: _t, ...rest } = body.bot as Record<string, unknown>; body.bot = rest; }
+  // Shared Bot trials load the persona server-side from the share token, never from the client.
+  let sharedPersona = false;
+  if (typeof body.botShare === 'string' && /^[0-9a-f-]{36}$/i.test(body.botShare)) {
+    const { readSharedBot } = await import('@/lib/bot-shares.functions');
+    const shared = await readSharedBot(body.botShare).catch(() => null);
+    if (!shared) return json(404, '这个分享的 Bot 已失效');
+    const kind = ['general','mail','document','code','team'].includes(shared.kind) ? shared.kind : 'general';
+    body.bot = { name: shared.name, kind, ...(shared.systemPrompt ? { systemPrompt: shared.systemPrompt } : {}) };
+    sharedPersona = true;
+  }
+  if(!pro && !sharedPersona && body.bot && typeof body.bot==='object'){ const { systemPrompt: _p, preferredTools: _t, ...rest } = body.bot as Record<string, unknown>; body.bot = rest; }
   if (!Array.isArray(messages) || messages.length === 0 || !threadId) return json(400, "缺少消息或会话");
   try { validateAttachments(messages); } catch (error) { return json(400, error instanceof Error ? error.message : "附件无效"); }
   if (threadId !== "guest" && (!supabase || !userId)) return json(401, "请先登录");
