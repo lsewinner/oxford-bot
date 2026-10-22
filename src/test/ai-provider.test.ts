@@ -72,10 +72,10 @@ describe('own-account AI routing', () => {
     const reader = stream.stream.getReader();
     while (!(await reader.read()).done) { /* consume */ }
     expect(calls).toHaveLength(2);
-    expect(calls[1].url).toBe('https://api.deepseek.com/v1/chat/completions');
-    expect(calls[1].body.model).toBe('deepseek-reasoner');
-    expect(calls[1].body.tools).toBeUndefined();
-    expect((calls[1].body.messages as { role: string }[]).at(-1)?.role).toBe('user');
+    expect(calls[1]!.url).toBe('https://api.deepseek.com/v1/chat/completions');
+    expect(calls[1]!.body['model']).toBe('deepseek-reasoner');
+    expect(calls[1]!.body['tools']).toBeUndefined();
+    expect((calls[1]!.body['messages'] as { role: string }[]).at(-1)?.role).toBe('user');
   });
 
   it('never falls back or retries official credential failures', async () => {
