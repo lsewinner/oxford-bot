@@ -15,6 +15,11 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth: {
   signInWithOtp: mocks.send, verifyOtp: mocks.verify,
 } } }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+// 本页测试模拟短信服务商批准中国发送、开关重新打开后的登录页。
+vi.mock("@/lib/phone-auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/phone-auth")>();
+  return { ...actual, PHONE_SIGNIN_ENABLED: true };
+});
 const Page = Route.options.component as React.ComponentType;
 beforeEach(() => { vi.clearAllMocks(); mocks.send.mockResolvedValue({ error: null }); mocks.verify.mockResolvedValue({ error: null }); });
 afterEach(cleanup);
