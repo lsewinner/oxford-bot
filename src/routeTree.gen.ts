@@ -43,6 +43,7 @@ import { Route as ApiOauthSlackCallbackRouteImport } from './routes/api/oauth/sl
 import { Route as ApiPublicCronBriefingRouteImport } from './routes/api/public/cron/briefing'
 import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oauth/return'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicSbSplatRouteImport } from './routes/api/public/sb/$'
 import { Route as ApiPublicWechatKfAccountIdRouteImport } from './routes/api/public/wechat-kf/$accountId'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -223,6 +224,11 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSbSplatRoute = ApiPublicSbSplatRouteImport.update({
+  id: '/api/public/sb/$',
+  path: '/api/public/sb/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWechatKfAccountIdRoute =
   ApiPublicWechatKfAccountIdRouteImport.update({
     id: '/api/public/wechat-kf/$accountId',
@@ -298,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/briefing': typeof ApiPublicCronBriefingRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/sb/$': typeof ApiPublicSbSplatRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -339,6 +346,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/briefing': typeof ApiPublicCronBriefingRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/sb/$': typeof ApiPublicSbSplatRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -383,6 +391,7 @@ export interface FileRoutesById {
   '/api/public/cron/briefing': typeof ApiPublicCronBriefingRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/sb/$': typeof ApiPublicSbSplatRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -427,6 +436,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/briefing'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
+    | '/api/public/sb/$'
     | '/api/public/wechat-kf/$accountId'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -468,6 +478,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/briefing'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
+    | '/api/public/sb/$'
     | '/api/public/wechat-kf/$accountId'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -511,6 +522,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/briefing'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
+    | '/api/public/sb/$'
     | '/api/public/wechat-kf/$accountId'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -547,6 +559,7 @@ export interface RootRouteChildren {
   ApiPublicCronBriefingRoute: typeof ApiPublicCronBriefingRoute
   ApiPublicOauthReturnRoute: typeof ApiPublicOauthReturnRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicSbSplatRoute: typeof ApiPublicSbSplatRoute
   ApiPublicWechatKfAccountIdRoute: typeof ApiPublicWechatKfAccountIdRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -796,6 +809,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sb/$': {
+      id: '/api/public/sb/$'
+      path: '/api/public/sb/$'
+      fullPath: '/api/public/sb/$'
+      preLoaderRoute: typeof ApiPublicSbSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/wechat-kf/$accountId': {
       id: '/api/public/wechat-kf/$accountId'
       path: '/api/public/wechat-kf/$accountId'
@@ -909,6 +929,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronBriefingRoute: ApiPublicCronBriefingRoute,
   ApiPublicOauthReturnRoute: ApiPublicOauthReturnRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicSbSplatRoute: ApiPublicSbSplatRoute,
   ApiPublicWechatKfAccountIdRoute: ApiPublicWechatKfAccountIdRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
