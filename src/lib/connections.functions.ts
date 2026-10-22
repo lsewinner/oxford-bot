@@ -21,7 +21,7 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  const withRetry=async<T>(fn:()=>Promise<T>)=>{try{return await fn();}catch(first){await new Promise(r=>setTimeout(r,800));try{return await fn();}catch{throw first;}}};
 
  const perProvider=await Promise.all(providerId.options.map(async(id)=>{
-  const configured=id==='google_mail'||id==='google_drive'||id==='google_calendar'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'||id==='microsoft_calendar'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):id==='notion'?Boolean(process.env['NOTION_OAUTH_CLIENT_ID'] && process.env['NOTION_OAUTH_CLIENT_SECRET']):id==='github'?(Boolean(process.env['GITHUB_OAUTH_CLIENT_ID'] && process.env['GITHUB_OAUTH_CLIENT_SECRET'])||Boolean(process.env['GITHUB_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='slack'?(Boolean(process.env['SLACK_OAUTH_CLIENT_ID'] && process.env['SLACK_OAUTH_CLIENT_SECRET'])||Boolean(process.env['SLACK_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='linear'?Boolean(process.env['LINEAR_OAUTH_CLIENT_ID'] && process.env['LINEAR_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
+  const configured=id==='google_mail'||id==='google_drive'||id==='google_calendar'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'||id==='microsoft_calendar'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):id==='notion'?Boolean(process.env['NOTION_OAUTH_CLIENT_ID'] && process.env['NOTION_OAUTH_CLIENT_SECRET']):id==='github'?(Boolean(process.env['GITHUB_OAUTH_CLIENT_ID'] && process.env['GITHUB_OAUTH_CLIENT_SECRET'])||Boolean(process.env['GITHUB_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='slack'?(Boolean(process.env['SLACK_OAUTH_CLIENT_ID'] && process.env['SLACK_OAUTH_CLIENT_SECRET'])||Boolean(process.env['SLACK_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='airtable'?Boolean(process.env['AIRTABLE_OAUTH_CLIENT_ID'] && process.env['AIRTABLE_OAUTH_CLIENT_SECRET']):id==='linear'?Boolean(process.env['LINEAR_OAUTH_CLIENT_ID'] && process.env['LINEAR_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
   if(!rows.length)return [{id,rowId:null as string|null,account:'',label:'',configured,credentialKind:'oauth',connected:false,enabled:false,reconnectRequired:false,connectionError:''}];
   return Promise.all(rows.map(async(row)=>{let account=row.account_key;
   let reconnectRequired=row?.reconnect_required ?? false;let connectionError='';
@@ -30,7 +30,10 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
      if(row.credential_kind==='personal_token'){
        const {supportsPersonalToken,validatePersonalToken}=await import('./connections/personal-token.server');
        if(!supportsPersonalToken(id))throw new Error('不支持此服务的个人 Token');
-       await withRetry(()=>validatePersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token')));
+       if(id==='airtable'){
+         const {callWithAirtableCredential,AirtableReconnectError}=await import('./connections/airtable-oauth.server');
+         if(row.enabled)try{const response=await callWithAirtableCredential(context.userId,row,paths.airtable);if(!response.ok)connectionError=`Airtable (${response.status})`;else await response.arrayBuffer();}catch(e){if(e instanceof AirtableReconnectError){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}else throw e;}
+       }else await withRetry(()=>validatePersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token')));
      } else if(row.credential_kind==='google_oauth'){
        const {callWithGoogleToken,GoogleReconnectError,isGoogleProvider}=await import('./connections/google-oauth.server');
        if(!isGoogleProvider(id))throw new Error('此服务不支持 Google 授权');
@@ -65,7 +68,7 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
        else await response.arrayBuffer();}
      }catch(error){const msg=error instanceof Error?error.message:'';connectionError=/fetch|network|ECONN|ETIMEDOUT|timed out|无法访问/i.test(msg)?'暂时无法访问服务，请稍后重试':msg||'连接检查失败';}
    }
-   return {id,rowId:row.id as string|null,account,label:row.account_label || account,configured,credentialKind:row.credential_kind,connected:true,enabled:row.enabled,reconnectRequired,connectionError};
+   return {id,rowId:row.id as string|null,account,label:row.account_label || account,configured,credentialKind:id==='airtable' && row.credential_kind==='personal_token' && decryptConnectionKey(row.connection_key_ciphertext,'personal_token').startsWith('{')?'airtable_oauth':row.credential_kind,connected:true,enabled:row.enabled,reconnectRequired,connectionError};
   }));
  }));
  return perProvider.flat();
@@ -135,3 +138,22 @@ export const confirmOperation=createServerFn({method:'POST'}).middleware([requir
  await supabaseAdmin.from('tool_actions').update({status:result.status,result:result as never,updated_at:new Date().toISOString()}).eq('id',row.id).eq('user_id',context.userId);return result;
 });
 export const actionStatus=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({actionId:z.string().uuid()}).parse(v)).handler(async({data,context})=>{const {supabaseAdmin}=await import('@/integrations/supabase/client.server');const {data:row,error}=await supabaseAdmin.from('tool_actions').select('status,result').eq('id',data.actionId).eq('user_id',context.userId).maybeSingle();if(error || !row)throw new Error('操作不存在');return {status:row.status,result:row.result as ToolResult|null};});
+
+export const startAirtableOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).handler(async({context})=>{
+ await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
+ const {startAirtableAuthorization,AIRTABLE_CALLBACK}=await import('./connections/airtable-oauth.server');
+ const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
+ return startAirtableAuthorization(context.userId,new URL(AIRTABLE_CALLBACK,origin).toString());
+});
+export const completeAirtableOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({code:z.string().min(1).max(8192),state:z.string().min(1).max(4096)}).strict().parse(v)).handler(async({data,context})=>{
+ await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
+ const {verifyAirtableState,exchangeAirtableCode,AIRTABLE_CALLBACK}=await import('./connections/airtable-oauth.server');
+ const payload=verifyAirtableState(data.state);
+ if(payload.userId!==context.userId)throw new Error('授权不属于当前账户');
+ const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;const origin=sandboxHost?`https://${sandboxHost}`:url.origin;
+ if(payload.redirectUri!==new URL(AIRTABLE_CALLBACK,origin).toString())throw new Error('授权地址不匹配');
+ const result=await exchangeAirtableCode(data.code,payload);
+ const {saveConnection}=await import('./connections/storage.server');
+ await saveConnection(context.userId,'airtable',result.credential,'personal_token',result.account,result.label);
+ return {ok:true};
+});

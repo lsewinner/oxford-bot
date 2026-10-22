@@ -6,6 +6,7 @@ import { callWithPersonalToken,supportsPersonalToken,personalTokenError } from '
 import { callWithMicrosoftToken,MicrosoftReconnectError } from './microsoft-oauth.server';
 import { callWithGoogleToken,isGoogleProvider } from './google-oauth.server';
 import { callLinearGraphQL,LinearReconnectError } from './linear-oauth.server';
+import { callWithAirtableCredential,AirtableReconnectError } from './airtable-oauth.server';
 const BASE='https://connector-gateway.lovable.dev';
 const enc=encodeURIComponent;
 const b64=(s:string)=>Buffer.from(s,'utf8').toString('base64');
@@ -30,7 +31,7 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(personal && !supportsPersonalToken(id))throw new Error('不支持此服务的个人 Token');
  if(google && !isGoogleProvider(id))throw new Error('此服务不支持 Google 授权');
  let r:Response;
-  try{r=microsoft?await callWithMicrosoftToken(decryptConnectionKey(row.connection_key_ciphertext,'microsoft_oauth'),path,init,token=>rotateMicrosoftCredential(userId,row.id,row.connection_key_ciphertext,token),id==='microsoft_teams'?'microsoft_teams':id==='microsoft_calendar'?'microsoft_calendar':'microsoft_outlook'):personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):google && isGoogleProvider(id)?await callWithGoogleToken(id,decryptConnectionKey(row.connection_key_ciphertext),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});}catch(e){if(e instanceof MicrosoftReconnectError){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);return Promise.reject(e);}throw e;}
+  try{r=microsoft?await callWithMicrosoftToken(decryptConnectionKey(row.connection_key_ciphertext,'microsoft_oauth'),path,init,token=>rotateMicrosoftCredential(userId,row.id,row.connection_key_ciphertext,token),id==='microsoft_teams'?'microsoft_teams':id==='microsoft_calendar'?'microsoft_calendar':'microsoft_outlook'):personal && id==='airtable'?await callWithAirtableCredential(userId,row,path,init):personal && supportsPersonalToken(id)?await callWithPersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token'),path,init):google && isGoogleProvider(id)?await callWithGoogleToken(id,decryptConnectionKey(row.connection_key_ciphertext),path,init):await callAsAppUser({gatewayBaseUrl:BASE,connectionAPIKey:decryptConnectionKey(row.connection_key_ciphertext),connectorId:id,path,requiredScopes:PROVIDERS[id].scopes,init});}catch(e){if(e instanceof MicrosoftReconnectError || e instanceof AirtableReconnectError){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);return Promise.reject(e);}throw e;}
  if(microsoft && r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new MicrosoftReconnectError();}
  if(google && isGoogleProvider(id)){
    if(!r.ok){if(r.status===401){await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',userId);throw new Error('授权需要更新，请重新连接');}throw new Error(`${provider} (${r.status})`);}
