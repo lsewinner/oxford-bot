@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Settings2Icon, CheckIcon, PlusIcon } from "lucide-react";
+import { Settings2Icon, CheckIcon, PlusIcon, Share2Icon } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { createBotShare } from "@/lib/bot-shares.functions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,6 +136,21 @@ export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (
   const [preferredTools,setPreferredTools]=useState<ProviderId[]>(entry.bot.preferredTools ?? []);
   const [saving, setSaving] = useState(false);
   const { isPro, openUpgrade } = usePro();
+  const shareBot = useServerFn(createBotShare);
+  const [intro, setIntro] = useState('');
+  const [sharing, setSharing] = useState(false);
+  const share = async () => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) { toast.error('登录后才能分享 Bot'); return; }
+    setSharing(true);
+    try {
+      const { token } = await shareBot({ data: { name: name.trim() || entry.bot.name, kind: entry.bot.kind, breed, ...(isPro && systemPrompt ? { systemPrompt } : {}), ...(intro.trim() ? { intro: intro.trim() } : {}) } });
+      const url = `${window.location.origin}/b/${token}`;
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast.success('分享链接已复制', { description: url });
+    } catch { toast.error('创建分享链接失败，请重试'); }
+    finally { setSharing(false); }
+  };
   return <>
     <Button variant="ghost" size="icon-sm" title="Bot 人设、职能与头像" aria-label={`设置 ${entry.bot.name}`} className="size-6 shrink-0 text-muted-foreground [&_svg]:size-3.5" onClick={() => { setName(entry.bot.name); setBreed(entry.bot.breed ?? entry.bot.kind); setSystemPrompt(entry.bot.systemPrompt ?? '');setPreferredTools(entry.bot.preferredTools ?? []);setOpen(true); }}><Settings2Icon /></Button>
     <Dialog open={open} onOpenChange={(value) => { if (!saving) setOpen(value); }}><DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>设置 Bot</DialogTitle></DialogHeader>
@@ -150,6 +167,11 @@ export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (
         <div className="space-y-2"><label htmlFor={`persona-${entry.id}`} className="text-sm">系统提示词 · 人设 / 说话风格 / 专注职能</label>{!isPro && <button type="button" onClick={() => openUpgrade("persona")} className="block text-xs text-muted-foreground underline">自定义人设为 Pro 权益 · 升级解锁</button>}<Textarea readOnly={!isPro} onFocus={() => { if (!isPro) openUpgrade("persona"); }} id={`persona-${entry.id}`} aria-label="Bot 系统提示词" value={systemPrompt} maxLength={8000} rows={5} onChange={e=>setSystemPrompt(e.target.value)} placeholder="例如：你是一位严谨的技术顾问，用简洁中文回答，专注代码审查与架构分析。"/></div>
         <fieldset><legend className="mb-3 text-sm">默认工具偏好</legend><div className="grid grid-cols-2 gap-3">{TOOL_CATALOG.map(tool=><label key={tool.id} className="flex items-center gap-2 text-sm"><Checkbox checked={preferredTools.includes(tool.id)} onCheckedChange={checked=>setPreferredTools(prev=>checked?[...prev,tool.id]:prev.filter(id=>id!==tool.id))}/>{tool.name}</label>)}</div></fieldset>
         <CatPicker bot={{ ...entry.bot, name }} breed={breed} onChange={setBreed} />
+        <fieldset className="space-y-2 rounded-md border border-border p-3"><legend className="px-1 text-sm">分享此 Bot</legend>
+          <Input aria-label="分享简介" placeholder="一句话介绍（可选），显示在分享页" maxLength={200} value={intro} onChange={(e) => setIntro(e.target.value)} />
+          <p className="text-xs text-muted-foreground">对方可以试聊或复制一份；会分享名字、头像{isPro ? '和人设' : ''}，不会分享你的聊天记录和资料。</p>
+          <Button type="button" variant="outline" size="sm" disabled={sharing} onClick={share}><Share2Icon className="size-4" />{sharing ? '正在生成…' : '生成分享链接'}</Button>
+        </fieldset>
         <DialogFooter><Button type="submit" disabled={!name.trim() || saving}>{saving ? "正在保存…" : "保存"}</Button></DialogFooter>
       </form>
     </DialogContent></Dialog>
