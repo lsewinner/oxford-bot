@@ -1,6 +1,6 @@
 import { useEffect,useId,useRef,useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { CameraIcon,LoaderCircleIcon,LogOutIcon,Trash2Icon,FlameIcon,SparklesIcon,ShieldCheckIcon,DownloadIcon,PencilIcon,ChevronsUpDownIcon,SunriseIcon } from 'lucide-react';
+import { CameraIcon,LoaderCircleIcon,LogOutIcon,Trash2Icon,FlameIcon,SparklesIcon,ShieldCheckIcon,DownloadIcon,PencilIcon,ChevronsUpDownIcon,SunriseIcon,NotebookPenIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuLabel,DropdownMenuSeparator,DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { usePro } from '@/components/pro/pro-context';
@@ -26,6 +26,7 @@ export function AccountProfile({user,onSignOut,isAdmin=false}:{user:User;onSignO
   <DropdownMenuLabel className="flex items-center gap-3 py-2"><ProfileAvatar profile={profile}/><span className="min-w-0"><span className="block truncate text-sm">{profile.nickname}</span><span className="block text-xs font-normal text-muted-foreground">{isPro?'Oxford Pro':'Free'}</span></span></DropdownMenuLabel><DropdownMenuSeparator/>
   <DropdownMenuItem onSelect={()=>setTrends(true)}><FlameIcon/>实时热点</DropdownMenuItem>
   <DropdownMenuItem asChild><Link to="/briefing"><SunriseIcon/>主动早报</Link></DropdownMenuItem>
+  <DropdownMenuItem asChild><Link to="/meetings"><NotebookPenIcon/>会议助手</Link></DropdownMenuItem>
   <DropdownMenuItem onSelect={()=>openUpgrade('general')}><SparklesIcon/>{isPro?'Oxford Pro · 管理订阅':'升级到 Pro'}</DropdownMenuItem>
   {isAdmin&&<DropdownMenuItem asChild><Link to="/admin"><ShieldCheckIcon/>管理后台</Link></DropdownMenuItem>}
   <DropdownMenuItem disabled={desk.installed||desk.busy} onSelect={()=>desk.install()}><DownloadIcon/>{desk.installed?'已安装桌面端':'安装桌面端'}</DropdownMenuItem>
