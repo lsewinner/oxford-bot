@@ -5,7 +5,8 @@ export function supportsPersonalToken(id: ProviderId): id is PersonalTokenProvid
 const HOSTS = { github: 'https://api.github.com', slack: 'https://slack.com', cloudflare: 'https://api.cloudflare.com/client/v4', supabase: 'https://api.supabase.com/v1', notion: 'https://api.notion.com/v1', yuque: 'https://www.yuque.com/api/v2', feishu: 'https://open.feishu.cn/open-apis', gitee: 'https://gitee.com/api/v5', airtable: 'https://api.airtable.com', clickup: 'https://api.clickup.com', telegram: 'https://api.telegram.org', asana: 'https://app.asana.com/api/1.0', jira: '' } as const;
 const NAMES = { github: 'GitHub', slack: 'Slack', cloudflare: 'Cloudflare', supabase: 'Supabase', notion: 'Notion', yuque: '语雀', feishu: '飞书', gitee: 'Gitee', airtable: 'Airtable', clickup: 'ClickUp', telegram: 'Telegram', asana: 'Asana', jira: 'Jira' } as const;
 const VALIDATE = { github: '/user', slack: '/api/auth.test', cloudflare: '/zones?per_page=1', supabase: '/projects', notion: '/users/me', yuque: '/user', feishu: '/bot/v3/info', gitee: '/user', airtable: '/v0/meta/whoami', clickup: '/api/v2/user', telegram: '/getMe', asana: '/users/me', jira: '/rest/api/3/myself' } as const;
-export async function callWithPersonalToken(id: PersonalTokenProvider, token: string, path: string, init?: RequestInit): Promise<Response> {
+export async function callWithPersonalToken(id: PersonalTokenProvider, token: string, path: string, init?: RequestInit, oauth?: { bearer?: true; jiraCloudId?: string }): Promise<Response> {
+  if (oauth?.jiraCloudId !== undefined && (id !== 'jira' || !/^[0-9a-f-]{36}$/.test(oauth.jiraCloudId))) throw new Error('Jira 站点标识无效');
   const method = (init?.method ?? 'GET').toUpperCase();
   const allowed = id === 'feishu'
     // Feishu: wiki/docx/bitable reads plus confirmed bitable record creation only.
@@ -56,13 +57,14 @@ export async function callWithPersonalToken(id: PersonalTokenProvider, token: st
   if (id === 'feishu') headers.set('Authorization', `Bearer ${await feishuTenantToken(token)}`);
   else if (id === 'gitee') { headers.set('Authorization', `token ${token}`); headers.set('User-Agent', 'Oxford-Bot'); }
   else if (id === 'clickup') { headers.set('Authorization', token); headers.set('User-Agent', 'Oxford-Bot'); }
+  else if (oauth) headers.set('Authorization', `Bearer ${token}`);
   else if (id === 'jira') { const j = parseJiraCredential(token); headers.set('Authorization', `Basic ${btoa(`${j.email}:${j.apiToken}`)}`); }
   else if (id === 'telegram') { headers.delete('Authorization'); }
   else if (id === 'yuque') { headers.delete('Authorization'); headers.set('X-Auth-Token', token); headers.set('User-Agent', 'Oxford-Bot'); }
   else headers.set('Authorization', `Bearer ${token}`);
   if (id === 'notion') headers.set('Notion-Version', '2025-09-03');
   if (id === 'github') { headers.set('Accept', 'application/vnd.github+json'); headers.set('X-GitHub-Api-Version', '2022-11-28'); headers.set('User-Agent', 'Oxford-Bot'); }
-  const base = id === 'jira' ? `https://${parseJiraCredential(token).site}` : id === 'telegram' ? `${HOSTS.telegram}/bot${telegramToken(token)}` : HOSTS[id];
+  const base = oauth?.jiraCloudId ? `https://api.atlassian.com/ex/jira/${oauth.jiraCloudId}` : id === 'jira' ? `https://${parseJiraCredential(token).site}` : id === 'telegram' ? `${HOSTS.telegram}/bot${telegramToken(token)}` : HOSTS[id];
   const res = await fetch(`${base}${path}`, { ...init, headers, redirect: 'manual' });
   // Never follow redirects off the fixed provider host; surface them as a gateway error.
   if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) return new Response(JSON.stringify({ error: 'unexpected_redirect' }), { status: 502, headers: { 'content-type': 'application/json' } });

@@ -21,7 +21,7 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  const withRetry=async<T>(fn:()=>Promise<T>)=>{try{return await fn();}catch(first){await new Promise(r=>setTimeout(r,800));try{return await fn();}catch{throw first;}}};
 
  const perProvider=await Promise.all(providerId.options.map(async(id)=>{
-  const configured=id==='google_mail'||id==='google_drive'||id==='google_calendar'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'||id==='microsoft_calendar'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):id==='notion'?Boolean(process.env['NOTION_OAUTH_CLIENT_ID'] && process.env['NOTION_OAUTH_CLIENT_SECRET']):id==='github'?(Boolean(process.env['GITHUB_OAUTH_CLIENT_ID'] && process.env['GITHUB_OAUTH_CLIENT_SECRET'])||Boolean(process.env['GITHUB_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='slack'?(Boolean(process.env['SLACK_OAUTH_CLIENT_ID'] && process.env['SLACK_OAUTH_CLIENT_SECRET'])||Boolean(process.env['SLACK_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='airtable'?Boolean(process.env['AIRTABLE_OAUTH_CLIENT_ID'] && process.env['AIRTABLE_OAUTH_CLIENT_SECRET']):id==='clickup'?Boolean(process.env['CLICKUP_OAUTH_CLIENT_ID'] && process.env['CLICKUP_OAUTH_CLIENT_SECRET']):id==='linear'?Boolean(process.env['LINEAR_OAUTH_CLIENT_ID'] && process.env['LINEAR_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
+  const configured=id==='google_mail'||id==='google_drive'||id==='google_calendar'?Boolean(process.env['GOOGLE_OAUTH_CLIENT_ID'] && process.env['GOOGLE_OAUTH_CLIENT_SECRET']):id==='microsoft_outlook'||id==='microsoft_teams'||id==='microsoft_calendar'?Boolean(process.env['MICROSOFT_OAUTH_CLIENT_SECRET']):id==='notion'?Boolean(process.env['NOTION_OAUTH_CLIENT_ID'] && process.env['NOTION_OAUTH_CLIENT_SECRET']):id==='github'?(Boolean(process.env['GITHUB_OAUTH_CLIENT_ID'] && process.env['GITHUB_OAUTH_CLIENT_SECRET'])||Boolean(process.env['GITHUB_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='slack'?(Boolean(process.env['SLACK_OAUTH_CLIENT_ID'] && process.env['SLACK_OAUTH_CLIENT_SECRET'])||Boolean(process.env['SLACK_APP_USER_CONNECTOR_CLIENT_API_KEY'])):id==='airtable'?Boolean(process.env['AIRTABLE_OAUTH_CLIENT_ID'] && process.env['AIRTABLE_OAUTH_CLIENT_SECRET']):id==='clickup'?Boolean(process.env['CLICKUP_OAUTH_CLIENT_ID'] && process.env['CLICKUP_OAUTH_CLIENT_SECRET']):id==='asana'||id==='jira'?Boolean(process.env[`${id.toUpperCase()}_OAUTH_CLIENT_ID`] && process.env[`${id.toUpperCase()}_OAUTH_CLIENT_SECRET`]):id==='linear'?Boolean(process.env['LINEAR_OAUTH_CLIENT_ID'] && process.env['LINEAR_OAUTH_CLIENT_SECRET']):Boolean(process.env[`${id.toUpperCase()}_APP_USER_CONNECTOR_CLIENT_API_KEY`]);const rows=await getConnections(context.userId,id);
   if(!rows.length)return [{id,rowId:null as string|null,account:'',label:'',configured,credentialKind:'oauth',connected:false,enabled:false,reconnectRequired:false,connectionError:''}];
   return Promise.all(rows.map(async(row)=>{let account=row.account_key;
   let reconnectRequired=row?.reconnect_required ?? false;let connectionError='';
@@ -33,6 +33,9 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
        if(id==='airtable'){
          const {callWithAirtableCredential,AirtableReconnectError}=await import('./connections/airtable-oauth.server');
          if(row.enabled)try{const response=await callWithAirtableCredential(context.userId,row,paths.airtable);if(!response.ok)connectionError=`Airtable (${response.status})`;else await response.arrayBuffer();}catch(e){if(e instanceof AirtableReconnectError){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}else throw e;}
+       }else if(id==='asana'||id==='jira'){
+         const {callWithRotatingCredential,RotatingReconnectError}=await import('./connections/rotating-oauth.server');
+         if(row.enabled)try{const response=await callWithRotatingCredential(id,context.userId,row,paths[id]);if(!response.ok)connectionError=`${PROVIDERS[id].name} (${response.status})`;else await response.arrayBuffer();}catch(e){if(e instanceof RotatingReconnectError){reconnectRequired=true;await supabaseAdmin.from('app_user_connections').update({reconnect_required:true}).eq('id',row.id).eq('user_id',context.userId);}else throw e;}
        }else await withRetry(()=>validatePersonalToken(id,decryptConnectionKey(row.connection_key_ciphertext,'personal_token')));
      } else if(row.credential_kind==='google_oauth'){
        const {callWithGoogleToken,GoogleReconnectError,isGoogleProvider}=await import('./connections/google-oauth.server');
@@ -176,3 +179,21 @@ export const completeClickUpOAuth=createServerFn({method:'POST'}).middleware([re
  return {ok:true};
 });
 
+const rotatingId=z.object({id:z.enum(['asana','jira'])}).strict();
+const requestOrigin=()=>{const request=getRequest();const url=new URL(request.url);const sandboxHost=url.hostname==='localhost'?request.headers.get('x-forwarded-host'):null;return sandboxHost?`https://${sandboxHost}`:url.origin;};
+export const startRotatingOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>rotatingId.parse(v)).handler(async({data,context})=>{
+ await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
+ const {startRotatingAuthorization,ROTATING_CALLBACK}=await import('./connections/rotating-oauth.server');
+ return startRotatingAuthorization(data.id,context.userId,new URL(ROTATING_CALLBACK[data.id],requestOrigin()).toString());
+});
+export const completeRotatingOAuth=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['asana','jira']),code:z.string().min(1).max(8192),state:z.string().min(1).max(4096)}).strict().parse(v)).handler(async({data,context})=>{
+ await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
+ const {verifyRotatingState,exchangeRotatingCode,ROTATING_CALLBACK}=await import('./connections/rotating-oauth.server');
+ const payload=verifyRotatingState(data.id,data.state);
+ if(payload.userId!==context.userId)throw new Error('授权不属于当前账户');
+ if(payload.redirectUri!==new URL(ROTATING_CALLBACK[data.id],requestOrigin()).toString())throw new Error('授权地址不匹配');
+ const result=await exchangeRotatingCode(data.id,data.code,payload);
+ const {saveConnection}=await import('./connections/storage.server');
+ await saveConnection(context.userId,data.id,result.credential,'personal_token',result.account,result.label);
+ return {ok:true};
+});

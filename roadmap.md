@@ -101,5 +101,7 @@
 - [x] ClickUp：个人 API 令牌、多账户、工作区/任务读取、确认后新建任务；8 项测试（与 Airtable 同文件）
 - [ ] ClickUp 真实账户验收（一键授权或个人令牌任选其一）
 - [x] Telegram（BotFather Token）、Asana（个人令牌）、Jira（站点|邮箱|API 令牌）：多账户、读取与写入前确认；7 项测试
+- [x] Asana / Jira 一键授权代码：PKCE/加密状态、自动续期、令牌方式保留；3 项测试
+- [ ] Asana / Jira 一键授权：等待用户注册开发者应用并录入 ASANA_/JIRA_OAUTH_CLIENT_ID/SECRET
 - [ ] Telegram / Asana / Jira 真实账户验收（用户在工具面板输入令牌后测试读取）
 - 暂缓：WhatsApp（仅企业认证 API，非官方方案有封号风险）、Trello、X/LinkedIn
