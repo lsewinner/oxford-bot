@@ -37,6 +37,7 @@ import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oa
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicWechatKfAccountIdRouteImport } from './routes/api/public/wechat-kf/$accountId'
 import { Route as ApiPublicConnectionsAirtableCallbackRouteImport } from './routes/api/public/connections/airtable/callback'
+import { Route as ApiPublicConnectionsClickupCallbackRouteImport } from './routes/api/public/connections/clickup/callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -182,6 +183,12 @@ const ApiPublicConnectionsAirtableCallbackRoute =
     path: '/api/public/connections/airtable/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicConnectionsClickupCallbackRoute =
+  ApiPublicConnectionsClickupCallbackRouteImport.update({
+    id: '/api/public/connections/clickup/callback',
+    path: '/api/public/connections/clickup/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
   '/api/public/connections/airtable/callback': typeof ApiPublicConnectionsAirtableCallbackRoute
+  '/api/public/connections/clickup/callback': typeof ApiPublicConnectionsClickupCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -239,6 +247,7 @@ export interface FileRoutesByTo {
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
   '/api/public/connections/airtable/callback': typeof ApiPublicConnectionsAirtableCallbackRoute
+  '/api/public/connections/clickup/callback': typeof ApiPublicConnectionsClickupCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -270,6 +279,7 @@ export interface FileRoutesById {
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
   '/api/public/connections/airtable/callback': typeof ApiPublicConnectionsAirtableCallbackRoute
+  '/api/public/connections/clickup/callback': typeof ApiPublicConnectionsClickupCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/webhook'
     | '/api/public/wechat-kf/$accountId'
     | '/api/public/connections/airtable/callback'
+    | '/api/public/connections/clickup/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -329,6 +340,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/webhook'
     | '/api/public/wechat-kf/$accountId'
     | '/api/public/connections/airtable/callback'
+    | '/api/public/connections/clickup/callback'
   id:
     | '__root__'
     | '/'
@@ -359,6 +371,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/webhook'
     | '/api/public/wechat-kf/$accountId'
     | '/api/public/connections/airtable/callback'
+    | '/api/public/connections/clickup/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -386,6 +399,7 @@ export interface RootRouteChildren {
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicWechatKfAccountIdRoute: typeof ApiPublicWechatKfAccountIdRoute
   ApiPublicConnectionsAirtableCallbackRoute: typeof ApiPublicConnectionsAirtableCallbackRoute
+  ApiPublicConnectionsClickupCallbackRoute: typeof ApiPublicConnectionsClickupCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -586,6 +600,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicConnectionsAirtableCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/connections/clickup/callback': {
+      id: '/api/public/connections/clickup/callback'
+      path: '/api/public/connections/clickup/callback'
+      fullPath: '/api/public/connections/clickup/callback'
+      preLoaderRoute: typeof ApiPublicConnectionsClickupCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -641,6 +662,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWechatKfAccountIdRoute: ApiPublicWechatKfAccountIdRoute,
   ApiPublicConnectionsAirtableCallbackRoute:
     ApiPublicConnectionsAirtableCallbackRoute,
+  ApiPublicConnectionsClickupCallbackRoute:
+    ApiPublicConnectionsClickupCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
