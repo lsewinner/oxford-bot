@@ -17,7 +17,7 @@
 - Desktop installation uses a shared root-mounted prompt provider with browser-native prompts and manual Safari guidance, never an app-shell worker (why: capture early install events and keep previews cache-safe).
 - Do not override Vite’s Rolldown version (why: incompatible versions break diagram initialization).
 - First sends use sessionStorage and post-mount `setTimeout(..., 0)`, never synchronous effects (why: early sends disappear; chat-first-message tests guard this).
-- Chat responses forward the original body immediately; never wait on run-ID discovery or re-read the stream (why: must not block output or cancellation).
+- Chat responses forward the body immediately; never wait on run-ID discovery or re-read the stream (why: no blocked output/cancel).
 - External tool catalog and demo tools share `src/lib/tool-catalog.ts`; demos are explicitly labeled and never claim real account connectivity (why: unconfigured provider OAuth must not expose or fabricate personal data).
 - Real provider writes are immutable server-side proposals claimed atomically by the owning user's confirmation; result cards read persisted action outcomes after refresh (why: model requests are not user approval, and repeated clicks must not repeat writes).
 - Guest chat uses `/guest` with local conversation IDs and storage per Bot; transport maps these IDs to `threadId: guest`, while private thread reads/writes require a verified bearer token (why: independent local histories must not weaken cloud-history ownership).
@@ -25,7 +25,7 @@
 - Attachments: AI SDK file parts with inline validated image/PDF data, text extracted before model conversion; pending first sends serialize the full payload (why: keep attachments on every entry path, never fetch arbitrary URLs).
 - Image creation is an AI-selected generate_image task rendered by the client through a dedicated passthrough SSE image route; completed tool outputs retain the image while model replay strips image bytes (why: previews must not block chat headers or inflate subsequent tool context).
 - Public shares are revocable server-created snapshots of owner-read messages; the public reader exposes only text, completed generated images and sources, never private thread rows or tool actions (why: sharing must not weaken account isolation or publish subsequent messages).
-- Bot shares: server-fn writes only (admin client after auth; persona only if owner is Pro); public reads via read_bot_share/list_featured_bots; trials send botShare and chat loads persona server-side; featuring is admin-only (why: no client-forged personas or self-featuring).
+- Bot shares: writes via server fns only (persona kept only for Pro owners); public reads via security-definer RPCs; chat loads trial personas from botShare server-side; featuring is admin-only (why: no forged personas).
 - Query options shared by route loaders and components live outside route modules (why: route code splitting must not depend on unexported shared declarations).
 - Exports reuse the safe snapshot serializer; image regeneration swaps prompt+image only on success (why: predictable downloads, no lost images).
 
