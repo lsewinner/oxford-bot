@@ -10,11 +10,15 @@ import path from "node:path";
 export default defineConfig({
   vite: {
     resolve: {
-      alias: {
-        "entities/lib/decode.js": path.resolve("node_modules/entities/lib/decode.js"),
-        "entities/lib/encode.js": path.resolve("node_modules/entities/lib/encode.js"),
-        entities: path.resolve("node_modules/entities"),
-      },
+      // Match exact entry points: a root prefix alias turns modern subpaths
+      // such as entities/escape into nonexistent files in entities v4.
+      alias: [
+        { find: /^entities\/lib\/decode\.js$/, replacement: path.resolve("node_modules/entities/lib/esm/decode.js") },
+        { find: /^entities\/lib\/encode\.js$/, replacement: path.resolve("node_modules/entities/lib/esm/encode.js") },
+        { find: /^entities\/decode$/, replacement: path.resolve("node_modules/entities/lib/esm/decode.js") },
+        { find: /^entities\/escape$/, replacement: path.resolve("node_modules/entities/lib/esm/escape.js") },
+        { find: /^entities$/, replacement: path.resolve("node_modules/entities/lib/esm/index.js") },
+      ],
     },
   },
   tanstackStart: {
