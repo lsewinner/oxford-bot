@@ -16,6 +16,7 @@ export const TOOL_CATALOG = [
   { id: "asana", name: "Asana", category: "即时协作", detail: "工作区 · 项目 · 新建任务", action: "查询并新建 Asana 任务" },
   { id: "jira", name: "Jira", category: "开发与运维", detail: "项目 · Issue · 新建 Issue", action: "查询并整理 Jira Issue" },
   { id: "telegram", name: "Telegram", category: "即时协作", detail: "Bot 最近消息 · 发送消息", action: "读取 Telegram 消息并发送通知" },
+  { id: "oanda", name: "OANDA", category: "交易与行情", detail: "外汇/黄金/原油 · 持仓 · 确认后下单", action: "查询持仓行情并提交待确认交易" },
   { id: "slack", name: "Slack", category: "即时协作", detail: "频道消息 · 工作简报", action: "检索频道并整理简报" },
   { id: "microsoft_teams", name: "Teams", category: "即时协作", detail: "频道消息 · 工作简报", action: "检索频道并整理简报" },
 ] as const;
@@ -46,6 +47,7 @@ export function simulateTool(id: ToolId, query: string) {
       : id === "airtable" ? "示例记录：客户跟进表最新 5 条（演示数据）"
       : id === "asana" ? "示例任务：准备季度复盘材料（演示数据）"
       : id === "jira" ? "示例 Issue：ENG-42 支付页超时（演示数据）"
+      : id === "oanda" ? "示例持仓：EUR_USD 多单 1,000 单位（演示数据，未下单）"
       : id === "telegram" ? "示例消息：今晚 8 点上线提醒（演示数据，未发送）"
       : id === "clickup" ? "示例任务：整理本周待办清单（演示数据）"
       : id === "slack" || id === "microsoft_teams" ? "示例简报：团队正在准备本周发布（演示数据）"
