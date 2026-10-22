@@ -13,6 +13,9 @@ export function phoneAuthError(error: unknown, phase: "send" | "verify") {
   if (/60220|messages to china require use case vetting/i.test(message)) {
     return { kind: "china_approval", message: "中国大陆短信通道尚未获短信服务商批准，暂时无法发送验证码。请改用邮箱登录或注册；重复发送或开启 VPN 都不能解除此限制。" };
   }
+  if (/60605|geo.?permissions|country.*blocked|region.*blocked/i.test(message)) {
+    return { kind: "geo_block", message: "短信服务商未开放向该国家或地区发送验证码，请改用邮箱登录，并联系 Oxford Bot 管理员检查短信发送地区设置。" };
+  }
   if (value.status === 429 || /rate.?limit|too many|over_sms_send_rate_limit/i.test(`${value.code} ${message}`)) {
     return { kind: "rate_limit", message: "验证码请求过于频繁，请稍后再试，或改用邮箱登录。" };
   }

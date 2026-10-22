@@ -29,6 +29,7 @@ describe("phone OTP", () => {
   it("distinguishes China vetting from network and rate-limit failures", () => {
     expect(phoneAuthError({ message: "Messages to China require use case vetting", status: 422 }, "send").kind).toBe("china_approval");
     expect(phoneAuthError({ message: "Twilio error 60220" }, "send").kind).toBe("china_approval");
+    expect(phoneAuthError({ message: "Twilio error 60605" }, "send").kind).toBe("geo_block");
     expect(phoneAuthError({ code: "over_sms_send_rate_limit", status: 429 }, "send").kind).toBe("rate_limit");
     expect(phoneAuthError(new TypeError("Failed to fetch"), "send").kind).toBe("network");
   });
