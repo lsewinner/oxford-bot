@@ -1,5 +1,5 @@
 import { z } from 'zod';
-export const providerId = z.enum(['github','google_mail','microsoft_outlook','google_drive','google_calendar','microsoft_calendar','slack','cloudflare','microsoft_teams','supabase','notion','yuque','feishu','linear','gitee','flomo']);
+export const providerId = z.enum(['github','google_mail','microsoft_outlook','google_drive','google_calendar','microsoft_calendar','slack','cloudflare','microsoft_teams','supabase','notion','yuque','feishu','linear','gitee']);
 export type ProviderId = z.infer<typeof providerId>;
 export const PROVIDERS = {
  github: { name:'GitHub', scopes:['read:user','repo'], setup:'https://github.com/settings/developers', operations:['repos','issues','pulls','read_file','create_issue','write_file'] },
@@ -16,7 +16,6 @@ export const PROVIDERS = {
   yuque: { name:'语雀', scopes:[], setup:'https://www.yuque.com/settings/tokens', operations:['repos','docs','read','create_doc','update_doc'] },
  slack: { name:'Slack', scopes:['channels:read','channels:history','chat:write','users:read'], setup:'https://api.slack.com/apps', operations:['channels','history','send'] },
  gitee: { name:'Gitee', scopes:[], setup:'https://gitee.com/profile/personal_access_tokens', operations:['repos','issues','read_file','create_issue'] },
- flomo: { name:'Flomo', scopes:[], setup:'https://v.flomoapp.com/mine?source=incoming_webhook', operations:['create_memo'] },
  linear: { name:'Linear', scopes:['read','write','issues:create','comments:create'], setup:'https://linear.app/settings/api', operations:['teams','issues','issue','create_issue','create_comment'] },
 } as const;
 export const operationInput = z.object({ operation:z.string(), offset:z.number().int().min(0).max(100000).optional(), account:z.string().max(320).optional(), teamId:z.string().uuid().optional(), channelId:z.string().min(1).max(500).regex(/^[\w:@.-]+$/).optional(), query:z.string().max(8000).optional(), id:z.string().max(500).optional(), repo:z.string().max(200).optional(), path:z.string().max(500).optional(), title:z.string().max(300).optional(), text:z.string().max(30000).optional(), to:z.string().email().optional(), sha:z.string().max(100).optional(), start:z.string().max(40).optional(), end:z.string().max(40).optional(), timeZone:z.string().max(60).regex(/^[\w/+-]+$/).optional() }).strict();
@@ -50,7 +49,6 @@ export function validateOperation(provider:ProviderId,input:OperationInput) {
   }
  }
  if (provider==='gitee' && input.operation!=='repos' && !/^[\w.-]+\/[\w.-]+$/.test(input.repo ?? '')) throw new Error('请指定 Gitee 仓库 owner/repo');
- if (provider==='flomo' && (!input.text?.trim() || input.text.length>5000)) throw new Error('请提供要记录的 flomo 内容（5000 字以内）');
  if (provider==='github' && input.operation!=='repos' && !/^[\w.-]+\/[\w.-]+$/.test(input.repo ?? '')) throw new Error('请指定 owner/repo');
  if (provider==='cloudflare' && input.operation==='dns_records' && !input.id && !input.query) throw new Error('请指定 Zone 标识或域名');
  if (provider==='supabase' && input.operation!=='projects' && !/^[a-z0-9]{20}$/.test(input.id ?? '')) throw new Error('请指定 Supabase 项目 ref（20 位）');
