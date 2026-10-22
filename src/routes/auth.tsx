@@ -28,6 +28,10 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [method, setMethod] = useState<"phone" | "email">("phone");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -159,41 +163,41 @@ function AuthPage() {
                 <p className="text-center text-xs text-muted-foreground">新手机号验证后自动创建账号</p>
               </form>
             ) : (
-              <></>
+              <>
+                <form onSubmit={submit} className="flex flex-col gap-3">
+                  <Input
+                    type="email"
+                    required
+                    placeholder="邮箱"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-11 rounded-xl"
+                  />
+                  <Input
+                    type="password"
+                    required
+                    minLength={6}
+                    placeholder="密码"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 rounded-xl"
+                  />
+                  <Button type="submit" disabled={loading} className="h-11 rounded-xl">
+                    {loading ? "请稍候…" : mode === "signin" ? "登录" : "注册"}
+                  </Button>
+                </form>
+                <p className="mt-5 text-center text-sm text-muted-foreground">
+                  {mode === "signin" ? "还没有账号？" : "已有账号？"}
+                  <button
+                    type="button"
+                    className="ml-1 text-foreground underline-offset-4 hover:underline"
+                    onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+                  >
+                    {mode === "signin" ? "注册" : "登录"}
+                  </button>
+                </p>
+              </>
             )}
-            {method === "email" && (<></>)}
-            <form onSubmit={submit} className="flex flex-col gap-3">
-              <Input
-                type="email"
-                required
-                placeholder="邮箱"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-11 rounded-xl"
-              />
-              <Input
-                type="password"
-                required
-                minLength={6}
-                placeholder="密码"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11 rounded-xl"
-              />
-              <Button type="submit" disabled={loading} className="h-11 rounded-xl">
-                {loading ? "请稍候…" : mode === "signin" ? "登录" : "注册"}
-              </Button>
-            </form>
-            <p className="mt-5 text-center text-sm text-muted-foreground">
-              {mode === "signin" ? "还没有账号？" : "已有账号？"}
-              <button
-                type="button"
-                className="ml-1 text-foreground underline-offset-4 hover:underline"
-                onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-              >
-                {mode === "signin" ? "注册" : "登录"}
-              </button>
-            </p>
           </>
         )}
       </div>
