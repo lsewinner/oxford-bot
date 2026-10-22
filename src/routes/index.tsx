@@ -47,7 +47,7 @@ function Index() {
     <div className="relative flex min-h-dvh flex-col items-center justify-center bg-background bg-glow px-6 pb-8 pt-24 text-center">
       <header className="absolute inset-x-0 top-0 flex items-center justify-between gap-3 px-6 py-4 md:px-10">
         <Link to="/" className="flex items-center gap-2 text-sm font-semibold"><img src={logo} alt="" width={28} height={28} />Oxford Bot</Link>
-        <nav aria-label={t.nav} className="flex items-center gap-2"><Button variant="ghost" size="sm" onClick={switchLang} aria-label={lang === "zh" ? "Switch to English" : "切换到中文"}>{t.toggle}</Button><DesktopInstallButton /></nav>
+        <nav aria-label={t.nav} className="flex items-center gap-2"><Button variant="ghost" size="sm" onClick={switchLang} aria-label={lang === "zh" ? "Switch to English" : "切换到中文"}>{t.toggle}</Button><DesktopInstallButton lang={lang} /></nav>
       </header>
       <img src={logo} alt="Oxford Bot" width={88} height={88} className="size-22 rounded-3xl" />
       <h1 className="mt-8 text-4xl font-semibold tracking-tight md:text-6xl">Oxford Bot</h1>
@@ -65,7 +65,7 @@ function Index() {
         <h2 id="about-heading" className="text-base font-semibold text-foreground">{t.about}</h2>
         <p className="mt-3">{t.body}</p>
       </section>
-      <div className="mt-6"><LegalLinks /></div>
+      <div className="mt-6"><LegalLinks lang={lang} /></div>
     </div>
   );
 }

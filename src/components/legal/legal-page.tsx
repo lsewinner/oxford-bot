@@ -57,13 +57,14 @@ export function LegalCompany() {
   );
 }
 
-export function LegalLinks({ onNavigate }: { onNavigate?: () => void }) {
+export function LegalLinks({ onNavigate, lang = "zh" }: { onNavigate?: () => void; lang?: "zh" | "en" }) {
+  const en = lang === "en";
   const cls = "hover:text-foreground underline-offset-4 hover:underline";
   return (
     <nav className="flex flex-wrap justify-center gap-4 pt-2 text-xs text-muted-foreground">
-      <Link to="/terms" className={cls} onClick={onNavigate}>服务条款</Link>
-      <Link to="/privacy" className={cls} onClick={onNavigate}>隐私政策</Link>
-      <Link to="/refund" className={cls} onClick={onNavigate}>退款政策</Link>
+      <Link to="/terms" className={cls} onClick={onNavigate}>{en ? "Terms of Service" : "服务条款"}</Link>
+      <Link to="/privacy" className={cls} onClick={onNavigate}>{en ? "Privacy Policy" : "隐私政策"}</Link>
+      <Link to="/refund" className={cls} onClick={onNavigate}>{en ? "Refund Policy" : "退款政策"}</Link>
     </nav>
   );
 }
