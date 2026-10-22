@@ -135,8 +135,15 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(o==='create_record'){const b=await request(`/v0/${base}/${table}`,'POST',{fields:JSON.parse(input.text ?? '{}')});items=[{title:'已新增记录',id:b.id}];}
  } else if(id==='clickup'){
  if(o==='teams'){const b=await request('/api/v2/team');items=(b.teams ?? []).map((v:any)=>({title:v.name,id:String(v.id),detail:v.members?.length?`${v.members.length} 名成员`:''}));}
+ if(o==='spaces' || o==='folders' || o==='lists'){
+  const parent=o==='spaces'?'team':o==='folders'?'space':input.repo==='folder'?'folder':'space';
+  const kind=o==='spaces'?'space':o==='folders'?'folder':'list';
+  const b=await request(`/api/v2/${parent}/${enc(input.id ?? '')}/${kind}?archived=false`);
+  items=(b[o] ?? []).map((v:any)=>({title:v.name,id:String(v.id),detail:o==='lists'?'任务列表':o==='spaces'?'空间':'文件夹'}));
+  if(o==='lists' && parent==='space')text='仅显示该空间下的无文件夹列表；文件夹内列表需先 folders，再用 repo=folder 查询 lists';
+ }
  if(o==='tasks'){const b=await request(`/api/v2/team/${enc(input.id ?? '')}/task?order_by=updated`);items=(b.tasks ?? []).map((v:any)=>({title:v.name,id:String(v.id),url:v.url,detail:`${v.status?.status ?? ''}${v.list?.name?' · '+v.list.name:''}${v.due_date?' · 截止 '+new Date(Number(v.due_date)).toISOString().slice(0,10):''}`}));if((b.tasks ?? []).length>=100)text='仅显示前 100 条任务';}
- if(o==='create_task'){const b=await request(`/api/v2/team/${enc(input.id ?? '')}/task`,'POST',{name:input.title,content:input.text});items=[{title:b.name ?? input.title ?? '',id:String(b.id ?? ''),url:b.url}];}
+ if(o==='create_task'){const b=await request(`/api/v2/list/${enc(input.id ?? '')}/task`,'POST',{name:input.title,description:input.text});if(!b.id)throw new Error('ClickUp 未返回任务结果');items=[{title:b.name ?? input.title ?? '',id:String(b.id),url:b.url}];}
  } else if(id==='telegram'){
  if(o==='updates'){const b=await request('/getUpdates?limit=100');const seen=new Map<string,{title:string;id:string;detail:string}>();for(const u of (b.result ?? []).reverse()){const m=u.message ?? u.channel_post ?? u.edited_message;const c=m?.chat;if(!c?.id)continue;const key=String(c.id);if(!seen.has(key))seen.set(key,{title:c.title ?? ([c.first_name,c.last_name].filter(Boolean).join(' ') || (c.username?'@'+c.username:key)),id:key,detail:`${c.type ?? ''}${m.text?' · '+String(m.text).slice(0,300):''}`});}items=[...seen.values()];if(!items.length)text='最近没有新消息：请先在 Telegram 里给 Bot 发一条消息，或把 Bot 拉进群后再读取';}
  if(o==='send_message'){const b=await request('/sendMessage','POST',{chat_id:input.id,text:input.text});if(b.ok!==true)throw new Error('Telegram 未发送消息');items=[{title:String(input.text ?? '').slice(0,100),id:String(b.result?.message_id ?? '')}];}

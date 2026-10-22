@@ -6,7 +6,9 @@ import { providerId } from './connections/catalog';
 export const workflowConnections = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.from('app_user_connections')
+    // Credentials are service-role only; expose just owner-scoped non-secret metadata.
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { data, error } = await supabaseAdmin.from('app_user_connections')
       .select('connector_id,account_key,account_label,enabled,reconnect_required')
       .eq('user_id', context.userId).order('created_at');
     if (error) throw new Error('无法读取工具账户，请重试');

@@ -48,7 +48,7 @@ describe('ClickUp',()=>{
   expect(await personalTokenIdentity('clickup','pk-token',body)).toEqual({account:'cu-123',label:'michael'});
  });
  it('blocks other methods, hosts and traversal',async()=>{
-  for(const [path,method] of <[string,string][]>[['/api/v2/team/1/task','DELETE'],['/api/v2/team/1/../user','GET'],['https://evil.example/api/v2/user','GET']])
+  for(const [path,method] of <[string,string][]>[['/api/v2/team/1/task','DELETE'],['/api/v2/team/1/task','POST'],['/api/v2/team/1/../user','GET'],['https://evil.example/api/v2/user','GET']])
    await expect(callWithPersonalToken('clickup','t',path,{method})).rejects.toThrow();
   expect(fetcher).not.toHaveBeenCalled();
  });
@@ -61,7 +61,20 @@ describe('ClickUp',()=>{
  it('creates the task once confirmed',async()=>{
   fetcher.mockResolvedValue(Response.json({id:'task1',name:'T',url:'https://app.clickup.com/t/1'}));
   await executeOperation('owner','clickup',{operation:'create_task',id:'901',title:'T',text:'B'},true);
-  expect(fetcher.mock.calls[0]?.[0]).toBe('https://api.clickup.com/api/v2/team/901/task');
-  expect(JSON.parse(fetcher.mock.calls[0]?.[1].body)).toEqual({name:'T',content:'B'});
+  expect(fetcher.mock.calls[0]?.[0]).toBe('https://api.clickup.com/api/v2/list/901/task');
+  expect(JSON.parse(fetcher.mock.calls[0]?.[1].body)).toEqual({name:'T',description:'B'});
+ });
+ it('discovers target lists from real space and folder identifiers',async()=>{
+  fetcher.mockResolvedValueOnce(Response.json({spaces:[{id:'10',name:'Engineering'}]}))
+   .mockResolvedValueOnce(Response.json({folders:[{id:'20',name:'Sprint'}]}))
+   .mockResolvedValueOnce(Response.json({lists:[{id:'901',name:'Backlog'}]}));
+  expect((await executeOperation('owner','clickup',{operation:'spaces',id:'1'})).items?.[0]?.id).toBe('10');
+  expect((await executeOperation('owner','clickup',{operation:'folders',id:'10'})).items?.[0]?.id).toBe('20');
+  expect((await executeOperation('owner','clickup',{operation:'lists',id:'20',repo:'folder'})).items?.[0]?.id).toBe('901');
+  expect(fetcher.mock.calls.map(c=>c[0])).toEqual(['https://api.clickup.com/api/v2/team/1/space?archived=false','https://api.clickup.com/api/v2/space/10/folder?archived=false','https://api.clickup.com/api/v2/folder/20/list?archived=false']);
+ });
+ it('does not claim successful creation without a returned task',async()=>{
+  fetcher.mockResolvedValueOnce(Response.json({}));
+  await expect(executeOperation('owner','clickup',{operation:'create_task',id:'901',title:'T',text:'B'},true)).rejects.toThrow('未返回任务');
  });
 });
