@@ -67,7 +67,7 @@ describe('own-account AI routing', () => {
     const stream = await provider.model.doStream({
       prompt: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }],
       providerOptions: provider.providerOptions,
-      tools: [{ type: 'function' }],
+      tools: [{ type: 'function', name: 'demo_tool', description: 'demo', inputSchema: { type: 'object', properties: {}, additionalProperties: false } }],
     } as never);
     const reader = stream.stream.getReader();
     while (!(await reader.read()).done) { /* consume */ }

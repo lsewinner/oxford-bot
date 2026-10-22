@@ -59,7 +59,7 @@ export function withRegionFallback<T extends object>(primary: T, fallback: { mod
             const tools = fallback.stripTools
               ? undefined
               : Array.isArray(options['tools']) ? options['tools'].filter((t: AnyModel) => t['type'] === 'function') : undefined;
-            return fallback.model[prop]({ ...options, providerOptions, ...(tools ? { tools } : {}) });
+            return fallback.model[prop]({ ...options, providerOptions, tools });
           }
         };
       }
