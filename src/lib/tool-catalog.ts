@@ -11,6 +11,8 @@ export const TOOL_CATALOG = [
   { id: "supabase", name: "Supabase", category: "开发与运维", detail: "项目 · 表结构 · 只读查询 · 健康检查", action: "查询数据库结构与数据" },
   { id: "gitee", name: "Gitee", category: "开发与运维", detail: "仓库 · Issue · 读取文件", action: "查询 Gitee 仓库与 Issue" },
   { id: "linear", name: "Linear", category: "开发与运维", detail: "团队 · 问题 · 评论", action: "查询并整理 Linear 问题" },
+  { id: "airtable", name: "Airtable", category: "云盘与文档", detail: "数据表 · 记录 · 新增记录", action: "查询并整理 Airtable 数据" },
+  { id: "clickup", name: "ClickUp", category: "即时协作", detail: "工作区 · 任务 · 新建任务", action: "查询并新建 ClickUp 任务" },
   { id: "slack", name: "Slack", category: "即时协作", detail: "频道消息 · 工作简报", action: "检索频道并整理简报" },
   { id: "microsoft_teams", name: "Teams", category: "即时协作", detail: "频道消息 · 工作简报", action: "检索频道并整理简报" },
 ] as const;
@@ -38,6 +40,8 @@ export function simulateTool(id: ToolId, query: string) {
       : id === "cloudflare" ? "示例站点：DNS 查询流程已完成（演示数据）"
       : id === "gitee" ? "示例 Issue：修复首页加载（演示数据）"
       : id === "linear" ? "示例问题：登录页在 Safari 下偶发报错（演示数据）"
+      : id === "airtable" ? "示例记录：客户跟进表最新 5 条（演示数据）"
+      : id === "clickup" ? "示例任务：整理本周待办清单（演示数据）"
       : id === "slack" || id === "microsoft_teams" ? "示例简报：团队正在准备本周发布（演示数据）"
       : "示例草稿：感谢来信，我们会尽快确认安排。（仅演示，未保存或发送）",
   };
