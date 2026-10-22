@@ -6,9 +6,11 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import path from "node:path";
+import { liveVoiceDev } from "./live-vite-plugin";
 
 export default defineConfig({
   vite: {
+    plugins: [liveVoiceDev()],
     resolve: {
       // Match exact entry points: a root prefix alias turns modern subpaths
       // such as entities/escape into nonexistent files in entities v4.

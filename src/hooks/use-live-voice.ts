@@ -350,11 +350,13 @@ function createLiveVoice(options: LiveOptions) {
       if (!starting()) return;
       const sdp = connection.localDescription?.sdp;
       if (!sdp) throw new Error("Missing voice session offer");
+      const token = await options.getToken?.();
+      if (!starting()) return;
       socket = new WebSocket(options.url);
       deadline = setTimeout(() => fail("Voice session did not start"), 50_000);
       socket.onopen = () => {
         if (!starting()) return release();
-        send({ type: "app.start", sdp, token: await options.getToken?.() });
+        send({ type: "app.start", sdp, token });
       };
       socket.onmessage = ({ data }) => {
         try {
