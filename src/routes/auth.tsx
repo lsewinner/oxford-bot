@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizePhone, phoneAuthError } from "@/lib/phone-auth";
+import { PHONE_SIGNIN_ENABLED, normalizePhone, phoneAuthError } from "@/lib/phone-auth";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -29,7 +29,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const [method, setMethod] = useState<"phone" | "email">("phone");
+  const [method, setMethod] = useState<"phone" | "email">(PHONE_SIGNIN_ENABLED ? "phone" : "email");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -140,19 +140,21 @@ function AuthPage() {
             <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
               <div className="h-px flex-1 bg-border" /> 或 <div className="h-px flex-1 bg-border" />
             </div>
-            <div className="mb-3 grid grid-cols-2 rounded-xl border border-border p-1 text-sm">
-              {(["phone", "email"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMethod(m)}
-                  className={`rounded-lg py-2 ${method === m ? "bg-secondary text-foreground" : "text-muted-foreground"}`}
-                >
-                  {m === "phone" ? "手机号" : "邮箱"}
-                </button>
-              ))}
-            </div>
-            {method === "phone" ? (
+            {PHONE_SIGNIN_ENABLED && (
+              <div className="mb-3 grid grid-cols-2 rounded-xl border border-border p-1 text-sm">
+                {(["phone", "email"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMethod(m)}
+                    className={`rounded-lg py-2 ${method === m ? "bg-secondary text-foreground" : "text-muted-foreground"}`}
+                  >
+                    {m === "phone" ? "手机号" : "邮箱"}
+                  </button>
+                ))}
+              </div>
+            )}
+            {PHONE_SIGNIN_ENABLED && method === "phone" ? (
               <form onSubmit={verifyCode} className="flex flex-col gap-3">
                 <Input
                   type="tel"
