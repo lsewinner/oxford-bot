@@ -19,6 +19,7 @@ import { Route as RefundRouteImport } from './routes/refund'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBrainRouteImport } from './routes/_authenticated/brain'
+import { Route as AuthenticatedBriefingRouteImport } from './routes/_authenticated/briefing'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
@@ -90,6 +91,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 const AuthenticatedBrainRoute = AuthenticatedBrainRouteImport.update({
   id: '/brain',
   path: '/brain',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBriefingRoute = AuthenticatedBriefingRouteImport.update({
+  id: '/briefing',
+  path: '/briefing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/brain': typeof AuthenticatedBrainRoute
+  '/briefing': typeof AuthenticatedBriefingRoute
   '/chat': typeof AuthenticatedChatRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/brain': typeof AuthenticatedBrainRoute
+  '/briefing': typeof AuthenticatedBriefingRoute
   '/api/chat': typeof ApiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
@@ -295,6 +303,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/brain': typeof AuthenticatedBrainRoute
+  '/_authenticated/briefing': typeof AuthenticatedBriefingRoute
   '/_authenticated/chat': typeof AuthenticatedChatRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
@@ -331,6 +340,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/brain'
+    | '/briefing'
     | '/chat'
     | '/api/chat'
     | '/api/generate-image'
@@ -365,6 +375,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/brain'
+    | '/briefing'
     | '/api/chat'
     | '/api/generate-image'
     | '/api/speech'
@@ -399,6 +410,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/admin'
     | '/_authenticated/brain'
+    | '/_authenticated/briefing'
     | '/_authenticated/chat'
     | '/api/chat'
     | '/api/generate-image'
@@ -525,6 +537,13 @@ declare module '@tanstack/react-router' {
       path: '/brain'
       fullPath: '/brain'
       preLoaderRoute: typeof AuthenticatedBrainRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/briefing': {
+      id: '/_authenticated/briefing'
+      path: '/briefing'
+      fullPath: '/briefing'
+      preLoaderRoute: typeof AuthenticatedBriefingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chat': {
@@ -707,12 +726,14 @@ const AuthenticatedChatRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBrainRoute: typeof AuthenticatedBrainRoute
+  AuthenticatedBriefingRoute: typeof AuthenticatedBriefingRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBrainRoute: AuthenticatedBrainRoute,
+  AuthenticatedBriefingRoute: AuthenticatedBriefingRoute,
   AuthenticatedChatRoute: AuthenticatedChatRouteWithChildren,
 }
 
