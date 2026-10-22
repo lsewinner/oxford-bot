@@ -1,5 +1,5 @@
 import { z } from 'zod';
-export const providerId = z.enum(['github','google_mail','microsoft_outlook','google_drive','google_calendar','microsoft_calendar','slack','cloudflare','microsoft_teams','supabase','notion','yuque','feishu','linear','gitee','airtable','clickup']);
+export const providerId = z.enum(['github','google_mail','microsoft_outlook','google_drive','google_calendar','microsoft_calendar','slack','cloudflare','microsoft_teams','supabase','notion','yuque','feishu','linear','gitee','airtable','clickup','telegram','asana','jira']);
 export type ProviderId = z.infer<typeof providerId>;
 export const PROVIDERS = {
  github: { name:'GitHub', scopes:['read:user','repo'], setup:'https://github.com/settings/developers', operations:['repos','issues','pulls','read_file','create_issue','write_file'] },
@@ -18,11 +18,14 @@ export const PROVIDERS = {
  gitee: { name:'Gitee', scopes:[], setup:'https://gitee.com/profile/personal_access_tokens', operations:['repos','issues','read_file','create_issue'] },
  airtable: { name:'Airtable', scopes:['data.records:read','data.records:write','schema.bases:read'], setup:'https://airtable.com/create/tokens', operations:['bases','tables','records','create_record'] },
  clickup: { name:'ClickUp', scopes:[], setup:'https://app.clickup.com/settings/apps', operations:['teams','tasks','create_task'] },
+ telegram: { name:'Telegram', scopes:[], setup:'https://t.me/BotFather', operations:['updates','send_message'] },
+ asana: { name:'Asana', scopes:[], setup:'https://app.asana.com/0/my-apps', operations:['workspaces','projects','tasks','create_task'] },
+ jira: { name:'Jira', scopes:[], setup:'https://id.atlassian.com/manage-profile/security/api-tokens', operations:['projects','issues','issue','create_issue'] },
  linear: { name:'Linear', scopes:['read','write','issues:create','comments:create'], setup:'https://linear.app/settings/api', operations:['teams','issues','issue','create_issue','create_comment'] },
 } as const;
 export const operationInput = z.object({ operation:z.string(), offset:z.number().int().min(0).max(100000).optional(), account:z.string().max(320).optional(), teamId:z.string().uuid().optional(), channelId:z.string().min(1).max(500).regex(/^[\w:@.-]+$/).optional(), query:z.string().max(8000).optional(), id:z.string().max(500).optional(), repo:z.string().max(200).optional(), path:z.string().max(500).optional(), title:z.string().max(300).optional(), text:z.string().max(30000).optional(), to:z.string().email().optional(), sha:z.string().max(100).optional(), start:z.string().max(40).optional(), end:z.string().max(40).optional(), timeZone:z.string().max(60).regex(/^[\w/+-]+$/).optional() }).strict();
 export type OperationInput = z.infer<typeof operationInput>;
-export function isWrite(operation:string) { return ['draft','send','create_issue','write_file','create_file','append','create_page','create_doc','update_doc','add_record','create_event','create_comment','create_memo','create_record','create_task'].includes(operation); }
+export function isWrite(operation:string) { return ['draft','send','create_issue','write_file','create_file','append','create_page','create_doc','update_doc','add_record','create_event','create_comment','create_memo','create_record','create_task','send_message'].includes(operation); }
 export function validateOperation(provider:ProviderId,input:OperationInput) {
  if (!(PROVIDERS[provider].operations as readonly string[]).includes(input.operation)) throw new Error('不支持的操作');
   if (provider==='feishu') {
@@ -59,6 +62,21 @@ export function validateOperation(provider:ProviderId,input:OperationInput) {
  if (provider==='clickup') {
   if (['tasks','create_task'].includes(input.operation) && !/^\d{1,20}$/.test(input.id ?? '')) throw new Error('请指定 ClickUp 团队 ID（来自工作区列表）');
   if (input.operation==='create_task' && !input.title?.trim()) throw new Error('请提供任务标题');
+ }
+ if (provider==='telegram' && input.operation==='send_message') {
+  if (!/^(?:-?\d{1,20}|@[A-Za-z]\w{4,31})$/.test(input.id ?? '')) throw new Error('请指定 Telegram 聊天 ID（来自最近消息）或 @频道名');
+  if (!input.text?.trim() || input.text.length>4096) throw new Error('请提供 4096 字以内的消息正文');
+ }
+ if (provider==='asana') {
+  if (input.operation==='projects' && !/^\d{1,20}$/.test(input.id ?? '')) throw new Error('请指定 Asana 工作区 ID（来自工作区列表）');
+  if (['tasks','create_task'].includes(input.operation) && !/^\d{1,20}$/.test(input.id ?? '')) throw new Error('请指定 Asana 项目 ID（来自项目列表）');
+  if (input.operation==='create_task' && !input.title?.trim()) throw new Error('请提供任务标题');
+ }
+ if (provider==='jira') {
+  if (input.operation==='issues' && !input.repo && !input.query?.trim()) throw new Error('请指定 Jira 项目 Key（repo）或 JQL（query）');
+  if (input.repo && !/^[A-Z][A-Z0-9_]{0,20}$/.test(input.repo)) throw new Error('Jira 项目 Key 格式无效（如 ENG）');
+  if (input.operation==='issue' && !/^[A-Z][A-Z0-9_]{0,20}-\d{1,9}$/.test(input.id ?? '')) throw new Error('请指定 Jira Issue 编号（如 ENG-123）');
+  if (input.operation==='create_issue' && !input.repo) throw new Error('请指定 Jira 项目 Key（repo）');
  }
  if (provider==='github' && input.operation!=='repos' && !/^[\w.-]+\/[\w.-]+$/.test(input.repo ?? '')) throw new Error('请指定 owner/repo');
  if (provider==='cloudflare' && input.operation==='dns_records' && !input.id && !input.query) throw new Error('请指定 Zone 标识或域名');

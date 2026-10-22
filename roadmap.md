@@ -1,7 +1,7 @@
 # Roadmap
 - [x] Airtable 一键授权：已启用开发者凭证、PKCE、自动续期、保留令牌账户；自动测试通过
 - [x] Airtable 一键授权真实验收：正式域名回调已登记，用户已从 oxford.bot 完成授权并保存账户
-- [ ] ClickUp 一键授权：已实现加密状态、用开发者凭证换取令牌并保存为个人账户；需登记 https://oxford.bot/api/public/connections/clickup/callback 并录入 CLICKUP_OAUTH_CLIENT_ID/SECRET 后验收
+- [x] ClickUp 一键授权：凭证已录入，用户已完成真实授权
 - [x] 免费账户养猫额度：FREE = Oxonian + 1 只自建 Bot，PRO 不限量；已用真实免费账户验证第 1 只可建、第 2 只引导升级
 - [x] Linear 一键 OAuth：微软式只存 refresh token、每次调用换新并比对写回，按工作区区分多账户，团队/问题列表/问题详情与评论只读，新建问题与加评论需确认；256 项测试通过
 - [x] Google Calendar：沿用 Gmail 的一键 Google 授权，支持查看日历/日程与确认后创建日程
@@ -100,4 +100,6 @@
 - [x] Airtable：个人访问令牌、多账户、base/数据表/记录读取、确认后新增记录；8 项测试（与 ClickUp 同文件）
 - [x] ClickUp：个人 API 令牌、多账户、工作区/任务读取、确认后新建任务；8 项测试（与 Airtable 同文件）
 - [ ] ClickUp 真实账户验收（一键授权或个人令牌任选其一）
-- [ ] 后续候选（按"客户一步自助连上"筛选）：Jira（邮箱+API 令牌）、Asana（PAT）；Trello 需创建 Power-Up 应用、X/LinkedIn 受付费或 API 限制，暂缓
+- [x] Telegram（BotFather Token）、Asana（个人令牌）、Jira（站点|邮箱|API 令牌）：多账户、读取与写入前确认；7 项测试
+- [ ] Telegram / Asana / Jira 真实账户验收（用户在工具面板输入令牌后测试读取）
+- 暂缓：WhatsApp（仅企业认证 API，非官方方案有封号风险）、Trello、X/LinkedIn
