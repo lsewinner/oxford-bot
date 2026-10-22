@@ -120,7 +120,17 @@ export async function handleChat(request: Request): Promise<Response> {
     const { buildMemoryContext } = await import('@/lib/memory');
     memoryContext = buildMemoryContext(Object.fromEntries((mem ?? []).map((m: any) => [m.kind, m.content])));
   } catch { /* memory is optional */ }
-  const botContext = memoryContext + botInstructions(body.bot) + ' 使用 Supabase 工具时：先确认目标项目（多个项目时询问或按名称匹配），查数据前先看表结构，只生成只读 SELECT 并附上所用 SQL，结果用表格总结。使用 Notion/语雀时：先搜索或列出候选文档并给出标题让用户确认，总结时注明来源文档标题；新建、追加或更新前先在回复中预览将写入的完整内容，再调用写入工具。' + (deepThink ? ' 本次为 Deep Think 深度分析。最终回复开头必须用 <public_summary>...</public_summary> 包含面向用户的公开论证摘要：关键依据、假设、方案取舍、风险和结论核查；随后给出正常答案。这个摘要是对答案的解释而非内部思维推导，不披露私有内部思维链。' : '');
+  let brainContext = '';
+  if (userId && threadId !== 'guest') {
+    const lastUser = [...messages].reverse().find(m => m.role === 'user');
+    const q = lastUser?.parts.map(p => p.type === 'text' ? p.text : '').join(' ').trim();
+    if (q) try {
+      const { searchBrain } = await import('@/lib/brain.server');
+      const { buildBrainContext } = await import('@/lib/brain');
+      brainContext = buildBrainContext(await searchBrain(userId, q));
+    } catch (e) { console.error('brain search failed', e); }
+  }
+  const botContext = memoryContext + brainContext + botInstructions(body.bot) + ' 使用 Supabase 工具时：先确认目标项目（多个项目时询问或按名称匹配），查数据前先看表结构，只生成只读 SELECT 并附上所用 SQL，结果用表格总结。使用 Notion/语雀时：先搜索或列出候选文档并给出标题让用户确认，总结时注明来源文档标题；新建、追加或更新前先在回复中预览将写入的完整内容，再调用写入工具。' + (deepThink ? ' 本次为 Deep Think 深度分析。最终回复开头必须用 <public_summary>...</public_summary> 包含面向用户的公开论证摘要：关键依据、假设、方案取舍、风险和结论核查；随后给出正常答案。这个摘要是对答案的解释而非内部思维推导，不披露私有内部思维链。' : '');
   const realTools = threadId !== 'guest' ? await createRealTools(userId) : {};
   const actionResults = new Map<string, unknown>();
   if (userId && threadId !== 'guest') {

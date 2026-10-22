@@ -105,3 +105,10 @@
 - [ ] Asana / Jira 一键授权：等待用户注册开发者应用并录入 ASANA_/JIRA_OAUTH_CLIENT_ID/SECRET
 - [ ] Telegram / Asana / Jira 真实账户验收（用户在工具面板输入令牌后测试读取）
 - 暂缓：WhatsApp（仅企业认证 API，非官方方案有封号风险）、Trello、X/LinkedIn
+
+## Oxford AI 五大功能
+- [x] Smart Brain 私人知识库（第一版）
+- [ ] 多工具复合工作流
+- [ ] 主动定时助理
+- [ ] 全屏实时语音
+- [ ] Bot 广场与分享

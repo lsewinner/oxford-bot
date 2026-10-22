@@ -110,6 +110,89 @@ export type Database = {
         }
         Relationships: []
       }
+      brain_chunks: {
+        Row: {
+          brain_id: string
+          content: string
+          document_id: string
+          embedding: string
+          id: string
+          idx: number
+          user_id: string
+        }
+        Insert: {
+          brain_id: string
+          content: string
+          document_id: string
+          embedding: string
+          id?: string
+          idx: number
+          user_id: string
+        }
+        Update: {
+          brain_id?: string
+          content?: string
+          document_id?: string
+          embedding?: string
+          id?: string
+          idx?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brain_chunks_brain_id_fkey"
+            columns: ["brain_id"]
+            isOneToOne: false
+            referencedRelation: "smart_brains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brain_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "brain_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brain_documents: {
+        Row: {
+          brain_id: string
+          chars: number
+          chunk_count: number
+          created_at: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          brain_id: string
+          chars?: number
+          chunk_count?: number
+          created_at?: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          brain_id?: string
+          chars?: number
+          chunk_count?: number
+          created_at?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brain_documents_brain_id_fkey"
+            columns: ["brain_id"]
+            isOneToOne: false
+            referencedRelation: "smart_brains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_shares: {
         Row: {
           created_at: string
@@ -219,6 +302,33 @@ export type Database = {
           note?: string | null
           published?: boolean
           published_at?: string | null
+        }
+        Relationships: []
+      }
+      smart_brains: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -454,6 +564,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      match_brain_chunks: {
+        Args: { match_count?: number; p_user: string; query_embedding: string }
+        Returns: {
+          content: string
+          id: string
+          similarity: number
+          title: string
+        }[]
       }
       read_conversation_share: {
         Args: { p_token: string }
