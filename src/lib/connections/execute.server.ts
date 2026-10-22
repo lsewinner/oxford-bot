@@ -125,6 +125,16 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(o==='issues'){const b=await request(`/repos/${repo}/issues?state=open&per_page=20`);items=(b ?? []).map((v:any)=>({title:v.title,id:String(v.number),url:v.html_url,detail:(v.body ?? '').slice(0,2000)}));}
  if(o==='read_file'){const b=await request(`/repos/${repo}/contents/${path}`);if(b.encoding!=='base64' || typeof b.content!=='string')throw new Error('请选择一个文本文件');text=Buffer.from(b.content,'base64').toString('utf8').slice(0,30000);items=[{title:b.path ?? input.path ?? '',id:b.sha,url:b.html_url}];}
  if(o==='create_issue'){const [owner,name]=(input.repo ?? '').split('/');const b=await request(`/repos/${enc(owner ?? '')}/issues`,'POST',{repo:name,title:input.title,body:input.text});if(!b.number)throw new Error('Gitee 未返回 Issue 结果');items=[{title:b.title,id:String(b.number),url:b.html_url}];}
+ } else if(id==='airtable'){
+ const base=enc(input.id ?? '');const table=enc(input.repo ?? '');
+ if(o==='bases'){const b=await request('/v0/meta/bases');items=(b.bases ?? []).map((v:any)=>({title:v.name,id:v.id,detail:v.permissionLevel ?? ''}));}
+ if(o==='tables'){const b=await request(`/v0/meta/bases/${base}/tables`);items=(b.tables ?? []).map((v:any)=>({title:v.name,id:v.id,detail:v.description ?? ''}));}
+ if(o==='records'){const extra=input.query?.trim().startsWith('offset=')?`&${enc(input.query.trim())}`:'';const b=await request(`/v0/${base}/${table}?pageSize=100${extra}`);items=(b.records ?? []).map((v:any)=>{const fields=v.fields ?? {};const vals=Object.entries(fields).filter(([,x]:any)=>typeof x==='string'||typeof x==='number');const first=vals.find(([,x]:any)=>typeof x==='string' && String(x).trim());return {title:String(first?.[1] ?? v.id).slice(0,120),id:v.id,detail:vals.map(([k,x]:any)=>`${k}: ${String(x).slice(0,200)}`).join(' · ').slice(0,1500)};});if(b.offset)text=`仅显示前 100 条；继续读取在 query 填 offset=${b.offset}`;}
+ if(o==='create_record'){const b=await request(`/v0/${base}/${table}`,'POST',{fields:JSON.parse(input.text ?? '{}')});items=[{title:'已新增记录',id:b.id}];}
+ } else if(id==='clickup'){
+ if(o==='teams'){const b=await request('/api/v2/team');items=(b.teams ?? []).map((v:any)=>({title:v.name,id:String(v.id),detail:v.members?.length?`${v.members.length} 名成员`:''}));}
+ if(o==='tasks'){const b=await request(`/api/v2/team/${enc(input.id ?? '')}/task?order_by=updated`);items=(b.tasks ?? []).map((v:any)=>({title:v.name,id:String(v.id),url:v.url,detail:`${v.status?.status ?? ''}${v.list?.name?' · '+v.list.name:''}${v.due_date?' · 截止 '+new Date(Number(v.due_date)).toISOString().slice(0,10):''}`}));if((b.tasks ?? []).length>=100)text='仅显示前 100 条任务';}
+ if(o==='create_task'){const b=await request(`/api/v2/team/${enc(input.id ?? '')}/task`,'POST',{name:input.title,content:input.text});items=[{title:b.name ?? input.title ?? '',id:String(b.id ?? ''),url:b.url}];}
  } else if(id==='yuque'){
  const namespace=input.repo ?? '';const base=`/repos/${namespace}/docs`;const offset=input.offset ?? 0;
  const docItem=(v:any)=>({title:v.title || '未命名',id:String(v.id ?? v.slug),url:`https://www.yuque.com/${namespace}/${enc(v.slug ?? String(v.id))}`,detail:v.description ?? v.updated_at ?? ''});
