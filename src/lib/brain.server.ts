@@ -48,3 +48,28 @@ export async function searchBrain(userId: string, query: string): Promise<BrainH
   if (error) throw error;
   return ((data ?? []) as BrainHit[]);
 }
+
+/** Chunks, embeds and stores one text document for an already-verified user (quota enforced). */
+export async function ingestBrainText(supabase: any, userId: string, title: string, text: string) {
+  const { BRAIN_FREE_DOCS, BRAIN_PRO_DOCS, BRAIN_MAX_CHARS, chunkText } = await import("./brain");
+  const { isProUser } = await import("./pro.server");
+  const limit = (await isProUser(supabase as never, userId)) ? BRAIN_PRO_DOCS : BRAIN_FREE_DOCS;
+  const { count } = await supabase.from("brain_documents").select("id", { count: "exact", head: true }).eq("user_id", userId);
+  if ((count ?? 0) >= limit) throw new Error(limit === BRAIN_FREE_DOCS ? `免费账户最多 ${limit} 份文档，升级 Pro 可存 ${BRAIN_PRO_DOCS} 份` : `最多 ${limit} 份文档`);
+  let { data: brain } = await supabase.from("smart_brains").select("id").eq("user_id", userId).order("created_at").limit(1).maybeSingle();
+  if (!brain) ({ data: brain } = await supabase.from("smart_brains").insert({ user_id: userId }).select("id").single());
+  if (!brain) throw new Error("创建 Smart Brain 失败");
+  const body = text.slice(0, BRAIN_MAX_CHARS);
+  const chunks = chunkText(body);
+  if (!chunks.length) throw new Error("没有可保存的文字");
+  const vectors = await embedTexts(chunks);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: doc, error } = await supabaseAdmin.from("brain_documents").insert({ brain_id: brain.id, user_id: userId, title, chars: body.length, chunk_count: chunks.length }).select("id").single();
+  if (error || !doc) throw new Error("保存文档失败");
+  const rows = chunks.map((content, idx) => ({ document_id: doc.id, brain_id: brain.id, user_id: userId, idx, content, embedding: JSON.stringify(vectors[idx]) }));
+  for (let i = 0; i < rows.length; i += 100) {
+    const { error: e } = await supabaseAdmin.from("brain_chunks").insert(rows.slice(i, i + 100) as never);
+    if (e) { await supabaseAdmin.from("brain_documents").delete().eq("id", doc.id); throw new Error("保存索引失败"); }
+  }
+  return doc.id as string;
+}
