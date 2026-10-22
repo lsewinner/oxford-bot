@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizePhone, phoneAuthError } from "@/lib/phone-auth";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -32,6 +33,9 @@ function AuthPage() {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
+  const [sentPhone, setSentPhone] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const phonePending = useRef(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -72,29 +76,42 @@ function AuthPage() {
     if (result.error) toast.error("登录失败，请重试");
   };
 
-  const normalizedPhone = () => {
-    const digits = phone.replace(/[\s-]/g, "");
-    if (digits.startsWith("+")) return digits;
-    return `+86${digits.replace(/^0+/, "")}`;
-  };
-
   const sendCode = async () => {
-    const p = normalizedPhone();
-    if (!/^\+\d{8,15}$/.test(p)) { toast.error("请输入正确的手机号"); return; }
+    if (phonePending.current) return;
+    const p = normalizePhone(phone);
+    if (!p) { setPhoneError("请输入正确的手机号；海外号码请带国家区号，例如 +44。"); return; }
+    phonePending.current = true;
+    setPhoneError(null);
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({ phone: p });
-    setLoading(false);
-    if (error) { toast.error("验证码发送失败，请稍后重试"); return; }
-    setCodeSent(true);
-    toast.success("验证码已发送");
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ phone: p });
+      if (error) { setPhoneError(phoneAuthError(error, "send").message); return; }
+      setSentPhone(p);
+      setCodeSent(true);
+      toast.success("验证码已发送");
+    } catch (error) {
+      setPhoneError(phoneAuthError(error, "send").message);
+    } finally {
+      phonePending.current = false;
+      setLoading(false);
+    }
   };
 
   const verifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (phonePending.current || !sentPhone || sentPhone !== normalizePhone(phone)) return;
+    phonePending.current = true;
+    setPhoneError(null);
     setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({ phone: normalizedPhone(), token: code.trim(), type: "sms" });
-    setLoading(false);
-    if (error) toast.error("验证码错误或已过期");
+    try {
+      const { error } = await supabase.auth.verifyOtp({ phone: sentPhone, token: code.trim(), type: "sms" });
+      if (error) setPhoneError(phoneAuthError(error, "verify").message);
+    } catch (error) {
+      setPhoneError(phoneAuthError(error, "verify").message);
+    } finally {
+      phonePending.current = false;
+      setLoading(false);
+    }
   };
 
   return (
@@ -141,14 +158,25 @@ function AuthPage() {
                   type="tel"
                   required
                   placeholder="手机号（默认 +86）"
+                  aria-label="手机号"
+                  autoComplete="tel"
+                  disabled={loading}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setSentPhone(null);
+                    setCodeSent(false);
+                    setCode("");
+                    setPhoneError(null);
+                  }}
                   className="h-11 rounded-xl"
                 />
                 <div className="flex gap-2">
                   <Input
                     inputMode="numeric"
                     placeholder="验证码"
+                    aria-label="验证码"
+                    autoComplete="one-time-code"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     className="h-11 rounded-xl"
@@ -157,6 +185,14 @@ function AuthPage() {
                     {codeSent ? "重新发送" : "获取验证码"}
                   </Button>
                 </div>
+                {phoneError && (
+                  <div role="alert" className="border-l-2 border-destructive pl-3 text-sm leading-6 text-foreground">
+                    <p>{phoneError}</p>
+                    <Button type="button" variant="link" className="h-auto px-0 py-1" disabled={loading} onClick={() => { setMethod("email"); setPhoneError(null); }}>
+                      改用邮箱登录 / 注册
+                    </Button>
+                  </div>
+                )}
                 <Button type="submit" disabled={loading || !codeSent || !code} className="h-11 rounded-xl">
                   {loading ? "请稍候…" : "登录 / 注册"}
                 </Button>
