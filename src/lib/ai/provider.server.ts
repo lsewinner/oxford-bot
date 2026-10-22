@@ -83,11 +83,12 @@ export function selectChatProvider(secrets: ChatProviderSecrets) {
 export function createChatProvider(request: Request, secrets: ChatProviderSecrets, deepThink: boolean) {
   const selected = selectChatProvider(secrets);
   if (!selected) return null;
+  const domestic = selectDomesticModel(secrets, deepThink);
   if (selected.kind === 'anthropic') {
     const provider = createAnthropic({ apiKey: selected.apiKey, baseURL: 'https://api.anthropic.com/v1' });
     return {
       kind: selected.kind,
-      model: withRegionFallback(provider('claude-sonnet-4-6'), createDomesticModel(secrets)),
+      model: withRegionFallback(provider('claude-sonnet-4-6'), domestic && createDomesticModel(secrets, domestic)),
       webSearch: () => provider.tools.webSearch_20260209(),
       providerOptions: { anthropic: { sendReasoning: false, thinking: { type: 'adaptive' as const }, effort: deepThink ? 'high' as const : 'low' as const } },
       wrapResponse: (response: Response) => response,
@@ -97,7 +98,7 @@ export function createChatProvider(request: Request, secrets: ChatProviderSecret
     const provider = createOpenAI({ apiKey: selected.apiKey, baseURL: 'https://api.openai.com/v1' });
     return {
       kind: selected.kind,
-      model: withRegionFallback(provider.responses(secrets.OPENAI_MODEL?.trim() || 'gpt-6-sol'), createDomesticModel(secrets)),
+      model: withRegionFallback(provider.responses(secrets.OPENAI_MODEL?.trim() || 'gpt-6-sol'), domestic && createDomesticModel(secrets, domestic)),
       webSearch: () => provider.tools.webSearch(),
       providerOptions: { openai: thinkOptions(deepThink) },
       wrapResponse: (response: Response) => response,
@@ -111,7 +112,7 @@ export function createChatProvider(request: Request, secrets: ChatProviderSecret
   });
   return {
     kind: selected.kind,
-    model: withRegionFallback(provider.responses('openai/gpt-6-sol'), createDomesticModel(secrets)),
+    model: withRegionFallback(provider.responses('openai/gpt-6-sol'), domestic && createDomesticModel(secrets, domestic)),
     webSearch: () => provider.tools.webSearch(),
     providerOptions: { openai: thinkOptions(deepThink) },
     wrapResponse: (response: Response) => withLovableAiGatewayRunIdHeader(response, runIdFetch),
