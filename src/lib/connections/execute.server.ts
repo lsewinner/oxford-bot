@@ -20,7 +20,8 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(isWrite(input.operation) && !confirmed){
  const {data,error}=await supabaseAdmin.from('tool_actions').insert({user_id:userId,connector_id:id,operation:input.operation,payload:row.account_key && !input.account?{...input,account:row.account_key}:input}).select('id').single();
  if(error || !data)throw new Error('无法保存待确认操作');
- return {provider,status:'confirmation_required',actionId:data.id,summary:`${provider} · ${input.operation} · ${row.account_label || row.account_key || ''} · ${input.teamId ? `${input.teamId} / ${input.channelId ?? ''}` : input.to ?? input.repo ?? input.id ?? input.title ?? ''}${input.start?` · ${input.start} → ${input.end ?? ''}`:''}`,...(input.text?{text:input.text}:{})};
+ const oandaText=id==='oanda'?oandaProposal(input,String(row.account_key ?? '')):undefined;
+ return {provider,status:'confirmation_required',actionId:data.id,summary:`${provider} · ${input.operation} · ${row.account_label || row.account_key || ''} · ${input.teamId ? `${input.teamId} / ${input.channelId ?? ''}` : input.to ?? input.repo ?? input.id ?? input.title ?? ''}${input.start?` · ${input.start} → ${input.end ?? ''}`:''}`,...(oandaText?{text:oandaText}:input.text?{text:input.text}:{})};
  }
  const request=async(path:string,method='GET',body?:unknown,raw=false)=>{
  const init={method,headers:{Accept:id==='github'?'application/vnd.github+json':'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})};
@@ -144,6 +145,20 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  }
  if(o==='tasks'){const b=await request(`/api/v2/team/${enc(input.id ?? '')}/task?order_by=updated`);items=(b.tasks ?? []).map((v:any)=>({title:v.name,id:String(v.id),url:v.url,detail:`${v.status?.status ?? ''}${v.list?.name?' · '+v.list.name:''}${v.due_date?' · 截止 '+new Date(Number(v.due_date)).toISOString().slice(0,10):''}`}));if((b.tasks ?? []).length>=100)text='仅显示前 100 条任务';}
  if(o==='create_task'){const b=await request(`/api/v2/list/${enc(input.id ?? '')}/task`,'POST',{name:input.title,description:input.text});if(!b.id)throw new Error('ClickUp 未返回任务结果');items=[{title:b.name ?? input.title ?? '',id:String(b.id),url:b.url}];}
+ } else if(id==='oanda'){
+ const acct=`/v3/accounts/${input.id ?? ''}`;
+ const num=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?n:0;};
+ const pl=(v:unknown)=>{const n=num(v);return `${n>=0?'+':''}${n.toFixed(2)}`;};
+ if(o==='accounts'){const b=await request('/v3/accounts');items=(b.accounts ?? []).map((v:any)=>({title:v.id,id:v.id,detail:(v.tags ?? []).map((t:any)=>t.name).join(', ')}));text=`环境：${String(row.account_key ?? '').startsWith('oa-live-')?'实盘':'模拟盘'}`;}
+ if(o==='summary'){const b=await request(`${acct}/summary`);const a=b.account ?? {};items=[{title:`${a.alias || a.id} · ${a.currency ?? ''}`,id:a.id,detail:`净值 ${a.NAV} · 余额 ${a.balance} · 未实现盈亏 ${pl(a.unrealizedPL)} · 已用保证金 ${a.marginUsed} · 可用保证金 ${a.marginAvailable} · 持仓 ${a.openPositionCount ?? 0} · 挂单 ${a.pendingOrderCount ?? 0}`}];}
+ if(o==='positions'){const b=await request(`${acct}/openPositions`);items=(b.positions ?? []).flatMap((p:any)=>[['long','多'],['short','空']].filter(([k])=>num(p[k!]?.units)!==0).map(([k,label])=>({title:`${p.instrument} · ${label} ${Math.abs(num(p[k!].units))}`,id:p.instrument,detail:`均价 ${p[k!].averagePrice} · 未实现盈亏 ${pl(p[k!].unrealizedPL)}`})));if(!items.length)text='当前没有持仓';}
+ if(o==='trades'){const b=await request(`${acct}/openTrades`);items=(b.trades ?? []).map((t:any)=>({title:`#${t.id} ${t.instrument} · ${num(t.currentUnits)>0?'多':'空'} ${Math.abs(num(t.currentUnits))}`,id:String(t.id),detail:`开仓价 ${t.price} · 未实现盈亏 ${pl(t.unrealizedPL)}${t.stopLossOrder?.price?' · 止损 '+t.stopLossOrder.price:''}${t.takeProfitOrder?.price?' · 止盈 '+t.takeProfitOrder.price:''}`}));if(!items.length)text='当前没有未平仓交易';}
+ if(o==='orders'){const b=await request(`${acct}/pendingOrders`);items=(b.orders ?? []).filter((v:any)=>v.instrument).map((v:any)=>({title:`#${v.id} ${v.type} ${v.instrument} ${v.units ?? ''}`,id:String(v.id),detail:`价格 ${v.price ?? '-'} · ${v.timeInForce ?? ''}`}));if(!items.length)text='当前没有挂单';}
+ if(o==='prices'){const b=await request(`${acct}/pricing?instruments=${input.repo}`);items=(b.prices ?? []).map((p:any)=>{const bid=num(p.bids?.[0]?.price),ask=num(p.asks?.[0]?.price);return {title:p.instrument,id:p.instrument,detail:`买价 ${p.bids?.[0]?.price ?? '-'} · 卖价 ${p.asks?.[0]?.price ?? '-'} · 点差 ${(ask-bid).toPrecision(3)} · ${p.tradeable?'可交易':'休市'} · ${p.time ?? ''}`};});}
+ if(o==='create_order'){const type=input.orderType ?? 'MARKET';const order:Record<string,unknown>={type,instrument:input.repo,units:input.units,positionFill:'DEFAULT',timeInForce:type==='MARKET'?'FOK':'GTC',...(type==='LIMIT'?{price:input.price}:{}),...(input.stopLoss?{stopLossOnFill:{price:input.stopLoss}}:{}),...(input.takeProfit?{takeProfitOnFill:{price:input.takeProfit}}:{})};const b=await request(`${acct}/orders`,'POST',{order});const fill=b.orderFillTransaction,cancel=b.orderCancelTransaction;if(cancel && !fill)throw new Error(`OANDA 未成交：${cancel.reason ?? '订单被取消'}`);items=fill?[{title:`已成交 ${fill.instrument} ${fill.units}`,id:String(fill.id),detail:`成交价 ${fill.price ?? '-'}`}]:[{title:`已挂单 ${input.repo} ${input.units}`,id:String(b.orderCreateTransaction?.id ?? ''),detail:type==='LIMIT'?`限价 ${input.price}`:''}];}
+ if(o==='close_position'){const body=input.side==='long'?{longUnits:'ALL'}:input.side==='short'?{shortUnits:'ALL'}:{longUnits:'ALL',shortUnits:'ALL'};let b:any;try{b=await request(`${acct}/positions/${input.repo}/close`,'PUT',body);}catch(e){if(input.side==='all'){const p=(await request(`${acct}/openPositions`)).positions?.find((v:any)=>v.instrument===input.repo);const one=p && num(p.long?.units)!==0?{longUnits:'ALL'}:p && num(p.short?.units)!==0?{shortUnits:'ALL'}:null;if(!one)throw new Error(`没有 ${input.repo} 的持仓`);b=await request(`${acct}/positions/${input.repo}/close`,'PUT',one);}else throw e;}items=[b.longOrderFillTransaction,b.shortOrderFillTransaction].filter(Boolean).map((f:any)=>({title:`已平仓 ${f.instrument} ${f.units}`,id:String(f.id),detail:`成交价 ${f.price ?? '-'} · 已实现盈亏 ${pl(f.pl)}`}));if(!items.length)throw new Error('OANDA 未返回平仓成交');}
+ if(o==='close_trade'){const b=await request(`${acct}/trades/${input.ref}/close`,'PUT',{units:input.units ?? 'ALL'});const f=b.orderFillTransaction;if(!f)throw new Error(`OANDA 未平仓：${b.orderCancelTransaction?.reason ?? '未知原因'}`);items=[{title:`已平仓 #${input.ref} ${f.instrument}`,id:String(f.id),detail:`成交价 ${f.price ?? '-'} · 已实现盈亏 ${pl(f.pl)}`}];}
+ if(o==='cancel_order'){const b=await request(`${acct}/orders/${input.ref}/cancel`,'PUT');items=[{title:`已撤销挂单 #${input.ref}`,id:String(b.orderCancelTransaction?.id ?? '')}];}
  } else if(id==='telegram'){
  if(o==='updates'){const b=await request('/getUpdates?limit=100');const seen=new Map<string,{title:string;id:string;detail:string}>();for(const u of (b.result ?? []).reverse()){const m=u.message ?? u.channel_post ?? u.edited_message;const c=m?.chat;if(!c?.id)continue;const key=String(c.id);if(!seen.has(key))seen.set(key,{title:c.title ?? ([c.first_name,c.last_name].filter(Boolean).join(' ') || (c.username?'@'+c.username:key)),id:key,detail:`${c.type ?? ''}${m.text?' · '+String(m.text).slice(0,300):''}`});}items=[...seen.values()];if(!items.length)text='最近没有新消息：请先在 Telegram 里给 Bot 发一条消息，或把 Bot 拉进群后再读取';}
  if(o==='send_message'){const b=await request('/sendMessage','POST',{chat_id:input.id,text:input.text});if(b.ok!==true)throw new Error('Telegram 未发送消息');items=[{title:String(input.text ?? '').slice(0,100),id:String(b.result?.message_id ?? '')}];}
@@ -235,4 +250,14 @@ export async function executeOperation(userId:string,id:ProviderId,input:Operati
  if(o==='send'){const b=await request('/api/chat.postMessage','POST',{channel:input.id,text:input.text});items=[{title:input.text?.slice(0,100) ?? '消息',id:b.ts}];}
  }
  return {provider,status:'completed',summary:isWrite(o)?'操作已完成':'读取完成',items,...(text?{text}:{})};
+}
+
+/** Human-readable trade ticket shown on the confirmation card before any OANDA write runs. */
+export function oandaProposal(input:OperationInput,accountKey:string){
+ const env=accountKey.startsWith('oa-live-')?'⚠️ 实盘（真实资金）':'模拟盘';
+ if(input.operation==='create_order'){const u=Number(input.units);return [`${env} · 账户 ${input.id}`,`${u>0?'买入 / 做多':'卖出 / 做空'} ${input.repo} ${Math.abs(u)} 单位`,`类型：${(input.orderType ?? 'MARKET')==='LIMIT'?`限价 ${input.price}`:'市价'}`,`止损：${input.stopLoss ?? '未设置'} · 止盈：${input.takeProfit ?? '未设置'}`].join('\n');}
+ if(input.operation==='close_position')return `${env} · 账户 ${input.id}\n平仓 ${input.repo} · ${input.side==='long'?'多单':input.side==='short'?'空单':'全部'}`;
+ if(input.operation==='close_trade')return `${env} · 账户 ${input.id}\n平仓交易 #${input.ref}${input.units?` · ${input.units} 单位`:' · 全部'}`;
+ if(input.operation==='cancel_order')return `${env} · 账户 ${input.id}\n撤销挂单 #${input.ref}`;
+ return undefined;
 }
