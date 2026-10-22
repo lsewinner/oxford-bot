@@ -49,7 +49,7 @@ export function transcribe(creds: VoiceCredentials, file: File, signal?: AbortSi
     method: "POST",
     headers: { Authorization: `Bearer ${creds.apiKey}` },
     body: form,
-    redirect: "error",
+    redirect: "manual",
     ...(signal ? { signal } : {}),
   });
 }
@@ -70,7 +70,7 @@ export function requestSpeech(creds: VoiceCredentials, text: string, signal?: Ab
     method: "POST",
     headers: { Authorization: `Bearer ${creds.apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
-    redirect: "error",
+    redirect: "manual",
     ...(signal ? { signal } : {}),
   });
 }
