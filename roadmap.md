@@ -94,3 +94,7 @@
 - [x] Gitee：私人令牌、多账户、仓库/Issue/文件读取、确认后新建 Issue；4 项测试
 - [ ] Gitee 真实账户验收（Gitee 一键 OAuth 待用户创建第三方应用）
 - [x] 移除 Flomo 接入：注册、开通会员和复制专属链接三道门槛，普通客户无法自助完成；已从工具列表、连接中心、模型工具与测试中删除
+- [x] Airtable：个人访问令牌、多账户、base/数据表/记录读取、确认后新增记录；8 项测试（与 ClickUp 同文件）
+- [x] ClickUp：个人 API 令牌、多账户、工作区/任务读取、确认后新建任务；8 项测试（与 Airtable 同文件）
+- [ ] Airtable/ClickUp 真实账户验收（需用户在应用内分别录入自己的令牌）
+- [ ] 后续候选（按"客户一步自助连上"筛选）：Jira（邮箱+API 令牌）、Asana（PAT）；Trello 需创建 Power-Up 应用、X/LinkedIn 受付费或 API 限制，暂缓
