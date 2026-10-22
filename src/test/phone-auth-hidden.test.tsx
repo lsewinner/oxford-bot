@@ -25,7 +25,8 @@ describe("phone sign-in entry stays closed until SMS approval", () => {
     expect(screen.queryByLabelText("手机号")).toBeNull();
     expect(screen.queryByRole("button", { name: "获取验证码" })).toBeNull();
     expect(screen.queryByText("手机号")).toBeNull();
-    expect(screen.getByLabelText("邮箱")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("邮箱")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("密码")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "使用 Apple 继续" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "使用 Google 继续" })).toBeInTheDocument();
   });
