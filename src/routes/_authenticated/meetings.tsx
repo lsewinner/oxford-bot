@@ -108,7 +108,8 @@ function MeetingsPage() {
 
   const upload = async (file: File | undefined) => {
     if (!file) return;
-    if (!file.type.startsWith("audio/") || file.size > MAX_UPLOAD) { toast.error("请上传 20MB 以内的音频文件（mp3 / m4a / wav / webm）"); return; }
+    const isAudio = file.type.startsWith("audio/") || /\.(mp3|m4a|wav|webm|ogg|aac)$/i.test(file.name);
+    if (!isAudio || file.size > MAX_UPLOAD) { toast.error("请上传 20MB 以内的音频文件（mp3 / m4a / wav / webm）"); return; }
     parts.current = []; pending.current = Promise.resolve();
     if (!title.trim() && !event) setTitle(file.name.replace(/\.[^.]+$/, ""));
     queueTranscribe(file, 0);
