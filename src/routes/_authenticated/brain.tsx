@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { addBrainDocument, deleteBrainDocument, getBrain, setBrainEnabled } from "@/lib/brain.functions";
+import { addBrainDocument, browseBrainSource, deleteBrainDocument, getBrain, importBrainSource, setBrainEnabled } from "@/lib/brain.functions";
 
 export const Route = createFileRoute("/_authenticated/brain")({
   head: () => ({
@@ -95,6 +95,8 @@ function BrainPage() {
           </details>
         </section>
 
+        <SourceImport onImported={refresh} />
+
         <section className="mt-6">
           <h2 className="mb-3 text-sm font-medium">我的文档</h2>
           {isLoading ? <LoaderCircleIcon className="size-4 animate-spin text-muted-foreground" /> : docs.length === 0 ? <p className="text-sm text-muted-foreground">还没有文档。上传第一份资料，让 Oxford 记住它。</p> :
@@ -111,4 +113,51 @@ function BrainPage() {
       </div>
     </div>
   );
+}
+
+type Source = "google_drive" | "notion" | "yuque";
+const SOURCES: { id: Source; label: string }[] = [{ id: "google_drive", label: "Google 云盘" }, { id: "notion", label: "Notion" }, { id: "yuque", label: "语雀" }];
+
+function SourceImport({ onImported }: { onImported: () => void }) {
+  const browse = useServerFn(browseBrainSource);
+  const importDoc = useServerFn(importBrainSource);
+  const [source, setSource] = useState<Source>("google_drive");
+  const [query, setQuery] = useState("");
+  const [repo, setRepo] = useState<{ id: string; title: string } | null>(null);
+  const [result, setResult] = useState<Awaited<ReturnType<typeof browseBrainSource>> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState("");
+  const [done, setDone] = useState<string[]>([]);
+
+  async function load(nextRepo = repo) {
+    setLoading(true);
+    try { setResult(await browse({ data: { source, query, repo: nextRepo?.id } })); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "读取失败"); }
+    finally { setLoading(false); }
+  }
+  function pick(s: Source) { setSource(s); setRepo(null); setResult(null); setQuery(""); }
+  async function add(item: { id: string; title: string }) {
+    if (!window.confirm(`把《${item.title}》导入 Smart Brain？之后可随时在下方删除。`)) return;
+    setImporting(item.id);
+    try { await importDoc({ data: { source, id: item.id, repo: repo?.id, title: item.title.slice(0, 180) } }); setDone((d) => [...d, item.id]); toast.success(`《${item.title}》已导入`); onImported(); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "导入失败"); }
+    finally { setImporting(""); }
+  }
+
+  return <section className="mt-6 rounded-lg border border-border p-5">
+    <p className="text-sm">从已连接的工具导入 <span className="text-muted-foreground">· 只导入你勾选的资料</span></p>
+    <div className="mt-3 flex flex-wrap gap-2">{SOURCES.map((s) => <Button key={s.id} size="sm" variant={source === s.id ? "secondary" : "outline"} onClick={() => pick(s.id)}>{s.label}</Button>)}</div>
+    <div className="mt-3 flex gap-2">
+      {source !== "yuque" && <Input value={query} maxLength={200} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void load(); }} placeholder={source === "google_drive" ? "输入文件名或关键词" : "输入页面标题关键词（可留空）"} />}
+      {source === "yuque" && repo && <Button size="sm" variant="ghost" onClick={() => { setRepo(null); void load(null); }}>← 知识库列表</Button>}
+      <Button size="sm" variant="outline" disabled={loading} onClick={() => void load()}>{loading && <LoaderCircleIcon className="animate-spin" />}{source === "yuque" ? (repo ? `刷新《${repo.title}》` : "列出知识库") : "搜索"}</Button>
+    </div>
+    {result && !result.connected && <p className="mt-3 text-sm text-muted-foreground">还没有连接这个工具。请先在对话页的「工具与连接」里完成授权。</p>}
+    {result?.connected && (result.items.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">{source === "google_drive" && !query.trim() ? "请输入关键词搜索" : "没有找到资料"}</p> :
+      <ul className="mt-3 max-h-72 divide-y divide-border overflow-auto rounded-md border border-border">{result.items.map((i) => <li key={i.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+        <div className="min-w-0 flex-1"><p className="truncate">{i.title}</p>{i.detail && <p className="truncate text-xs text-muted-foreground">{i.detail}</p>}</div>
+        {i.kind === "repo" ? <Button size="sm" variant="ghost" onClick={() => { const r = { id: i.id, title: i.title }; setRepo(r); void load(r); }}>打开</Button> :
+          <Button size="sm" variant="outline" disabled={Boolean(importing) || done.includes(i.id)} onClick={() => void add(i)}>{importing === i.id && <LoaderCircleIcon className="animate-spin" />}{done.includes(i.id) ? "已导入" : "导入"}</Button>}
+      </li>)}</ul>)}
+  </section>;
 }
