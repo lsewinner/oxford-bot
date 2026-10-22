@@ -16,7 +16,7 @@ async function forward(request: Request): Promise<Response> {
   const upstream = await fetch(base + path + url.search, {
     method: request.method,
     headers,
-    body: hasBody ? await request.arrayBuffer() : undefined,
+    body: hasBody ? await request.arrayBuffer() : null,
     redirect: 'manual',
   });
   const out = new Headers(upstream.headers);

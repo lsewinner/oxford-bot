@@ -11,7 +11,7 @@ export function proxiedBackendUrl(url: string, backendUrl: string, origin: strin
 
 if (typeof window !== 'undefined' && !(window as { __sbProxy?: boolean }).__sbProxy) {
   (window as { __sbProxy?: boolean }).__sbProxy = true;
-  const backendUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const backendUrl = import.meta.env['VITE_SUPABASE_URL'] as string | undefined;
   const original = window.fetch.bind(window);
   window.fetch = (input, init) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
