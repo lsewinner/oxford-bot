@@ -37,7 +37,7 @@ describe('Airtable one-click authorization',()=>{
  });
  it('sends developer credentials as standard padded base64 Basic auth',async()=>{
   vi.stubEnv('AIRTABLE_OAUTH_CLIENT_ID','id?>');vi.stubEnv('AIRTABLE_OAUTH_CLIENT_SECRET','s~');
-  const fetcher=vi.fn(async(url:string)=>url.endsWith('/token')?Response.json({access_token:'a',refresh_token:'r',expires_in:3600}):Response.json({id:'u1'}));vi.stubGlobal('fetch',fetcher);
+  const fetcher=vi.fn(async(url:string)=>url.endsWith('/token')?Response.json({access_token:'a',refresh_token:'r',expires_in:3600}):Response.json({id:'usr1'}));vi.stubGlobal('fetch',fetcher);
   const state=verifyAirtableState(new URL(startAirtableAuthorization(owner,callback).authorizationUrl).searchParams.get('state') ?? '');
   await exchangeAirtableCode('code',state);
   const headers=(fetcher.mock.calls[0] as unknown as [string,RequestInit])[1].headers as Record<string,string>;
