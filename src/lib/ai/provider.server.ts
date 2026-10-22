@@ -34,13 +34,21 @@ export function selectDomesticModel(secrets: ChatProviderSecrets, deepThink: boo
   return null;
 }
 
+export const withQwenSearch: typeof fetch = (input, init) => {
+  if (typeof init?.body === 'string') {
+    try { init = { ...init, body: JSON.stringify({ ...JSON.parse(init.body), enable_search: true }) }; } catch { /* non-JSON body */ }
+  }
+  return fetch(input, init);
+};
+
 /** Domestic (Qwen/DeepSeek) model used only after a confirmed region refusal from the primary model. */
 function createDomesticModel(secrets: ChatProviderSecrets, domestic: DomesticChoice) {
   if (domestic.provider === 'deepseek') {
     const provider = createOpenAI({ name: 'deepseek', apiKey: secrets.DEEPSEEK_API_KEY?.trim()!, baseURL: DEEPSEEK_BASE_URL });
     return { model: provider.chat(secrets.DEEPSEEK_MODEL?.trim() || 'deepseek-reasoner'), stripTools: domestic.stripTools };
   }
-  const provider = createOpenAI({ name: 'dashscope', apiKey: secrets.DASHSCOPE_API_KEY?.trim()!, baseURL: DOMESTIC_BASE_URL });
+  // Qwen's built-in web search lets mainland users get live answers (weather, news) without OpenAI's search tool.
+  const provider = createOpenAI({ name: 'dashscope', apiKey: secrets.DASHSCOPE_API_KEY?.trim()!, baseURL: DOMESTIC_BASE_URL, fetch: withQwenSearch });
   return { model: provider.chat(secrets.DASHSCOPE_MODEL?.trim() || 'qwen-plus'), stripTools: domestic.stripTools };
 }
 
