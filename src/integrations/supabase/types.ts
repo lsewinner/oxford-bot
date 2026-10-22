@@ -193,6 +193,51 @@ export type Database = {
           },
         ]
       }
+      briefing_settings: {
+        Row: {
+          enabled: boolean
+          hour: number
+          last_error: string
+          last_run_at: string | null
+          last_sent_on: string | null
+          last_status: string
+          sources: string[]
+          telegram_account: string
+          telegram_chat_id: string
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          hour?: number
+          last_error?: string
+          last_run_at?: string | null
+          last_sent_on?: string | null
+          last_status?: string
+          sources?: string[]
+          telegram_account?: string
+          telegram_chat_id?: string
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          enabled?: boolean
+          hour?: number
+          last_error?: string
+          last_run_at?: string | null
+          last_sent_on?: string | null
+          last_status?: string
+          sources?: string[]
+          telegram_account?: string
+          telegram_chat_id?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversation_shares: {
         Row: {
           created_at: string

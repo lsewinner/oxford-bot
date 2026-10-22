@@ -19,6 +19,7 @@ import { Route as RefundRouteImport } from './routes/refund'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBrainRouteImport } from './routes/_authenticated/brain'
+import { Route as AuthenticatedBriefingRouteImport } from './routes/_authenticated/briefing'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
@@ -34,6 +35,7 @@ import { Route as ApiOauthLinearCallbackRouteImport } from './routes/api/oauth/l
 import { Route as ApiOauthMicrosoftCallbackRouteImport } from './routes/api/oauth/microsoft/callback'
 import { Route as ApiOauthNotionCallbackRouteImport } from './routes/api/oauth/notion/callback'
 import { Route as ApiOauthSlackCallbackRouteImport } from './routes/api/oauth/slack/callback'
+import { Route as ApiPublicCronBriefingRouteImport } from './routes/api/public/cron/briefing'
 import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oauth/return'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicWechatKfAccountIdRouteImport } from './routes/api/public/wechat-kf/$accountId'
@@ -89,6 +91,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 const AuthenticatedBrainRoute = AuthenticatedBrainRouteImport.update({
   id: '/brain',
   path: '/brain',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBriefingRoute = AuthenticatedBriefingRouteImport.update({
+  id: '/briefing',
+  path: '/briefing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
@@ -168,6 +175,11 @@ const ApiOauthSlackCallbackRoute = ApiOauthSlackCallbackRouteImport.update({
   path: '/api/oauth/slack/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCronBriefingRoute = ApiPublicCronBriefingRouteImport.update({
+  id: '/api/public/cron/briefing',
+  path: '/api/public/cron/briefing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicOauthReturnRoute = ApiPublicOauthReturnRouteImport.update({
   id: '/api/public/oauth/return',
   path: '/api/public/oauth/return',
@@ -220,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/brain': typeof AuthenticatedBrainRoute
+  '/briefing': typeof AuthenticatedBriefingRoute
   '/chat': typeof AuthenticatedChatRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
@@ -235,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
   '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
+  '/api/public/cron/briefing': typeof ApiPublicCronBriefingRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
@@ -253,6 +267,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/brain': typeof AuthenticatedBrainRoute
+  '/briefing': typeof AuthenticatedBriefingRoute
   '/api/chat': typeof ApiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/speech': typeof ApiSpeechRoute
@@ -267,6 +282,7 @@ export interface FileRoutesByTo {
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
   '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
+  '/api/public/cron/briefing': typeof ApiPublicCronBriefingRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
@@ -287,6 +303,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/brain': typeof AuthenticatedBrainRoute
+  '/_authenticated/briefing': typeof AuthenticatedBriefingRoute
   '/_authenticated/chat': typeof AuthenticatedChatRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
@@ -302,6 +319,7 @@ export interface FileRoutesById {
   '/api/oauth/microsoft/callback': typeof ApiOauthMicrosoftCallbackRoute
   '/api/oauth/notion/callback': typeof ApiOauthNotionCallbackRoute
   '/api/oauth/slack/callback': typeof ApiOauthSlackCallbackRoute
+  '/api/public/cron/briefing': typeof ApiPublicCronBriefingRoute
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
@@ -322,6 +340,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/brain'
+    | '/briefing'
     | '/chat'
     | '/api/chat'
     | '/api/generate-image'
@@ -337,6 +356,7 @@ export interface FileRouteTypes {
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
     | '/api/oauth/slack/callback'
+    | '/api/public/cron/briefing'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
     | '/api/public/wechat-kf/$accountId'
@@ -355,6 +375,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/brain'
+    | '/briefing'
     | '/api/chat'
     | '/api/generate-image'
     | '/api/speech'
@@ -369,6 +390,7 @@ export interface FileRouteTypes {
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
     | '/api/oauth/slack/callback'
+    | '/api/public/cron/briefing'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
     | '/api/public/wechat-kf/$accountId'
@@ -388,6 +410,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/admin'
     | '/_authenticated/brain'
+    | '/_authenticated/briefing'
     | '/_authenticated/chat'
     | '/api/chat'
     | '/api/generate-image'
@@ -403,6 +426,7 @@ export interface FileRouteTypes {
     | '/api/oauth/microsoft/callback'
     | '/api/oauth/notion/callback'
     | '/api/oauth/slack/callback'
+    | '/api/public/cron/briefing'
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
     | '/api/public/wechat-kf/$accountId'
@@ -433,6 +457,7 @@ export interface RootRouteChildren {
   ApiOauthMicrosoftCallbackRoute: typeof ApiOauthMicrosoftCallbackRoute
   ApiOauthNotionCallbackRoute: typeof ApiOauthNotionCallbackRoute
   ApiOauthSlackCallbackRoute: typeof ApiOauthSlackCallbackRoute
+  ApiPublicCronBriefingRoute: typeof ApiPublicCronBriefingRoute
   ApiPublicOauthReturnRoute: typeof ApiPublicOauthReturnRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicWechatKfAccountIdRoute: typeof ApiPublicWechatKfAccountIdRoute
@@ -512,6 +537,13 @@ declare module '@tanstack/react-router' {
       path: '/brain'
       fullPath: '/brain'
       preLoaderRoute: typeof AuthenticatedBrainRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/briefing': {
+      id: '/_authenticated/briefing'
+      path: '/briefing'
+      fullPath: '/briefing'
+      preLoaderRoute: typeof AuthenticatedBriefingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chat': {
@@ -619,6 +651,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOauthSlackCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/briefing': {
+      id: '/api/public/cron/briefing'
+      path: '/api/public/cron/briefing'
+      fullPath: '/api/public/cron/briefing'
+      preLoaderRoute: typeof ApiPublicCronBriefingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/oauth/return': {
       id: '/api/public/oauth/return'
       path: '/api/public/oauth/return'
@@ -687,12 +726,14 @@ const AuthenticatedChatRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBrainRoute: typeof AuthenticatedBrainRoute
+  AuthenticatedBriefingRoute: typeof AuthenticatedBriefingRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBrainRoute: AuthenticatedBrainRoute,
+  AuthenticatedBriefingRoute: AuthenticatedBriefingRoute,
   AuthenticatedChatRoute: AuthenticatedChatRouteWithChildren,
 }
 
@@ -720,6 +761,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOauthMicrosoftCallbackRoute: ApiOauthMicrosoftCallbackRoute,
   ApiOauthNotionCallbackRoute: ApiOauthNotionCallbackRoute,
   ApiOauthSlackCallbackRoute: ApiOauthSlackCallbackRoute,
+  ApiPublicCronBriefingRoute: ApiPublicCronBriefingRoute,
   ApiPublicOauthReturnRoute: ApiPublicOauthReturnRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicWechatKfAccountIdRoute: ApiPublicWechatKfAccountIdRoute,

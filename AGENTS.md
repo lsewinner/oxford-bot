@@ -29,7 +29,7 @@
 - Query options shared by route loaders and components live outside route modules (why: route code splitting must not depend on unexported shared declarations).
 - Conversation exports use the same safe snapshot serializer; image regeneration replaces both prompt and image only after completion and keeps the last successful image on failure (why: downloads stay predictable and failed redraws cannot destroy existing results).
 
-- Bot sidebars share BotListLabel/botListRowClass; actions outside label flow (why: aligned rows).
+- Bot sidebars share BotListLabel/botListRowClass (why: aligned rows).
 
 - Bot personas/preferences extend the scoped registry and are validated at chat entry; they never grant access (why: preserve identity and authorization).
 - Deep Think uses the existing model and public reasoning summaries only (why: retain model selection and reasoning privacy).
@@ -38,8 +38,8 @@
 - Pro access: `subscriptions` rows are written only by the signed Stripe webhook; server checks use `has_active_subscription` with the environment derived from the build's client token, and gated server paths (chat Deep Think/persona, connection starts) re-check Pro (why: client gates are UX only).
 - Admin `/admin`: `has_role` check before supabaseAdmin in admin.functions; actions audited. Quotas via `consume_daily_message` RPC; overrides/bans/granted Pro in `account_controls`, honored by `has_active_subscription` (why: server is the only source of truth).
 - Memory center: admin-only versions, one published per kind, injected server-side before Bot context.
-- A provider stays in 工具与连接 only if a normal customer can connect it alone, in one step, with no signup wall, paid tier, or hand-built app; Feishu and Flomo were removed on this rule (why: if the owner cannot self-serve, customers cannot either).
-- Connection OAuth/rotation rules live in src/lib/connections/AGENTS.md; callbacks verify the caller before saving (why: prevent credential theft).
+- Connection eligibility and OAuth/rotation rules live in src/lib/connections/AGENTS.md; callbacks verify the caller before saving (why: prevent credential theft).
 
 - Smart Brain (private RAG): user docs are chunked and embedded server-side into brain_chunks (service-role only, searched via match_brain_chunks with the verified userId) and injected into chat as reference data (why: private knowledge must never be readable across accounts or treated as instructions).
 - Workflows use the current composer and pending handoff, owner-only credential-free metadata, bounded service tools and existing write confirmations (why: preserve Bot context, isolation and approval).
+- Daily briefings: hourly managed cron → /api/public/cron/briefing; CAS-claim the user's local date, bounded batch, AI 402/403/429 breaker; read-only, saved Telegram target is standing consent (why: no double or silent writes).
