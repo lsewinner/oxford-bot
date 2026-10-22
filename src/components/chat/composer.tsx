@@ -16,7 +16,8 @@ import { AttachmentButton, AttachmentPreviews, AttachmentSubmit } from "./compos
 import { VoiceInputButton } from "./voice-controls";
 import { ATTACHMENT_ACCEPT, MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES, prepareAttachments, type ChatInput } from "@/lib/chat-attachments";
 import { useMode } from './mode-context';
-import { BrainIcon } from 'lucide-react';
+import { BrainIcon, AudioLinesIcon } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { TrendsDrawer } from './trends-drawer';
 import { usePro } from '@/components/pro/pro-context';
@@ -90,6 +91,7 @@ export function Composer({
               ref.current?.focus();
             }}
           />
+          <Button asChild type="button" variant="ghost" size="sm" className="gap-1.5 px-2" title="全屏实时语音对讲"><Link to="/voice" aria-label="全屏实时语音"><AudioLinesIcon className="size-4"/><span className="text-xs">实时语音</span></Link></Button>
           <ModeToggle />
           <WebSearchToggle />
           <Button type="button" variant={deepOn?'secondary':'ghost'} size="sm" aria-label="Deep Think 深度思考" aria-pressed={deepOn} title="深度思考 · 推理摘要与核查" disabled={busy} className="gap-1.5 px-2" onClick={()=>{ if(!requirePro('deep_think'))return; setDeepThink(!deepThink); }}><BrainIcon className="size-4"/><span className="text-xs">Deep Think</span></Button>
