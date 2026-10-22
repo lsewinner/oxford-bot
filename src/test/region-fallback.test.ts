@@ -42,3 +42,11 @@ describe("region fallback", () => {
     expect(fallback.doStream).not.toHaveBeenCalled();
   });
 });
+
+import { needsLiveSearch } from '@/lib/ai/provider.server';
+describe('domestic live search', () => {
+  it('forces search for weather questions only', () => {
+    expect(needsLiveSearch('今天上海天气怎么样？')).toBe(true);
+    expect(needsLiveSearch('帮我写一首诗')).toBe(false);
+  });
+});

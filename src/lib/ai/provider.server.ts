@@ -34,13 +34,31 @@ export function selectDomesticModel(secrets: ChatProviderSecrets, deepThink: boo
   return null;
 }
 
+export function needsLiveSearch(text: string): boolean {
+  return /天气|气温|下雨|新闻|最新|今天|今日|明天|昨天|现在|实时|股价|汇率|比分|weather|news|today|latest|price/i.test(text);
+}
+
+export const withQwenSearch: typeof fetch = (input, init) => {
+  if (typeof init?.body === 'string') {
+    try {
+      const body = JSON.parse(init.body);
+      // Qwen skips search when tools are present, so time-sensitive questions force it.
+      const last = [...(body.messages ?? [])].reverse().find((m: { role?: string }) => m.role === 'user');
+      const text = typeof last?.content === 'string' ? last.content : JSON.stringify(last?.content ?? '');
+      init = { ...init, body: JSON.stringify({ ...body, enable_search: true, ...(needsLiveSearch(text) ? { search_options: { forced_search: true } } : {}) }) };
+    } catch { /* non-JSON body */ }
+  }
+  return fetch(input, init);
+};
+
 /** Domestic (Qwen/DeepSeek) model used only after a confirmed region refusal from the primary model. */
 function createDomesticModel(secrets: ChatProviderSecrets, domestic: DomesticChoice) {
   if (domestic.provider === 'deepseek') {
     const provider = createOpenAI({ name: 'deepseek', apiKey: secrets.DEEPSEEK_API_KEY?.trim()!, baseURL: DEEPSEEK_BASE_URL });
     return { model: provider.chat(secrets.DEEPSEEK_MODEL?.trim() || 'deepseek-reasoner'), stripTools: domestic.stripTools };
   }
-  const provider = createOpenAI({ name: 'dashscope', apiKey: secrets.DASHSCOPE_API_KEY?.trim()!, baseURL: DOMESTIC_BASE_URL });
+  // Qwen's built-in web search lets mainland users get live answers (weather, news) without OpenAI's search tool.
+  const provider = createOpenAI({ name: 'dashscope', apiKey: secrets.DASHSCOPE_API_KEY?.trim()!, baseURL: DOMESTIC_BASE_URL, fetch: withQwenSearch });
   return { model: provider.chat(secrets.DASHSCOPE_MODEL?.trim() || 'qwen-plus'), stripTools: domestic.stripTools };
 }
 
