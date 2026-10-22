@@ -42,7 +42,7 @@ export const Route = createFileRoute("/api/voice-reply")({
         providerOptions: provider.providerOptions,
         maxRetries: 0,
       } as Parameters<typeof streamText>[0]);
-      const text = (await result.text).trim();
+      const text = (await (result as { text: PromiseLike<string> }).text).trim();
       if (!text) return Response.json({ error: "没有生成回答，请再说一次" }, { status: 502 });
       return Response.json({ text });
     } catch (error) {
