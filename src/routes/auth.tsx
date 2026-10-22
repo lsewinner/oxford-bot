@@ -63,9 +63,34 @@ function AuthPage() {
     setLoading(false);
   };
 
-  const oauth = async (provider: "google") => {
+  const oauth = async (provider: "google" | "apple") => {
     const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
     if (result.error) toast.error("登录失败，请重试");
+  };
+
+  const normalizedPhone = () => {
+    const digits = phone.replace(/[\s-]/g, "");
+    if (digits.startsWith("+")) return digits;
+    return `+86${digits.replace(/^0+/, "")}`;
+  };
+
+  const sendCode = async () => {
+    const p = normalizedPhone();
+    if (!/^\+\d{8,15}$/.test(p)) return toast.error("请输入正确的手机号");
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOtp({ phone: p });
+    setLoading(false);
+    if (error) return toast.error("验证码发送失败，请稍后重试");
+    setCodeSent(true);
+    toast.success("验证码已发送");
+  };
+
+  const verifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.verifyOtp({ phone: normalizedPhone(), token: code.trim(), type: "sms" });
+    setLoading(false);
+    if (error) toast.error("验证码错误或已过期");
   };
 
   return (
@@ -84,6 +109,9 @@ function AuthPage() {
         ) : (
           <>
             <div className="flex flex-col gap-2">
+              <Button variant="outline" className="h-11 rounded-xl" onClick={() => oauth("apple")}>
+                使用 Apple 继续
+              </Button>
               <Button variant="outline" className="h-11 rounded-xl" onClick={() => oauth("google")}>
                 使用 Google 继续
               </Button>
@@ -91,6 +119,49 @@ function AuthPage() {
             <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
               <div className="h-px flex-1 bg-border" /> 或 <div className="h-px flex-1 bg-border" />
             </div>
+            <div className="mb-3 grid grid-cols-2 rounded-xl border border-border p-1 text-sm">
+              {(["phone", "email"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMethod(m)}
+                  className={`rounded-lg py-2 ${method === m ? "bg-secondary text-foreground" : "text-muted-foreground"}`}
+                >
+                  {m === "phone" ? "手机号" : "邮箱"}
+                </button>
+              ))}
+            </div>
+            {method === "phone" ? (
+              <form onSubmit={verifyCode} className="flex flex-col gap-3">
+                <Input
+                  type="tel"
+                  required
+                  placeholder="手机号（默认 +86）"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="h-11 rounded-xl"
+                />
+                <div className="flex gap-2">
+                  <Input
+                    inputMode="numeric"
+                    placeholder="验证码"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="h-11 rounded-xl"
+                  />
+                  <Button type="button" variant="outline" disabled={loading} onClick={sendCode} className="h-11 shrink-0 rounded-xl">
+                    {codeSent ? "重新发送" : "获取验证码"}
+                  </Button>
+                </div>
+                <Button type="submit" disabled={loading || !codeSent || !code} className="h-11 rounded-xl">
+                  {loading ? "请稍候…" : "登录 / 注册"}
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">新手机号验证后自动创建账号</p>
+              </form>
+            ) : (
+              <></>
+            )}
+            {method === "email" && (<></>)}
             <form onSubmit={submit} className="flex flex-col gap-3">
               <Input
                 type="email"
