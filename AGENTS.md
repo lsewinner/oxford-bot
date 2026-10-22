@@ -25,8 +25,9 @@
 - Attachments: AI SDK file parts with inline validated image/PDF data, text extracted before model conversion; pending first sends serialize the full payload (why: keep attachments on every entry path, never fetch arbitrary URLs).
 - Image creation is an AI-selected generate_image task rendered by the client through a dedicated passthrough SSE image route; completed tool outputs retain the image while model replay strips image bytes (why: previews must not block chat headers or inflate subsequent tool context).
 - Public shares are revocable server-created snapshots of owner-read messages; the public reader exposes only text, completed generated images and sources, never private thread rows or tool actions (why: sharing must not weaken account isolation or publish subsequent messages).
+- Bot shares: server-fn writes only (admin client after auth; persona only if owner is Pro); public reads via read_bot_share/list_featured_bots; trials send botShare and chat loads persona server-side; featuring is admin-only (why: no client-forged personas or self-featuring).
 - Query options shared by route loaders and components live outside route modules (why: route code splitting must not depend on unexported shared declarations).
-- Conversation exports use the same safe snapshot serializer; image regeneration replaces both prompt and image only after completion and keeps the last successful image on failure (why: downloads stay predictable and failed redraws cannot destroy existing results).
+- Exports reuse the safe snapshot serializer; image regeneration swaps prompt+image only on success (why: predictable downloads, no lost images).
 
 
 - Bot personas/preferences extend the scoped registry and are validated at chat entry; they never grant access (why: preserve identity and authorization).
