@@ -29,7 +29,7 @@
 - Query options shared by route loaders and components live outside route modules (why: route code splitting must not depend on unexported shared declarations).
 - Conversation exports use the same safe snapshot serializer; image regeneration replaces both prompt and image only after completion and keeps the last successful image on failure (why: downloads stay predictable and failed redraws cannot destroy existing results).
 
-- Bot sidebars share BotListLabel/botListRowClass; actions outside label flow (why: aligned rows).
+- Bot sidebars share BotListLabel/botListRowClass (why: aligned rows).
 
 - Bot personas/preferences extend the scoped registry and are validated at chat entry; they never grant access (why: preserve identity and authorization).
 - Deep Think uses the existing model and public reasoning summaries only (why: retain model selection and reasoning privacy).
@@ -43,4 +43,4 @@
 
 - Smart Brain (private RAG): user docs are chunked and embedded server-side into brain_chunks (service-role only, searched via match_brain_chunks with the verified userId) and injected into chat as reference data (why: private knowledge must never be readable across accounts or treated as instructions).
 - Workflows use the current composer and pending handoff, owner-only credential-free metadata, bounded service tools and existing write confirmations (why: preserve Bot context, isolation and approval).
-- Daily briefings: one hourly managed cron hits /api/public/cron/briefing (cron-auth), claims each user's local date by compare-and-set before sending, bounded batch with AI 402/403/429 circuit breaker; reads only, and the saved Telegram target is the user's standing consent for that single send (why: no double sends, no silent writes elsewhere).
+- Daily briefings: hourly managed cron → /api/public/cron/briefing; CAS-claim the user's local date, bounded batch, AI 402/403/429 breaker; read-only, saved Telegram target is standing consent (why: no double or silent writes).
