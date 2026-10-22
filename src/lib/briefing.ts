@@ -1,12 +1,11 @@
 import { z } from "zod";
 
-export const BRIEFING_SOURCES = ["trends", "calendar", "jira", "asana"] as const;
+export const BRIEFING_SOURCES = ["trends", "calendar", "jira"] as const;
 export type BriefingSource = (typeof BRIEFING_SOURCES)[number];
 export const BRIEFING_SOURCE_LABELS: Record<BriefingSource, string> = {
   trends: "科技热点",
   calendar: "今日日程",
   jira: "Jira 待办",
-  asana: "Asana 任务",
 };
 export const BRIEFING_BATCH = 20;
 export const TELEGRAM_MAX = 3900;
