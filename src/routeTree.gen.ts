@@ -39,6 +39,8 @@ import { Route as ApiPublicCronBriefingRouteImport } from './routes/api/public/c
 import { Route as ApiPublicOauthReturnRouteImport } from './routes/api/public/oauth/return'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicWechatKfAccountIdRouteImport } from './routes/api/public/wechat-kf/$accountId'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as ApiPublicConnectionsAirtableCallbackRouteImport } from './routes/api/public/connections/airtable/callback'
 import { Route as ApiPublicConnectionsAsanaCallbackRouteImport } from './routes/api/public/connections/asana/callback'
 import { Route as ApiPublicConnectionsClickupCallbackRouteImport } from './routes/api/public/connections/clickup/callback'
@@ -197,6 +199,16 @@ const ApiPublicWechatKfAccountIdRoute =
     path: '/api/public/wechat-kf/$accountId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicConnectionsAirtableCallbackRoute =
   ApiPublicConnectionsAirtableCallbackRouteImport.update({
     id: '/api/public/connections/airtable/callback',
@@ -252,6 +264,8 @@ export interface FileRoutesByFullPath {
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/api/public/connections/airtable/callback': typeof ApiPublicConnectionsAirtableCallbackRoute
   '/api/public/connections/asana/callback': typeof ApiPublicConnectionsAsanaCallbackRoute
   '/api/public/connections/clickup/callback': typeof ApiPublicConnectionsClickupCallbackRoute
@@ -286,6 +300,8 @@ export interface FileRoutesByTo {
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/api/public/connections/airtable/callback': typeof ApiPublicConnectionsAirtableCallbackRoute
   '/api/public/connections/asana/callback': typeof ApiPublicConnectionsAsanaCallbackRoute
   '/api/public/connections/clickup/callback': typeof ApiPublicConnectionsClickupCallbackRoute
@@ -323,6 +339,8 @@ export interface FileRoutesById {
   '/api/public/oauth/return': typeof ApiPublicOauthReturnRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/wechat-kf/$accountId': typeof ApiPublicWechatKfAccountIdRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/api/public/connections/airtable/callback': typeof ApiPublicConnectionsAirtableCallbackRoute
   '/api/public/connections/asana/callback': typeof ApiPublicConnectionsAsanaCallbackRoute
   '/api/public/connections/clickup/callback': typeof ApiPublicConnectionsClickupCallbackRoute
@@ -360,6 +378,8 @@ export interface FileRouteTypes {
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
     | '/api/public/wechat-kf/$accountId'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/api/public/connections/airtable/callback'
     | '/api/public/connections/asana/callback'
     | '/api/public/connections/clickup/callback'
@@ -394,6 +414,8 @@ export interface FileRouteTypes {
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
     | '/api/public/wechat-kf/$accountId'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/api/public/connections/airtable/callback'
     | '/api/public/connections/asana/callback'
     | '/api/public/connections/clickup/callback'
@@ -430,6 +452,8 @@ export interface FileRouteTypes {
     | '/api/public/oauth/return'
     | '/api/public/payments/webhook'
     | '/api/public/wechat-kf/$accountId'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/api/public/connections/airtable/callback'
     | '/api/public/connections/asana/callback'
     | '/api/public/connections/clickup/callback'
@@ -461,6 +485,8 @@ export interface RootRouteChildren {
   ApiPublicOauthReturnRoute: typeof ApiPublicOauthReturnRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicWechatKfAccountIdRoute: typeof ApiPublicWechatKfAccountIdRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   ApiPublicConnectionsAirtableCallbackRoute: typeof ApiPublicConnectionsAirtableCallbackRoute
   ApiPublicConnectionsAsanaCallbackRoute: typeof ApiPublicConnectionsAsanaCallbackRoute
   ApiPublicConnectionsClickupCallbackRoute: typeof ApiPublicConnectionsClickupCallbackRoute
@@ -679,6 +705,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWechatKfAccountIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/connections/airtable/callback': {
       id: '/api/public/connections/airtable/callback'
       path: '/api/public/connections/airtable/callback'
@@ -765,6 +805,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicOauthReturnRoute: ApiPublicOauthReturnRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicWechatKfAccountIdRoute: ApiPublicWechatKfAccountIdRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   ApiPublicConnectionsAirtableCallbackRoute:
     ApiPublicConnectionsAirtableCallbackRoute,
   ApiPublicConnectionsAsanaCallbackRoute:

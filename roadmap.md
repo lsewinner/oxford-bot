@@ -1,4 +1,6 @@
 # Roadmap
+- [x] 品牌认证邮件：六类中文 Oxford Bot 邮件与托管发送配置
+- [ ] notify.oxford.bot 邮件生效及注册投递验收（等待 DNS 验证、发布后真实收信）
 - [x] Airtable 一键授权：已启用开发者凭证、PKCE、自动续期、保留令牌账户；自动测试通过
 - [x] Airtable 一键授权真实验收：正式域名回调已登记，用户已从 oxford.bot 完成授权并保存账户
 - [x] ClickUp 一键授权：凭证已录入，用户已完成真实授权
