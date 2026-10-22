@@ -110,6 +110,51 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_shares: {
+        Row: {
+          breed: string | null
+          created_at: string
+          featured: boolean
+          featured_at: string | null
+          id: string
+          intro: string
+          kind: string
+          name: string
+          revoked_at: string | null
+          system_prompt: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          breed?: string | null
+          created_at?: string
+          featured?: boolean
+          featured_at?: string | null
+          id?: string
+          intro?: string
+          kind?: string
+          name: string
+          revoked_at?: string | null
+          system_prompt?: string
+          token?: string
+          user_id: string
+        }
+        Update: {
+          breed?: string | null
+          created_at?: string
+          featured?: boolean
+          featured_at?: string | null
+          id?: string
+          intro?: string
+          kind?: string
+          name?: string
+          revoked_at?: string | null
+          system_prompt?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       brain_chunks: {
         Row: {
           brain_id: string
@@ -649,6 +694,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_featured_bots: {
+        Args: never
+        Returns: {
+          breed: string
+          intro: string
+          kind: string
+          name: string
+          token: string
+        }[]
+      }
       match_brain_chunks: {
         Args: { match_count?: number; p_user: string; query_embedding: string }
         Returns: {
@@ -656,6 +711,18 @@ export type Database = {
           id: string
           similarity: number
           title: string
+        }[]
+      }
+      read_bot_share: {
+        Args: { p_token: string }
+        Returns: {
+          breed: string
+          featured: boolean
+          intro: string
+          kind: string
+          name: string
+          system_prompt: string
+          token: string
         }[]
       }
       read_conversation_share: {

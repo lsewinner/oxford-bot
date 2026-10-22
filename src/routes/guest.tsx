@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { TrendsDrawer } from '@/components/chat/trends-drawer';
 import { UpgradeEntry } from '@/components/pro/upgrade-dialog';
 import { DesktopInstallButton } from "@/components/desktop-install";
+import { takeBotCopy } from "@/lib/bot-copy";
 
 export const Route = createFileRoute("/guest")({
   head: () => ({ meta: [
@@ -77,6 +78,19 @@ function GuestSurface() {
     localStorage.setItem("oxford:guest-active:v1", id);
     setOpen(false);
   };
+  const { register } = useBotPresence();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const bot = takeBotCopy();
+      if (!bot) return;
+      const messageId = `manual-${crypto.randomUUID()}`;
+      const entry = { id: `guest:${messageId}`, threadId: "guest", messageId, bot };
+      register([entry]);
+      select(entry);
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const activeBot = entries.find((entry) => guestConversationId(entry.id) === activeId)?.bot ?? null;
   return <div className="flex h-dvh overflow-hidden bg-background">
     <aside className="hidden w-64 shrink-0 border-r border-sidebar-border md:block"><GuestBots activeId={activeId} onSelect={select} /></aside>

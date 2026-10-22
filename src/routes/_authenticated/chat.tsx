@@ -20,6 +20,8 @@ import { AccountProfile } from '@/components/chat/account-profile';
 import { ProBadge } from '@/components/pro/upgrade-dialog';
 import { usePro } from '@/components/pro/pro-context';
 import { LockIcon, BrainCircuitIcon } from 'lucide-react';
+import { takeBotCopy } from "@/lib/bot-copy";
+import { canAddBot } from "@/lib/pro";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -67,6 +69,17 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   const { isPro, openUpgrade } = usePro();
+  // Bots copied from a share link arrive through a one-shot handoff after mount.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const bot = takeBotCopy();
+      if (!bot) return;
+      if (!canAddBot(isPro, entries.length)) { openUpgrade("bot"); toast.error("免费账户只能养 1 只自建 Bot，升级 Pro 后可复制更多"); return; }
+      void createBot(bot).then(() => toast.success(`已复制「${bot.name}」到我的 Bots`), () => toast.error("复制 Bot 失败，请重试"));
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const isAdmin = useAdminFlag();
   const [opening, setOpening] = useState<string | null>(null);
   const openBot = async (entry: (typeof entries)[number]) => {

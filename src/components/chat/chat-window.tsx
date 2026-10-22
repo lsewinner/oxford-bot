@@ -45,7 +45,7 @@ function errorText(err: Error) {
   return err.message || "出错了，请重试";
 }
 
-export function ChatWindow({ threadId, initialMessages, activeBot = null }: { threadId: string; initialMessages: UIMessage[]; activeBot?: BotIdentity | null }) {
+export function ChatWindow({ threadId, initialMessages, activeBot = null, botShare }: { threadId: string; initialMessages: UIMessage[]; activeBot?: BotIdentity | null; botShare?: string }) {
   const { mode, deepThink } = useMode();
   const deepThinkRef=useRef(deepThink);
   deepThinkRef.current=deepThink;
@@ -67,9 +67,9 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null }: { th
           const token = data.session?.access_token;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, deepThink:deepThinkRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind, systemPrompt:botRef.current.systemPrompt, preferredTools:botRef.current.preferredTools } : null }),
+        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, deepThink:deepThinkRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind, systemPrompt:botRef.current.systemPrompt, preferredTools:botRef.current.preferredTools } : null, ...(botShare ? { botShare } : {}) }),
       }),
-    [threadId],
+    [threadId, botShare],
   );
 
   const { messages, setMessages, sendMessage, status, stop, regenerate } = useChat({

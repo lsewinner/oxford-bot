@@ -13,11 +13,10 @@
 - Auth emails use six scaffolded templates and managed /lovable/email/auth handlers; preserve SDK verification and entities v4 aliases (why: secure, compatible sending).
 - Chat route → `ai/chat.server.ts` verifies bearer/ownership and persists messages. `ai/provider.server.ts` selects OpenAI key, then Anthropic key, then Gateway; no failure fallback; image/voice routing stays separate (why: protect accounts, keys and spending).
 - Threads are DB-backed with per-thread URLs `/chat/$threadId` under `_authenticated`; messages store AI SDK ids in `ui_id`, never in uuid columns (why: SDK ids are not UUIDs).
-- PWA uses only a manifest (why: avoid stale preview caches).
-- Desktop installation uses a shared root-mounted prompt provider with browser-native prompts and manual Safari guidance, never an app-shell worker (why: capture early install events and keep previews cache-safe).
+- PWA is manifest-only; desktop install uses a root-mounted prompt provider and Safari guidance, never a service worker (why: early install events, cache-safe previews).
 - Do not override Vite’s Rolldown version (why: incompatible versions break diagram initialization).
 - First sends use sessionStorage and post-mount `setTimeout(..., 0)`, never synchronous effects (why: early sends disappear; chat-first-message tests guard this).
-- Chat responses forward the original body immediately; never wait on run-ID discovery or re-read the stream (why: must not block output or cancellation).
+- Chat responses forward the body immediately; never wait on run-ID discovery or re-read the stream (why: no blocked output/cancel).
 - External tool catalog and demo tools share `src/lib/tool-catalog.ts`; demos are explicitly labeled and never claim real account connectivity (why: unconfigured provider OAuth must not expose or fabricate personal data).
 - Real provider writes are immutable server-side proposals claimed atomically by the owning user's confirmation; result cards read persisted action outcomes after refresh (why: model requests are not user approval, and repeated clicks must not repeat writes).
 - Guest chat uses `/guest` with local conversation IDs and storage per Bot; transport maps these IDs to `threadId: guest`, while private thread reads/writes require a verified bearer token (why: independent local histories must not weaken cloud-history ownership).
@@ -25,8 +24,9 @@
 - Attachments: AI SDK file parts with inline validated image/PDF data, text extracted before model conversion; pending first sends serialize the full payload (why: keep attachments on every entry path, never fetch arbitrary URLs).
 - Image creation is an AI-selected generate_image task rendered by the client through a dedicated passthrough SSE image route; completed tool outputs retain the image while model replay strips image bytes (why: previews must not block chat headers or inflate subsequent tool context).
 - Public shares are revocable server-created snapshots of owner-read messages; the public reader exposes only text, completed generated images and sources, never private thread rows or tool actions (why: sharing must not weaken account isolation or publish subsequent messages).
+- Bot shares: writes via server fns only (persona kept only for Pro owners); public reads via security-definer RPCs; chat loads trial personas from botShare server-side; featuring is admin-only (why: no forged personas).
 - Query options shared by route loaders and components live outside route modules (why: route code splitting must not depend on unexported shared declarations).
-- Conversation exports use the same safe snapshot serializer; image regeneration replaces both prompt and image only after completion and keeps the last successful image on failure (why: downloads stay predictable and failed redraws cannot destroy existing results).
+- Exports reuse the safe snapshot serializer; image regeneration swaps prompt+image only on success (why: predictable downloads, no lost images).
 
 
 - Bot personas/preferences extend the scoped registry and are validated at chat entry; they never grant access (why: preserve identity and authorization).
