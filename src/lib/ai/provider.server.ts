@@ -45,7 +45,7 @@ function createDomesticModel(secrets: ChatProviderSecrets, domestic: DomesticCho
 }
 
 type AnyModel = Record<string, any>;
-export function withRegionFallback<T extends object>(primary: T, fallback: AnyModel | null): T {
+export function withRegionFallback<T extends object>(primary: T, fallback: { model: AnyModel; stripTools: boolean } | null): T {
   if (!fallback) return primary;
   return new Proxy(primary, {
     get(target, prop, receiver) {
@@ -56,8 +56,10 @@ export function withRegionFallback<T extends object>(primary: T, fallback: AnyMo
             if (!isRegionBlocked(error)) throw error;
             console.warn('primary model region-blocked; using domestic model');
             const { openai: _o, ...providerOptions } = options['providerOptions'] ?? {};
-            const tools = Array.isArray(options['tools']) ? options['tools'].filter((t: AnyModel) => t['type'] === 'function') : undefined;
-            return fallback[prop]({ ...options, providerOptions, ...(tools ? { tools } : {}) });
+            const tools = fallback.stripTools
+              ? undefined
+              : Array.isArray(options['tools']) ? options['tools'].filter((t: AnyModel) => t['type'] === 'function') : undefined;
+            return fallback.model[prop]({ ...options, providerOptions, ...(tools ? { tools } : {}) });
           }
         };
       }
