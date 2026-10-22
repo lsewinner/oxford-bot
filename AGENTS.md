@@ -43,3 +43,4 @@
 
 - Smart Brain (private RAG): user docs are chunked and embedded server-side into brain_chunks (service-role only, searched via match_brain_chunks with the verified userId) and injected into chat as reference data (why: private knowledge must never be readable across accounts or treated as instructions).
 - Workflows use the current composer and pending handoff, owner-only credential-free metadata, bounded service tools and existing write confirmations (why: preserve Bot context, isolation and approval).
+- Daily briefings: one hourly managed cron hits /api/public/cron/briefing (cron-auth), claims each user's local date by compare-and-set before sending, bounded batch with AI 402/403/429 circuit breaker; reads only, and the saved Telegram target is the user's standing consent for that single send (why: no double sends, no silent writes elsewhere).
