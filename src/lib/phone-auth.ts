@@ -1,3 +1,7 @@
+// 中国大陆短信通道尚未通过服务商审核（Twilio 60220），先不在登录页提供手机号入口。
+// 短信服务商批准后把此开关改回 true 即可恢复，相关表单与校验逻辑全部保留。
+export const PHONE_SIGNIN_ENABLED = false;
+
 export function normalizePhone(value: string): string | null {
   const compact = value.trim().replace(/[\s()-]/g, "");
   const international = compact.startsWith("00") ? `+${compact.slice(2)}` : compact;
