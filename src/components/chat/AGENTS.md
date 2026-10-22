@@ -1,0 +1,1 @@
+- Bot sidebars share BotListLabel/botListRowClass (why: aligned rows).

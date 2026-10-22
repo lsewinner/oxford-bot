@@ -30,7 +30,6 @@
 - Query options shared by route loaders and components live outside route modules (why: route code splitting must not depend on unexported shared declarations).
 - Conversation exports use the same safe snapshot serializer; image regeneration replaces both prompt and image only after completion and keeps the last successful image on failure (why: downloads stay predictable and failed redraws cannot destroy existing results).
 
-- Bot sidebars share BotListLabel/botListRowClass (why: aligned rows).
 
 - Bot personas/preferences extend the scoped registry and are validated at chat entry; they never grant access (why: preserve identity and authorization).
 - Deep Think uses the existing model and public reasoning summaries only (why: retain model selection and reasoning privacy).
@@ -44,4 +43,4 @@
 - Smart Brain (private RAG): user docs are chunked and embedded server-side into brain_chunks (service-role only, searched via match_brain_chunks with the verified userId) and injected into chat as reference data (why: private knowledge must never be readable across accounts or treated as instructions).
 - Workflows use the current composer and pending handoff, owner-only credential-free metadata, bounded service tools and existing write confirmations (why: preserve Bot context, isolation and approval).
 - Daily briefings: hourly managed cron → /api/public/cron/briefing; CAS-claim the user's local date, bounded batch, AI 402/403/429 breaker; read-only, saved Telegram target is standing consent (why: no double or silent writes).
-- Meeting Copilot: browser recordings rotate into separate complete segments transcribed through /api/transcribe; summaries use strict JSON schema; task dispatch hands off to a new chat so existing write confirmations apply; Brain saves reuse ingestBrainText (why: upload limits, no silent writes, one indexing path).
+- Meeting Copilot: recordings rotate into complete segments for /api/transcribe; strict-JSON summaries; dispatch hands off to a new chat for normal confirmations; Brain saves use ingestBrainText (why: upload limits, no silent writes).
