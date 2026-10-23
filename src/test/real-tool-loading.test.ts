@@ -42,7 +42,7 @@ describe('scoped real tool loading', () => {
     const send = mailTool?.execute;
     if (!send) throw new Error('Mail execution missing');
     const input = { operation: 'send', account: 'mail-b', to: 'recipient@example.com', title: 'Meeting', text: 'Agenda' };
-    const result = await send(input, { toolCallId: 'call-1', messages: [] });
+    const result = await send(input, { toolCallId: 'call-1', messages: [], context: undefined });
     expect(mocks.execute).toHaveBeenCalledExactlyOnceWith('owner-a', 'google_mail', input);
     expect(result).toEqual({ status: 'confirmation_required', actionId: 'proposal' });
   });
