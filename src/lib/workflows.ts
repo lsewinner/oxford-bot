@@ -27,7 +27,7 @@ export function canReceiveWorkflow(id: ProviderId) { return ['google_mail', 'mic
 
 const PREFIX = '[Oxford 工作流 · ';
 export function isWorkflowPrompt(text: string) { return WORKFLOWS.some(w => text.startsWith(`${PREFIX}${w.name}]\n`)); }
-export function workflowStepLimit(text: string) { return isWorkflowPrompt(text) ? 12 : 5; }
+export function workflowStepLimit(text: string) { return isWorkflowPrompt(text) ? 12 : 3; }
 
 export function buildWorkflowPrompt(raw: WorkflowRequest, now = new Date(), timeZone = 'Asia/Shanghai') {
   const input = workflowRequestSchema.parse(raw);
