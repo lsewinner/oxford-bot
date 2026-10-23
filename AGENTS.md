@@ -35,6 +35,7 @@
 - Trends use fixed server-side GitHub Trending/Hacker News feeds and the current composer (why: preserve active-Bot context).
 - Nickname and compact avatar use authenticated owner metadata updates, never roles (why: sync identity without new tables).
 - Pro access: `subscriptions` rows are written only by the signed Stripe webhook; server checks use `has_active_subscription` with the environment derived from the build's client token, and gated server paths (chat Deep Think/persona, connection starts) re-check Pro (why: client gates are UX only).
+- Paid plan tiers use stable price lookup keys in shared plan helpers and quota RPCs; existing active paid subscriptions manage changes through the billing portal, never a second checkout (why: consistent test/live entitlements and no duplicate subscriptions).
 - Admin `/admin`: `has_role` check before supabaseAdmin in admin.functions; actions audited. Quotas via `consume_daily_message` RPC; overrides/bans/granted Pro in `account_controls`, honored by `has_active_subscription` (why: server is the only source of truth).
 - Memory center: admin-only versions, one published per kind, injected server-side before Bot context.
 - Connection eligibility and OAuth/rotation rules live in src/lib/connections/AGENTS.md; callbacks verify the caller before saving (why: prevent credential theft).
