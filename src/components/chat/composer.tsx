@@ -1,4 +1,5 @@
 import type { ChatStatus } from "ai";
+import { DropOverlay } from "./drop-overlay";
 import { useEffect, useRef, useState } from "react";
 import {
   PromptInput,
