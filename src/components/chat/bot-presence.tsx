@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Settings2Icon, CheckIcon, PlusIcon, Share2Icon } from "lucide-react";
+import { Settings2Icon, CheckIcon, PlusIcon, Share2Icon, CopyIcon, Trash2Icon } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { createBotShare } from "@/lib/bot-shares.functions";
+import { createBotShare, listMyBotShares, revokeBotShare } from "@/lib/bot-shares.functions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,15 +139,31 @@ export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (
   const shareBot = useServerFn(createBotShare);
   const [intro, setIntro] = useState('');
   const [sharing, setSharing] = useState(false);
+  const listShares = useServerFn(listMyBotShares);
+  const revokeShare = useServerFn(revokeBotShare);
+  const [shares, setShares] = useState<{ token: string; name: string; created_at: string }[]>([]);
+  const refreshShares = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) { setShares([]); return; }
+    try { setShares(await listShares()); } catch { /* list is optional */ }
+  }, [listShares]);
+  useEffect(() => { if (open) void refreshShares(); }, [open, refreshShares]);
+  const linkFor = (token: string) => `${window.location.origin}/b/${token}`;
+  const revokeOne = async (token: string) => {
+    if (!window.confirm('撤销后该链接立即失效，确定撤销吗？')) return;
+    try { await revokeShare({ data: { token } }); setShares(items => items.filter(s => s.token !== token)); toast.success('分享链接已撤销'); }
+    catch (e) { toast.error(e instanceof Error ? e.message : '撤销失败'); }
+  };
   const share = async () => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) { toast.error('登录后才能分享 Bot'); return; }
     setSharing(true);
     try {
       const { token } = await shareBot({ data: { name: name.trim() || entry.bot.name, kind: entry.bot.kind, breed, ...(isPro && systemPrompt ? { systemPrompt } : {}), ...(intro.trim() ? { intro: intro.trim() } : {}) } });
-      const url = `${window.location.origin}/b/${token}`;
+      const url = linkFor(token);
       await navigator.clipboard.writeText(url).catch(() => {});
       toast.success('分享链接已复制', { description: url });
+      void refreshShares();
     } catch { toast.error('创建分享链接失败，请重试'); }
     finally { setSharing(false); }
   };
