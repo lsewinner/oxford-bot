@@ -159,7 +159,7 @@ function UserDialog({ user, onClose, onAction, busy }: { user: AdminUser | null;
               {user.dailyLimitOverride !== null && <Button size="sm" variant="ghost" disabled={busy} onClick={() => onAction({ type: "set_limit", userId: id, dailyLimit: null })}>恢复默认</Button>}
             </div>
           </Block>
-          <Block title="会员等级授予" note={(user.paidPro ? "已通过 Stripe 付费订阅 Pro。" : "") + (user.grantedPro ? `已授予 ${user.grantedTier === "ultra" ? "Ultra" : "Pro"}，${user.proUntil ? `到期 ${fmt(user.proUntil)}` : "永久"}` : user.paidPro ? "" : "未授予")}>
+          <Block title="会员等级授予" note={(user.paidPro ? `已通过 Stripe 付费订阅 ${user.paidUltra ? "Ultra" : "Pro"}。` : "") + (user.grantedPro ? `已授予 ${user.grantedTier === "ultra" ? "Ultra" : "Pro"}，${user.proUntil ? `到期 ${fmt(user.proUntil)}` : "永久"}` : user.paidPro ? "" : "未授予")}>
             <div className="mb-2 flex gap-2">
               {(["pro", "ultra"] as const).map((t) => <Button key={t} size="sm" variant={tier === t ? "default" : "outline"} onClick={() => setTier(t)}>{t === "pro" ? `Pro · ${PRO_DAILY_MESSAGES}/天` : `Ultra · ${ULTRA_DAILY_MESSAGES}/天`}</Button>)}
             </div>
