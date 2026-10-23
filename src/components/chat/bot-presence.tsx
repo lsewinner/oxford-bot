@@ -187,6 +187,14 @@ export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (
           <Input aria-label="分享简介" placeholder="一句话介绍（可选），显示在分享页" maxLength={200} value={intro} onChange={(e) => setIntro(e.target.value)} />
           <p className="text-xs text-muted-foreground">对方打开链接后可试聊或复制一份。只分享名字、头像{isPro ? '和人设' : ''}，绝不包含你的聊天记录、Smart Brain 资料、工具连接或账户信息。</p>
           <Button type="button" variant="outline" size="sm" disabled={sharing} onClick={share}><Share2Icon className="size-4" />{sharing ? '正在生成…' : '生成分享链接'}</Button>
+          {shares.length > 0 && <div className="space-y-1 pt-2">
+            <p className="text-xs text-muted-foreground">我已分享的 Bot 链接（撤销后立即失效）</p>
+            <div className="max-h-48 overflow-auto">{shares.map(s => <div key={s.token} className="flex min-w-0 items-center gap-2 border-b border-border py-1.5">
+              <a href={`/b/${s.token}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-sm">{s.name} · <span className="text-muted-foreground">{new Date(s.created_at).toLocaleDateString()}</span></a>
+              <Button type="button" variant="ghost" size="icon-sm" aria-label="复制分享链接" title="复制链接" onClick={() => { void navigator.clipboard.writeText(linkFor(s.token)).then(() => toast.success('已复制')).catch(() => toast.error('复制失败')); }}><CopyIcon className="size-4" /></Button>
+              <Button type="button" variant="ghost" size="icon-sm" className="text-destructive" aria-label="撤销分享链接" title="撤销分享" onClick={() => void revokeOne(s.token)}><Trash2Icon className="size-4" /></Button>
+            </div>)}</div>
+          </div>}
         </fieldset>
         <DialogFooter><Button type="submit" disabled={!name.trim() || saving}>{saving ? "正在保存…" : "保存"}</Button></DialogFooter>
       </form>
