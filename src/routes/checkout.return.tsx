@@ -4,14 +4,15 @@ import { useEffect } from "react";
 import { SparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePro } from "@/components/pro/pro-context";
+import { paidPlanForPrice, subscriptionActive } from "@/lib/pro";
 
 export const Route = createFileRoute("/checkout/return")({
-  validateSearch: (s: Record<string, unknown>): { session_id?: string | undefined } => ({ session_id: typeof s["session_id"] === "string" ? s["session_id"] : undefined }),
+  validateSearch: (s: Record<string, unknown>): { session_id?: string | undefined; plan?: "pro" | "ultra" | undefined } => ({ session_id: typeof s["session_id"] === "string" ? s["session_id"] : undefined, plan: s["plan"] === "ultra" ? "ultra" : s["plan"] === "pro" ? "pro" : undefined }),
   head: () => ({ meta: [
     { title: "Oxford Bot · 升级完成" },
-    { name: "description", content: "Oxford Pro 订阅结果。" },
+    { name: "description", content: "Oxford Pro 与 Ultra 订阅结果。" },
     { property: "og:title", content: "Oxford Bot · 升级完成" },
-    { property: "og:description", content: "Oxford Pro 订阅结果。" },
+    { property: "og:description", content: "Oxford Pro 与 Ultra 订阅结果。" },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
@@ -19,8 +20,10 @@ export const Route = createFileRoute("/checkout/return")({
 });
 
 function CheckoutReturn() {
-  const { session_id } = Route.useSearch();
-  const { isPro, userId, plan } = usePro();
+  const { session_id, plan: expectedPlan } = Route.useSearch();
+  const { userId, subscription } = usePro();
+  const plan = paidPlanForPrice(subscription?.price_id);
+  const isPro = subscriptionActive(subscription) && (!expectedPlan || plan === expectedPlan);
   const qc = useQueryClient();
   useEffect(() => {
     if (isPro || !userId) return;

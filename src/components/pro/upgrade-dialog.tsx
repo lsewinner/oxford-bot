@@ -27,7 +27,7 @@ export function PaymentTestModeBanner() {
 
 function Checkout({ cycle, plan }: { cycle: BillingCycle; plan: PaidPlan }) {
   const fetchClientSecret = async () => {
-    const result = await createCheckoutSession({ data: { priceId: PLAN_PRICES[plan][cycle].priceId, returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`, environment: getStripeEnvironment() } });
+    const result = await createCheckoutSession({ data: { priceId: PLAN_PRICES[plan][cycle].priceId, returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`, environment: getStripeEnvironment() } });
     if ("error" in result) throw new Error(result.error);
     return result.clientSecret;
   };
