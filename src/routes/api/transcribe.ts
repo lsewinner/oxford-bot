@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MAX_AUDIO_BYTES, isAbort, passthrough, transcribe, verifyOptionalCaller, voiceCredentialsFromEnv } from "@/lib/voice-gateway.server";
+import { MAX_AUDIO_BYTES, isAbort, gatewayFallbackFromEnv, withVoiceFallback, transcribe, verifyOptionalCaller, voiceCredentialsFromEnv } from "@/lib/voice-gateway.server";
 
 export const Route = createFileRoute("/api/transcribe")({
   server: { handlers: { POST: async ({ request }) => {
@@ -15,7 +15,8 @@ export const Route = createFileRoute("/api/transcribe")({
       return Response.json({ error: "没有录到有效的声音，请再试一次" }, { status: 400 });
     }
     try {
-      return passthrough(await transcribe(apiKey, file, request.signal));
+      const text = file;
+      return await withVoiceFallback(apiKey, gatewayFallbackFromEnv(), (c) => transcribe(c, text, request.signal));
     } catch (error) {
       if (isAbort(error)) return new Response(null, { status: 499 });
       return Response.json({ error: "语音识别服务暂时不可用" }, { status: 502 });
