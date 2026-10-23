@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { recordWav, transcribeFile, playSpeech, type Recorder, type SpeechPlayer } from "@/lib/voice-client";
-import { MicIcon, MicOffIcon, PhoneOffIcon, PlayIcon, XIcon, AudioLinesIcon } from "lucide-react";
+import { MicIcon, MicOffIcon, PhoneOffIcon, PlayIcon, XIcon, AudioLinesIcon, HandIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
@@ -167,8 +167,12 @@ function VoicePage() {
 
       <button
         type="button"
-        aria-label={compat ? compatLabel : live ? "结束对讲" : "开始对讲"}
-        onClick={() => (compat ? void compatTap() : live ? call.stop() : call.start())}
+        aria-label={compat ? compatLabel : canInterrupt ? "打断回答" : live ? "对讲中" : "开始对讲"}
+        onClick={() => {
+          if (compat) void compatTap();
+          else if (canInterrupt) interruptLive();
+          else if (!live) startLive();
+        }}
         className="relative flex size-64 items-center justify-center rounded-full outline-none sm:size-80"
       >
         <span className={cn("absolute inset-0 rounded-full bg-primary/10 blur-3xl transition-all duration-700",
@@ -194,20 +198,25 @@ function VoicePage() {
         )}
         <div className="flex items-center gap-4">
           {compat ? (
-            <Button size="lg" className="rounded-full px-8" disabled={compatBusy === "thinking"} onClick={() => void compatTap()}>
-              <MicIcon className="size-4" />{compatBusy === "recording" ? "说完了" : compatBusy === "speaking" ? "停止朗读" : compatBusy === "thinking" ? "思考中…" : "开始说话"}
+            <Button size="lg" className="rounded-full px-8" onClick={() => void compatTap()}>
+              <MicIcon className="size-4" />{compatBusy === "recording" ? "说完了" : compatBusy === "idle" ? "开始说话" : "打断并说话"}
             </Button>
           ) : live ? (
             <>
               <Button variant="secondary" size="icon" className="size-12 rounded-full" aria-label={call.muted ? "取消静音" : "静音"} onClick={() => call.setMuted(!call.muted)}>
                 {call.muted ? <MicOffIcon /> : <MicIcon />}
               </Button>
+              {canInterrupt && (
+                <Button variant="secondary" size="lg" className="rounded-full px-6" onClick={interruptLive}>
+                  <HandIcon className="size-4" />打断
+                </Button>
+              )}
               <Button variant="destructive" size="icon" className="size-14 rounded-full" aria-label="挂断" onClick={() => call.stop()}>
                 <PhoneOffIcon />
               </Button>
             </>
           ) : (
-            <Button size="lg" className="rounded-full px-8" onClick={() => { setLines([]); lastRole.current = null; call.start(); }}>
+            <Button size="lg" className="rounded-full px-8" onClick={startLive}>
               <MicIcon className="size-4" />开始对讲
             </Button>
           )}
