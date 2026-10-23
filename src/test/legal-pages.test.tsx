@@ -23,7 +23,7 @@ const { Route: TermsRoute } = await import("@/routes/terms");
 // policy page, so each page must render them verbatim.
 const pages = [
   ["服务条款", TermsRoute.options.component!],
-  ["隐私政策", PrivacyRoute.options.component!],
+  ["Privacy Policy · 隐私政策", PrivacyRoute.options.component!],
   ["退款政策", RefundRoute.options.component!],
 ] as const;
 
