@@ -43,11 +43,11 @@ export const FEATURE_PROMPTS: Record<ProFeature, string> = {
 
 export const PLAN_ROWS: { label: string; free: string | boolean; pro: string | boolean; ultra: string | boolean }[] = [
   { label: "每日消息额度（UTC 0 点重置）", free: "30 条", pro: "300 条", ultra: "800 条" },
-  { label: "对话、联网搜索、生图与文件分析", free: true, pro: true },
-  { label: "猫咪 Bot", free: "Oxonian + 1 只自建", pro: "不限数量" },
-  { label: "自定义专属人设与说话风格", free: false, pro: true },
-  { label: "Deep Think 深度思考", free: false, pro: true },
-  { label: "连接真实工具（邮件、云盘、GitHub、Teams 等）", free: false, pro: true },
+  { label: "对话、联网搜索、生图与文件分析", free: true, pro: true, ultra: true },
+  { label: "猫咪 Bot", free: "Oxonian + 1 只自建", pro: "不限数量", ultra: "不限数量" },
+  { label: "自定义专属人设与说话风格", free: false, pro: true, ultra: true },
+  { label: "Deep Think 深度思考", free: false, pro: true, ultra: true },
+  { label: "连接真实工具（邮件、云盘、GitHub、Teams 等）", free: false, pro: true, ultra: true },
 ];
 
 type SubRow = { status: string; current_period_end: string | null };
