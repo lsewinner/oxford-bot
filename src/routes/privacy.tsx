@@ -4,7 +4,7 @@ import { LegalPage, LEGAL_CONTACT, LEGAL_ENTITY } from "@/components/legal/legal
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "隐私政策 · Oxford Bot" },
+      { title: "Privacy Policy · 隐私政策 · Oxford Bot" },
       { name: "description", content: "Oxford Bot 如何收集、使用和保护你的账户、对话与支付信息。" },
       { property: "og:title", content: "隐私政策 · Oxford Bot" },
       { property: "og:description", content: "Oxford Bot 的个人信息收集与使用说明。" },
