@@ -10,12 +10,12 @@ describe('cost controls', () => {
   it('keeps at most 16 messages starting with a user turn', () => {
     const out = trimHistory(Array.from({ length: 40 }, (_, i) => msg(i)));
     expect(out.length).toBeLessThanOrEqual(16);
-    expect(out[0].role).toBe('user');
+    expect(out[0]?.role).toBe('user');
     expect(out.at(-1)!.id).toBe('39');
   });
   it('strips non-text parts from older turns', () => {
     const out = trimHistory(Array.from({ length: 6 }, (_, i) => msg(i)));
-    expect(out[1].parts.every(p => p.type === 'text')).toBe(true);
+    expect(out[1]!.parts.every(p => p.type === 'text')).toBe(true);
   });
   it('only forces reasoning in Deep Think', () => {
     expect('forceReasoning' in thinkOptions(false)).toBe(false);
