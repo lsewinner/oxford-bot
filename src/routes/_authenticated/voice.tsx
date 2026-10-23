@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { recordWav, transcribeFile, playSpeech, type Recorder, type SpeechPlayer } from "@/lib/voice-client";
-import { MicIcon, MicOffIcon, PhoneOffIcon, PlayIcon, XIcon, AudioLinesIcon } from "lucide-react";
+import { MicIcon, MicOffIcon, PhoneOffIcon, PlayIcon, XIcon, AudioLinesIcon, HandIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
@@ -28,16 +28,23 @@ function VoicePage() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [lines, setLines] = useState<Line[]>([]);
   const lastRole = useRef<Line["role"] | null>(null);
+  // After a manual interrupt, the rest of the current answer stays silent until the user speaks again.
+  const interrupted = useRef(false);
 
   const onEvent = (event: LiveEvent) => {
     const t = event.type;
     if (t === "app.connected") setPhase("listening");
-    else if (t === "app.closed") setPhase("idle");
-    else if (t === "app.delegation.pending") setPhase("thinking");
+    else if (t === "app.closed") { setPhase("idle"); interrupted.current = false; }
+    else if (t === "app.delegation.pending") { if (!interrupted.current) setPhase("thinking"); }
     else if (t === "session.input_transcript.delta" || t === "session.output_transcript.delta") {
       const role = t === "session.input_transcript.delta" ? "user" : "assistant";
       const delta = typeof event["delta"] === "string" ? event["delta"] : "";
       if (!delta) return;
+      if (role === "user" && interrupted.current) {
+        interrupted.current = false;
+        if (call.audioRef.current) call.audioRef.current.muted = false;
+      }
+      if (role === "assistant" && interrupted.current) return;
       setPhase(role === "user" ? "listening" : "speaking");
       setLines((prev) => {
         const next = [...prev];
@@ -54,6 +61,17 @@ function VoicePage() {
     onEvent,
     getToken: async () => (await supabase.auth.getSession()).data.session?.access_token,
   });
+  const interruptLive = () => {
+    interrupted.current = true;
+    if (call.audioRef.current) call.audioRef.current.muted = true;
+    if (call.muted) call.setMuted(false);
+    setPhase("listening");
+  };
+  const startLive = () => {
+    interrupted.current = false;
+    if (call.audioRef.current) call.audioRef.current.muted = false;
+    setLines([]); lastRole.current = null; call.start();
+  };
   // Compatibility mode: turn-based recording → transcription → reply → read aloud.
   const [compat, setCompat] = useState(false);
   const [compatBusy, setCompatBusy] = useState<"idle" | "recording" | "thinking" | "speaking">("idle");
@@ -79,20 +97,29 @@ function VoicePage() {
     history.current = [...history.current, line].slice(-12);
     setLines(history.current.slice(-6));
   };
+  const turn = useRef(0);
+  const beginRecording = async () => {
+    try { recorder.current = await recordWav(); setCompatBusy("recording"); }
+    catch { setCompatError("无法使用麦克风，请在浏览器设置中允许麦克风权限"); setCompatBusy("idle"); }
+  };
   const compatTap = async () => {
     setCompatError(null);
-    if (compatBusy === "speaking") { player.current?.stop(); player.current = null; setCompatBusy("idle"); return; }
-    if (compatBusy === "thinking") return;
-    if (compatBusy === "idle") {
-      try { recorder.current = await recordWav(); setCompatBusy("recording"); }
-      catch { setCompatError("无法使用麦克风，请在浏览器设置中允许麦克风权限"); }
+    // Speaking or thinking: interrupt the current answer and listen right away.
+    if (compatBusy === "speaking" || compatBusy === "thinking") {
+      turn.current++;
+      player.current?.stop(); player.current = null;
+      await beginRecording();
       return;
     }
+    if (compatBusy === "idle") { await beginRecording(); return; }
     const rec = recorder.current; recorder.current = null;
     if (!rec) return;
+    const mine = ++turn.current;
+    const stale = () => turn.current !== mine;
     setCompatBusy("thinking");
     try {
       const said = (await transcribeFile(await rec.stop())).trim();
+      if (stale()) return;
       if (!said) throw new Error("没有听清，请再说一次");
       pushLine({ role: "user", text: said });
       const token = (await supabase.auth.getSession()).data.session?.access_token;
@@ -102,6 +129,7 @@ function VoicePage() {
         body: JSON.stringify({ lines: history.current }),
       });
       const data = await res.json().catch(() => ({})) as { text?: string; error?: string };
+      if (stale()) return;
       if (!res.ok || !data.text) throw new Error(data.error ?? "回答失败，请再试一次");
       pushLine({ role: "assistant", text: data.text });
       setCompatBusy("speaking");
@@ -109,21 +137,24 @@ function VoicePage() {
       await p.done.catch(() => undefined);
       if (player.current === p) { player.current = null; setCompatBusy("idle"); }
     } catch (error) {
+      if (stale()) return;
       setCompatError(error instanceof Error ? error.message : "出错了，请再试一次");
       setCompatBusy("idle");
     }
   };
 
   const live = call.status === "connecting" || call.status === "connected" || call.status === "stopping";
+  const liveActive = call.status === "connected";
+  const canInterrupt = liveActive && (phase === "speaking" || phase === "thinking");
   const label =
     call.status === "connecting" ? "正在连接…" :
     call.status === "stopping" ? "正在结束…" :
     !live ? "点击开始对讲" :
     call.muted ? "麦克风已静音" :
-    phase === "thinking" ? "思考中…" : phase === "speaking" ? "回答中 · 说话即可打断" : "聆听中…";
+    phase === "thinking" ? "思考中 · 点一下打断" : phase === "speaking" ? "回答中 · 开口或点一下即可打断" : "聆听中…";
   const recent = lines.slice(-2);
   const shownPhase: Phase = compat ? (compatBusy === "recording" ? "listening" : compatBusy === "idle" ? "idle" : compatBusy) : phase;
-  const compatLabel = compatBusy === "recording" ? "聆听中 · 说完点一下" : compatBusy === "thinking" ? "思考中…" : compatBusy === "speaking" ? "回答中 · 点一下停止" : "点一下开始说话";
+  const compatLabel = compatBusy === "recording" ? "聆听中 · 说完点一下" : compatBusy === "thinking" ? "思考中 · 点一下打断" : compatBusy === "speaking" ? "回答中 · 点一下打断" : "点一下开始说话";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-background px-6 py-8 text-foreground">
@@ -136,8 +167,12 @@ function VoicePage() {
 
       <button
         type="button"
-        aria-label={compat ? compatLabel : live ? "结束对讲" : "开始对讲"}
-        onClick={() => (compat ? void compatTap() : live ? call.stop() : call.start())}
+        aria-label={compat ? compatLabel : canInterrupt ? "打断回答" : live ? "对讲中" : "开始对讲"}
+        onClick={() => {
+          if (compat) void compatTap();
+          else if (canInterrupt) interruptLive();
+          else if (!live) startLive();
+        }}
         className="relative flex size-64 items-center justify-center rounded-full outline-none sm:size-80"
       >
         <span className={cn("absolute inset-0 rounded-full bg-primary/10 blur-3xl transition-all duration-700",
@@ -163,20 +198,25 @@ function VoicePage() {
         )}
         <div className="flex items-center gap-4">
           {compat ? (
-            <Button size="lg" className="rounded-full px-8" disabled={compatBusy === "thinking"} onClick={() => void compatTap()}>
-              <MicIcon className="size-4" />{compatBusy === "recording" ? "说完了" : compatBusy === "speaking" ? "停止朗读" : compatBusy === "thinking" ? "思考中…" : "开始说话"}
+            <Button size="lg" className="rounded-full px-8" onClick={() => void compatTap()}>
+              <MicIcon className="size-4" />{compatBusy === "recording" ? "说完了" : compatBusy === "idle" ? "开始说话" : "打断并说话"}
             </Button>
           ) : live ? (
             <>
               <Button variant="secondary" size="icon" className="size-12 rounded-full" aria-label={call.muted ? "取消静音" : "静音"} onClick={() => call.setMuted(!call.muted)}>
                 {call.muted ? <MicOffIcon /> : <MicIcon />}
               </Button>
+              {canInterrupt && (
+                <Button variant="secondary" size="lg" className="rounded-full px-6" onClick={interruptLive}>
+                  <HandIcon className="size-4" />打断
+                </Button>
+              )}
               <Button variant="destructive" size="icon" className="size-14 rounded-full" aria-label="挂断" onClick={() => call.stop()}>
                 <PhoneOffIcon />
               </Button>
             </>
           ) : (
-            <Button size="lg" className="rounded-full px-8" onClick={() => { setLines([]); lastRole.current = null; call.start(); }}>
+            <Button size="lg" className="rounded-full px-8" onClick={startLive}>
               <MicIcon className="size-4" />开始对讲
             </Button>
           )}

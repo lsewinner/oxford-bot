@@ -1,4 +1,5 @@
 import type { ChatStatus } from "ai";
+import { DropOverlay } from "./drop-overlay";
 import { useEffect, useRef, useState } from "react";
 import {
   PromptInput,
@@ -66,11 +67,13 @@ export function Composer({
       onSubmit={handleSubmit}
       accept={ATTACHMENT_ACCEPT}
       multiple
+      globalDrop
       maxFiles={MAX_ATTACHMENTS}
       maxFileSize={MAX_ATTACHMENT_BYTES}
       onError={(error) => toast.error(error.code === "max_files" ? "每次最多上传 4 个附件" : error.code === "max_file_size" ? "单个附件不能超过 4 MB" : "请选择图片、文本或 PDF 文件")}
       className="rounded-3xl border-border bg-card shadow-[0_0_0_1px_var(--border),0_20px_60px_-20px_oklch(0_0_0/0.8)]"
     >
+      <DropOverlay />
       <AttachmentPreviews />
       <PromptInputTextarea
         ref={ref}
