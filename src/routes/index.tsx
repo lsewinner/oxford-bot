@@ -65,6 +65,17 @@ function Index() {
         <h2 id="about-heading" className="text-base font-semibold text-foreground">{t.about}</h2>
         <p className="mt-3">{t.body}</p>
       </section>
+      <section lang="en" aria-labelledby="what-heading" className="mt-10 w-full max-w-2xl border-t border-border pt-10 text-left text-sm leading-7 text-muted-foreground">
+        <h2 id="what-heading" className="text-base font-semibold text-foreground">What Oxford Bot does</h2>
+        <p className="mt-3">Oxford Bot is an AI assistant web app made by Oxford Intelligence Limited (UK). Anyone can try it as a guest without an account. With a free account you can:</p>
+        <ul className="mt-3 list-disc space-y-1 pl-5">
+          <li>Chat with an AI assistant that answers questions, searches the web and analyses images and PDFs.</li>
+          <li>Create named assistant “Bots”, record meetings and get transcripts and summaries, and keep a private knowledge base.</li>
+          <li>Optionally connect your own tools (for example Google Calendar, Gmail, Google Drive, Notion, GitHub, Slack) so the assistant can read what you ask about.</li>
+        </ul>
+        <h3 className="mt-6 font-semibold text-foreground">How Oxford Bot uses Google data</h3>
+        <p className="mt-2">Google access is optional and only starts when you click “Connect” for a Google service in Tools &amp; Connections. Oxford Bot reads Gmail messages, Drive files or Calendar events only when you ask about them in chat, and it drafts or sends an email, creates a file or adds a calendar event only after you click a confirmation button. Google data is never sold, never used for advertising and never used to train AI models. You can disconnect at any time. Details are in our <Link to="/privacy" className="text-foreground underline">Privacy Policy</Link>.</p>
+      </section>
       <div className="mt-6"><LegalLinks lang={lang} /></div>
     </div>
   );
