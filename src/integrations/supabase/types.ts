@@ -686,6 +686,7 @@ export type Database = {
         Args: {
           check_env: string
           free_limit: number
+          paid_pro_limit?: number
           pro_limit: number
           ultra_limit?: number
         }
