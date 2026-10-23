@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Settings2Icon, CheckIcon, PlusIcon, Share2Icon } from "lucide-react";
+import { Settings2Icon, CheckIcon, PlusIcon, Share2Icon, CopyIcon, Trash2Icon } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { createBotShare } from "@/lib/bot-shares.functions";
+import { createBotShare, listMyBotShares, revokeBotShare } from "@/lib/bot-shares.functions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,15 +139,31 @@ export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (
   const shareBot = useServerFn(createBotShare);
   const [intro, setIntro] = useState('');
   const [sharing, setSharing] = useState(false);
+  const listShares = useServerFn(listMyBotShares);
+  const revokeShare = useServerFn(revokeBotShare);
+  const [shares, setShares] = useState<{ token: string; name: string; created_at: string }[]>([]);
+  const refreshShares = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) { setShares([]); return; }
+    try { setShares(await listShares()); } catch { /* list is optional */ }
+  }, [listShares]);
+  useEffect(() => { if (open) void refreshShares(); }, [open, refreshShares]);
+  const linkFor = (token: string) => `${window.location.origin}/b/${token}`;
+  const revokeOne = async (token: string) => {
+    if (!window.confirm('撤销后该链接立即失效，确定撤销吗？')) return;
+    try { await revokeShare({ data: { token } }); setShares(items => items.filter(s => s.token !== token)); toast.success('分享链接已撤销'); }
+    catch (e) { toast.error(e instanceof Error ? e.message : '撤销失败'); }
+  };
   const share = async () => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) { toast.error('登录后才能分享 Bot'); return; }
     setSharing(true);
     try {
       const { token } = await shareBot({ data: { name: name.trim() || entry.bot.name, kind: entry.bot.kind, breed, ...(isPro && systemPrompt ? { systemPrompt } : {}), ...(intro.trim() ? { intro: intro.trim() } : {}) } });
-      const url = `${window.location.origin}/b/${token}`;
+      const url = linkFor(token);
       await navigator.clipboard.writeText(url).catch(() => {});
       toast.success('分享链接已复制', { description: url });
+      void refreshShares();
     } catch { toast.error('创建分享链接失败，请重试'); }
     finally { setSharing(false); }
   };
@@ -171,6 +187,14 @@ export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (
           <Input aria-label="分享简介" placeholder="一句话介绍（可选），显示在分享页" maxLength={200} value={intro} onChange={(e) => setIntro(e.target.value)} />
           <p className="text-xs text-muted-foreground">对方打开链接后可试聊或复制一份。只分享名字、头像{isPro ? '和人设' : ''}，绝不包含你的聊天记录、Smart Brain 资料、工具连接或账户信息。</p>
           <Button type="button" variant="outline" size="sm" disabled={sharing} onClick={share}><Share2Icon className="size-4" />{sharing ? '正在生成…' : '生成分享链接'}</Button>
+          {shares.length > 0 && <div className="space-y-1 pt-2">
+            <p className="text-xs text-muted-foreground">我已分享的 Bot 链接（撤销后立即失效）</p>
+            <div className="max-h-48 overflow-auto">{shares.map(s => <div key={s.token} className="flex min-w-0 items-center gap-2 border-b border-border py-1.5">
+              <a href={`/b/${s.token}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-sm">{s.name} · <span className="text-muted-foreground">{new Date(s.created_at).toLocaleDateString()}</span></a>
+              <Button type="button" variant="ghost" size="icon-sm" aria-label="复制分享链接" title="复制链接" onClick={() => { void navigator.clipboard.writeText(linkFor(s.token)).then(() => toast.success('已复制')).catch(() => toast.error('复制失败')); }}><CopyIcon className="size-4" /></Button>
+              <Button type="button" variant="ghost" size="icon-sm" className="text-destructive" aria-label="撤销分享链接" title="撤销分享" onClick={() => void revokeOne(s.token)}><Trash2Icon className="size-4" /></Button>
+            </div>)}</div>
+          </div>}
         </fieldset>
         <DialogFooter><Button type="submit" disabled={!name.trim() || saving}>{saving ? "正在保存…" : "保存"}</Button></DialogFooter>
       </form>

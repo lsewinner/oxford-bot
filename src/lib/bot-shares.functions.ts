@@ -62,6 +62,14 @@ export const createBotShare = createServerFn({ method: 'POST' }).middleware([req
     return { token: row.token };
   });
 
+export const listMyBotShares = createServerFn({ method: 'GET' }).middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.from('bot_shares').select('token,name,created_at')
+      .eq('user_id', context.userId).is('revoked_at', null).order('created_at', { ascending: false }).limit(50);
+    if (error) throw new Error('读取分享链接失败');
+    return data ?? [];
+  });
+
 export const revokeBotShare = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
   .inputValidator((v) => tokenInput.parse(v)).handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
