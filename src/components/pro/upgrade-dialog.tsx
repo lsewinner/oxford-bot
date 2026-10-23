@@ -87,10 +87,10 @@ export function UpgradeDialog({ feature, onClose }: { feature: ProFeature | null
 export function UpgradeEntry() {
   const { isPro, plan, openUpgrade } = usePro();
   return <Button variant="ghost" type="button" onClick={() => openUpgrade("general")} aria-label={isPro ? "Pro 会员" : "Upgrade to Pro 升级会员"}
-    className="mx-3 mb-2 flex items-center gap-2.5 rounded-xl border border-sidebar-border px-3 py-2.5 text-left transition-colors hover:bg-sidebar-accent">
+    className="mx-3 mb-2 flex h-auto justify-start items-center gap-2.5 rounded-lg border border-sidebar-border px-3 py-2.5 text-left transition-colors hover:bg-sidebar-accent">
     <span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground"><SparklesIcon className="size-3.5" /></span>
     <span className="min-w-0"><span className="block text-sm font-medium">{isPro ? `Oxford ${plan === "ultra" ? "Ultra" : "Pro"}` : "Upgrade to Pro / Ultra"}</span><span className="block text-[11px] text-muted-foreground">{isPro ? "全部权益已解锁 · 管理订阅" : "升级会员 · 解锁全部猫咪与工具"}</span></span>
-  </button>;
+  </Button>;
 }
 
 export function ProBadge() {
