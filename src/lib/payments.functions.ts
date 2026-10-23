@@ -3,6 +3,7 @@ import { z } from "zod";
 import type Stripe from "stripe";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
+import { subscriptionActive } from "@/lib/pro";
 
 async function resolveOrCreateCustomer(stripe: Stripe, options: { email?: string | undefined; userId: string }): Promise<string> {
   if (!/^[a-zA-Z0-9_-]+$/.test(options.userId)) throw new Error("Invalid userId");
@@ -26,7 +27,7 @@ const env = z.enum(["sandbox", "live"]);
 
 export const createCheckoutSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v) => z.object({ priceId: z.enum(["pro_monthly", "pro_yearly"]), returnUrl: z.string().url().max(500), environment: env }).parse(v))
+  .inputValidator((v) => z.object({ priceId: z.enum(["pro_monthly", "pro_yearly", "ultra_monthly", "ultra_yearly"]), returnUrl: z.string().url().max(500), environment: env }).parse(v))
   .handler(async ({ data, context }): Promise<{ clientSecret: string } | { error: string }> => {
     try {
       const { data: { user } } = await context.supabase.auth.getUser();
@@ -35,6 +36,11 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       const price = prices.data[0];
       if (!price) return { error: "价格不存在" };
       const customerId = await resolveOrCreateCustomer(stripe, { email: user?.email ?? undefined, userId: context.userId });
+      const existing = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });
+      if (existing.data.some((s) => {
+        const end = s.items.data[0]?.current_period_end;
+        return subscriptionActive({ status: s.status, current_period_end: end ? new Date(end * 1000).toISOString() : null });
+      })) return { error: "已有有效付费订阅，请通过「管理或变更订阅」调整方案，避免重复扣费。" };
       const session = await stripe.checkout.sessions.create({
         line_items: [{ price: price.id, quantity: 1 }],
         mode: "subscription",
