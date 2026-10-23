@@ -20,7 +20,7 @@ export const Route = createFileRoute("/checkout/return")({
 
 function CheckoutReturn() {
   const { session_id } = Route.useSearch();
-  const { isPro, userId } = usePro();
+  const { isPro, userId, plan } = usePro();
   const qc = useQueryClient();
   useEffect(() => {
     if (isPro || !userId) return;
@@ -30,7 +30,7 @@ function CheckoutReturn() {
   return <main className="flex min-h-dvh items-center justify-center bg-background p-6">
     <div className="max-w-sm space-y-4 text-center">
       <SparklesIcon className="mx-auto size-10" />
-      <h1 className="text-2xl font-semibold">{!session_id ? "没有找到付款信息" : isPro ? "欢迎加入 Oxford Pro" : "付款已提交，正在开通…"}</h1>
+      <h1 className="text-2xl font-semibold">{!session_id ? "没有找到付款信息" : isPro ? `欢迎加入 Oxford ${plan === "ultra" ? "Ultra" : "Pro"}` : "付款已提交，正在开通…"}</h1>
       <p className="text-sm text-muted-foreground">{isPro ? "更多猫咪 Bot、自定义人设、Deep Think 与真实工具连接已全部解锁。" : "通常几秒内完成，本页会自动刷新状态。"}</p>
       <Button asChild><Link to="/chat">返回对话</Link></Button>
     </div>

@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { paidPlanForPrice } from "@/lib/pro";
+import { serverPaymentsEnv } from "@/lib/stripe.server";
 import { effectiveDailyLimit, type Tier } from "@/lib/quota";
 
 type Ctx = { supabase: any; userId: string };
@@ -12,7 +14,7 @@ async function requireAdmin(context: Ctx) {
   return supabaseAdmin as any;
 }
 
-export type AdminUserRow = { id: string; email: string; nickname: string; createdAt: string; lastSignIn: string | null; paidPro: boolean; grantedPro: boolean; proUntil: string | null; isPro: boolean; tier: Tier; grantedTier: "pro" | "ultra" | null; banned: boolean; dailyLimitOverride: number | null; dailyLimit: number; usedToday: number };
+export type AdminUserRow = { id: string; email: string; nickname: string; createdAt: string; lastSignIn: string | null; paidPro: boolean; paidUltra: boolean; grantedPro: boolean; proUntil: string | null; isPro: boolean; tier: Tier; grantedTier: "pro" | "ultra" | null; banned: boolean; dailyLimitOverride: number | null; dailyLimit: number; usedToday: number };
 export type AdminAuditRow = { id: string; action: string; details: Record<string, unknown> | null; createdAt: string; target: string | null; admin: string };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -33,12 +35,17 @@ export const loadAdminData = createServerFn({ method: "GET" })
     const [{ data: controls }, { data: usage }, { data: subs }, { data: audit }] = await Promise.all([
       admin.from("account_controls").select("*"),
       admin.from("usage_daily").select("user_id,count").eq("day", today()),
-      admin.from("subscriptions").select("user_id,status,current_period_end"),
+      admin.from("subscriptions").select("user_id,status,current_period_end,price_id").eq("environment", serverPaymentsEnv() ?? "unconfigured"),
       admin.from("admin_audit_log").select("*").order("created_at", { ascending: false }).limit(100),
     ]);
     const now = Date.now();
     const ctl = new Map((controls ?? []).map((c: any) => [c.user_id, c]));
     const used = new Map((usage ?? []).map((u: any) => [u.user_id, u.count as number]));
+    const activeSubs = (subs ?? []).filter((s: any) => {
+      const end = s.current_period_end ? Date.parse(s.current_period_end) : null;
+      return (["active", "trialing", "past_due"].includes(s.status) && (end === null || end > now)) || (s.status === "canceled" && end !== null && end > now);
+    });
+    const paidUltra = new Set(activeSubs.filter((s: any) => paidPlanForPrice(s.price_id) === "ultra").map((s: any) => s.user_id));
     const paid = new Set((subs ?? []).filter((s: any) => {
       const end = s.current_period_end ? Date.parse(s.current_period_end) : null;
       return (["active", "trialing", "past_due"].includes(s.status) && (end === null || end > now)) || (s.status === "canceled" && end !== null && end > now);
@@ -49,7 +56,7 @@ export const loadAdminData = createServerFn({ method: "GET" })
       const granted = Boolean(c?.pro_granted && (!c.pro_until || Date.parse(c.pro_until) > now));
       const isPro = paid.has(u.id) || granted;
       const grantedTier = granted ? ((c?.granted_tier === "ultra" ? "ultra" : "pro") as "pro" | "ultra") : null;
-      const tier: Tier = grantedTier === "ultra" ? "ultra" : paid.has(u.id) ? "paid_pro" : isPro ? "pro" : "free";
+      const tier: Tier = grantedTier === "ultra" || paidUltra.has(u.id) ? "ultra" : paid.has(u.id) ? "paid_pro" : isPro ? "pro" : "free";
       emails.set(u.id, u.email ?? "");
       return {
         id: u.id as string,
@@ -58,6 +65,7 @@ export const loadAdminData = createServerFn({ method: "GET" })
         createdAt: u.created_at as string,
         lastSignIn: (u.last_sign_in_at ?? null) as string | null,
         paidPro: paid.has(u.id),
+        paidUltra: paidUltra.has(u.id),
         grantedPro: granted,
         proUntil: (c?.pro_granted ? c.pro_until : null) as string | null,
         isPro,
