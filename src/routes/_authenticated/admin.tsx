@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { checkAdmin, loadAdminData, runAdminAction, type AdminAction, type AdminAuditRow } from "@/lib/admin.functions";
-import { FREE_DAILY_MESSAGES, PRO_DAILY_MESSAGES } from "@/lib/quota";
+import { FREE_DAILY_MESSAGES, PRO_DAILY_MESSAGES, ULTRA_DAILY_MESSAGES } from "@/lib/quota";
 import { cn } from "@/lib/utils";
 import { MemoryCenter } from "@/components/admin/memory-center";
 
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 const ACTION_LABEL: Record<string, string> = {
   memory_save: "保存记忆版本", memory_publish: "发布/回滚记忆", memory_unpublish: "停用记忆",
   reset_all: "重置全部今日额度", reset_usage: "重置今日额度", set_limit: "设置每日额度",
-  grant_pro: "授予 Pro", revoke_pro: "收回 Pro", ban: "停用账号", unban: "恢复账号",
+  grant_pro: "授予会员等级", revoke_pro: "收回授予等级", ban: "停用账号", unban: "恢复账号",
 };
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleString("zh-CN", { hour12: false }) : "—");
 
@@ -82,7 +82,7 @@ function AdminPage() {
             </div>
           ))}
         </section>
-        <p className="mt-3 text-xs text-muted-foreground">默认每日额度：免费 {FREE_DAILY_MESSAGES} 条，Pro {PRO_DAILY_MESSAGES} 条（UTC 0 点重置）。</p>
+        <p className="mt-3 text-xs text-muted-foreground">默认每日额度：免费 {FREE_DAILY_MESSAGES} 条，Pro {PRO_DAILY_MESSAGES} 条，Ultra {ULTRA_DAILY_MESSAGES} 条（UTC 0 点重置）。</p>
 
         <div className="mt-6 flex items-center gap-2">
           {(["users", "audit", "memory"] as const).map((t) => (
@@ -108,7 +108,7 @@ function AdminPage() {
                 {users.map((u) => (
                   <tr key={u.id} className="border-t border-border">
                     <td className="px-4 py-3"><div className="font-medium">{u.nickname || u.email.split("@")[0]}</div><div className="text-xs text-muted-foreground">{u.email}</div></td>
-                    <td className="px-4 py-3">{u.isPro ? <span className="rounded bg-primary px-1.5 py-0.5 text-[11px] font-semibold text-primary-foreground">PRO{u.grantedPro && !u.paidPro ? " · 授予" : ""}</span> : <span className="text-muted-foreground">Free</span>}</td>
+                    <td className="px-4 py-3">{u.isPro ? <span className="rounded bg-primary px-1.5 py-0.5 text-[11px] font-semibold text-primary-foreground">{u.tier === "ultra" ? "ULTRA" : "PRO"}{u.grantedPro && !u.paidPro ? " · 授予" : ""}</span> : <span className="text-muted-foreground">Free</span>}</td>
                     <td className="px-4 py-3 font-mono">{u.usedToday} / {u.dailyLimit}{u.dailyLimitOverride !== null && <span className="ml-1 text-[10px] text-muted-foreground">自定义</span>}</td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{fmt(u.createdAt)}</td>
                     <td className="px-4 py-3">{u.banned ? <span className="text-destructive">已停用</span> : <span className="text-muted-foreground">正常</span>}</td>
@@ -141,6 +141,7 @@ function AdminPage() {
 function UserDialog({ user, onClose, onAction, busy }: { user: AdminUser | null; onClose: () => void; onAction: (a: AdminAction) => void; busy: boolean }) {
   const [limit, setLimit] = useState("");
   const [until, setUntil] = useState("");
+  const [tier, setTier] = useState<"pro" | "ultra">("pro");
   if (!user) return null;
   const id = user.id;
   return (
@@ -158,12 +159,15 @@ function UserDialog({ user, onClose, onAction, busy }: { user: AdminUser | null;
               {user.dailyLimitOverride !== null && <Button size="sm" variant="ghost" disabled={busy} onClick={() => onAction({ type: "set_limit", userId: id, dailyLimit: null })}>恢复默认</Button>}
             </div>
           </Block>
-          <Block title="Pro 升级权限" note={user.paidPro ? "已通过 Stripe 付费订阅" : user.grantedPro ? `已授予，${user.proUntil ? `到期 ${fmt(user.proUntil)}` : "永久"}` : "未开通"}>
+          <Block title="会员等级授予" note={(user.paidPro ? "已通过 Stripe 付费订阅 Pro。" : "") + (user.grantedPro ? `已授予 ${user.grantedTier === "ultra" ? "Ultra" : "Pro"}，${user.proUntil ? `到期 ${fmt(user.proUntil)}` : "永久"}` : user.paidPro ? "" : "未授予")}>
+            <div className="mb-2 flex gap-2">
+              {(["pro", "ultra"] as const).map((t) => <Button key={t} size="sm" variant={tier === t ? "default" : "outline"} onClick={() => setTier(t)}>{t === "pro" ? `Pro · ${PRO_DAILY_MESSAGES}/天` : `Ultra · ${ULTRA_DAILY_MESSAGES}/天`}</Button>)}
+            </div>
             <div className="flex gap-2">
               <Input type="date" value={until} onChange={(e) => setUntil(e.target.value)} className="h-9" aria-label="到期日，留空为永久" />
-              <Button size="sm" disabled={busy} onClick={() => onAction({ type: "grant_pro", userId: id, until: until ? new Date(`${until}T23:59:59Z`).toISOString() : null })}>{until ? "授予至该日" : "永久授予"}</Button>
+              <Button size="sm" disabled={busy} onClick={() => onAction({ type: "grant_pro", userId: id, until: until ? new Date(`${until}T23:59:59Z`).toISOString() : null, tier })}>{until ? "授予至该日" : "永久授予"}</Button>
             </div>
-            {user.grantedPro && <Button size="sm" variant="ghost" className="mt-2" disabled={busy} onClick={() => onAction({ type: "revoke_pro", userId: id })}>收回授予的 Pro</Button>}
+            {user.grantedPro && <Button size="sm" variant="ghost" className="mt-2" disabled={busy} onClick={() => onAction({ type: "revoke_pro", userId: id })}>收回授予的等级</Button>}
           </Block>
           <Block title="账号状态" note={user.banned ? "已停用：无法登录和对话" : `正常 · 最近登录 ${fmt(user.lastSignIn)}`}>
             {user.banned
