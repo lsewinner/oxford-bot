@@ -27,8 +27,9 @@ function SharedConversation() {
   const { data: share } = useSuspenseQuery(shareQuery(token));
   if (!share) return <ShareUnavailable />;
   return <div className="min-h-dvh bg-background text-foreground">
-    <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-4"><Link to="/" className="flex items-center gap-2 text-sm font-semibold"><img src={logo} alt="Oxford Bot" className="size-7" />Oxford Bot</Link><span className="text-xs text-muted-foreground">公开对话 · 只读</span></header>
-    <main className="mx-auto max-w-3xl px-5 py-8"><h1 className="break-words text-2xl font-semibold">{share.title}</h1><p className="mt-2 text-xs text-muted-foreground">{share.createdAt.slice(0, 10)}</p>
+    <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-4"><Link to="/" className="flex items-center gap-2 text-sm font-semibold"><img src={logo} alt="Oxford Bot" className="size-7" />Oxford Bot</Link><span className="text-xs text-muted-foreground">对话快照 · 只读</span></header>
+    <main className="mx-auto max-w-3xl px-5 py-8"><h1 className="break-words text-2xl font-semibold">{share.title}</h1><p className="mt-2 text-xs text-muted-foreground">{share.createdAt.slice(0, 10)} · 分享者主动公开的一段对话副本，不包含其账户、其他对话或资料。</p>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4"><p className="text-sm text-muted-foreground">想自己和 Bot 聊？去 Bot 广场试聊官方精选 Bot，一键复制到你的列表。</p><Button asChild size="sm"><Link to="/bots">去 Bot 广场</Link></Button></div>
       <div className="mt-8 space-y-8">{share.messages.map((message, index) => <article key={`${message.id}-${index}`} className="min-w-0 border-b border-border pb-6">
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">{message.role === 'user' ? '用户' : 'Oxford Bot'}</h2>
         {message.role === 'user' ? <p className="whitespace-pre-wrap break-words">{message.text}</p> : <MessageResponse>{message.text}</MessageResponse>}

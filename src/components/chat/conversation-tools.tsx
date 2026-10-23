@@ -34,7 +34,7 @@ export function ConversationTools({ messages, threadId, busy }: { messages: UIMe
       </DropdownMenuContent></DropdownMenu>
       <Button size="icon-sm" variant="ghost" disabled={!messages.length || busy} aria-label="分享对话" title="分享对话" onClick={() => setOpen(true)}><Share2Icon className="size-4" /></Button>
     </div>
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-lg"><DialogTitle>公开分享对话</DialogTitle><DialogDescription>持有链接的人可以查看分享时的消息、生成图片和来源。后续消息不会同步；附件、思考过程及服务操作详情不会公开。</DialogDescription>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-lg"><DialogTitle>公开分享这段对话</DialogTitle><DialogDescription>这会生成当前对话内容的只读副本，持有链接的人能看到这段问答、生成图片和来源，但看不到你的账户、其他对话、资料和工具连接。后续消息不会同步。想分享 Bot 本身（让别人试聊、复制）？请在左侧「我的 Bots」点该 Bot 的设置 → 生成分享链接。</DialogDescription>
       {guest ? <Button asChild variant="outline"><Link to="/auth">登录后分享云端对话</Link></Button> : <>
         <Button disabled={working || busy} onClick={async () => {
           setWorking(true); try { const result = await create({ data: { threadId } }); setShares(await list({ data: { threadId } })); await copy(`${window.location.origin}/share/${result.token}`); } catch (e) { toast.error(e instanceof Error ? e.message : '分享失败'); } finally { setWorking(false); }

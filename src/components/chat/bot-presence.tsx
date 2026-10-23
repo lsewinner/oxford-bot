@@ -169,7 +169,7 @@ export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (
         <CatPicker bot={{ ...entry.bot, name }} breed={breed} onChange={setBreed} />
         <fieldset className="space-y-2 rounded-md border border-border p-3"><legend className="px-1 text-sm">分享此 Bot</legend>
           <Input aria-label="分享简介" placeholder="一句话介绍（可选），显示在分享页" maxLength={200} value={intro} onChange={(e) => setIntro(e.target.value)} />
-          <p className="text-xs text-muted-foreground">对方可以试聊或复制一份；会分享名字、头像{isPro ? '和人设' : ''}，不会分享你的聊天记录和资料。</p>
+          <p className="text-xs text-muted-foreground">对方打开链接后可试聊或复制一份。只分享名字、头像{isPro ? '和人设' : ''}，绝不包含你的聊天记录、Smart Brain 资料、工具连接或账户信息。</p>
           <Button type="button" variant="outline" size="sm" disabled={sharing} onClick={share}><Share2Icon className="size-4" />{sharing ? '正在生成…' : '生成分享链接'}</Button>
         </fieldset>
         <DialogFooter><Button type="submit" disabled={!name.trim() || saving}>{saving ? "正在保存…" : "保存"}</Button></DialogFooter>
