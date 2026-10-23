@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { providerId } from '@/lib/connections/catalog';
+import type { Tool } from 'ai';
+import { providerId, type OperationInput } from '@/lib/connections/catalog';
 import { SERVICE_TOOL_GUIDANCE } from '@/lib/ai/tool-guidance';
 
 const mocks = vi.hoisted(() => ({ connections: vi.fn(), execute: vi.fn() }));
@@ -37,7 +38,8 @@ describe('scoped real tool loading', () => {
       ? [{ enabled: true, reconnect_required: false, account_key: 'mail-a' }, { enabled: true, reconnect_required: false, account_key: 'mail-b' }] : []);
     mocks.execute.mockResolvedValue({ status: 'confirmation_required', actionId: 'proposal' });
     const tools = await createRealTools('owner-a');
-    const send = tools.service_google_mail?.execute;
+    const mailTool = tools['service_google_mail'] as Tool<OperationInput, unknown> | undefined;
+    const send = mailTool?.execute;
     if (!send) throw new Error('Mail execution missing');
     const input = { operation: 'send', account: 'mail-b', to: 'recipient@example.com', title: 'Meeting', text: 'Agenda' };
     const result = await send(input, { toolCallId: 'call-1', messages: [] });
