@@ -37,9 +37,9 @@ function Checkout({ cycle, plan }: { cycle: BillingCycle; plan: PaidPlan }) {
 export function UpgradeDialog({ feature, onClose }: { feature: ProFeature | null; onClose: () => void }) {
   const { isPro, plan: currentPlan, userId, subscription, loading } = usePro();
   const [plan, setPlan] = useState<PaidPlan>("pro");
-  const prices = PLAN_PRICES[plan];
   const paidActive = subscriptionActive(subscription);
   const [cycle, setCycle] = useState<BillingCycle>("yearly");
+  const prices = PLAN_PRICES[plan][cycle];
   const [checkout, setCheckout] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
   const lapsed = !isPro && subscription !== null;
