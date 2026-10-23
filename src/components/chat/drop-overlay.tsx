@@ -27,7 +27,7 @@ export function DropOverlay() {
       <div className="flex flex-col items-center gap-3 rounded-3xl border-2 border-dashed border-primary/50 px-12 py-10 text-center">
         <UploadIcon className="size-8 text-primary" />
         <p className="text-base font-medium">松开即可添加到 Oxford</p>
-        <p className="font-mono text-xs text-muted-foreground">图片 · PDF · 文本 · 单个 ≤ 4 MB · 最多 4 个</p>
+        <p className="font-mono text-xs text-muted-foreground">图片 · PDF · Word · 文本 · 单个 ≤ 4 MB · 最多 4 个</p>
       </div>
     </div>
   );

@@ -72,6 +72,7 @@
     "eventsource-parser": "^4.1.2",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.575.0",
+    "mammoth": "^1.13.0",
     "motion": "^14.3.0",
     "nanoid": "^6.0.2",
     "node-html-parser": "^9.0.4",
