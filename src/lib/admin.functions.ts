@@ -49,7 +49,7 @@ export const loadAdminData = createServerFn({ method: "GET" })
       const granted = Boolean(c?.pro_granted && (!c.pro_until || Date.parse(c.pro_until) > now));
       const isPro = paid.has(u.id) || granted;
       const grantedTier = granted ? ((c?.granted_tier === "ultra" ? "ultra" : "pro") as "pro" | "ultra") : null;
-      const tier: Tier = grantedTier === "ultra" ? "ultra" : isPro ? "pro" : "free";
+      const tier: Tier = grantedTier === "ultra" ? "ultra" : paid.has(u.id) ? "paid_pro" : isPro ? "pro" : "free";
       emails.set(u.id, u.email ?? "");
       return {
         id: u.id as string,
