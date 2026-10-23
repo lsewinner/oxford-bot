@@ -70,7 +70,7 @@ export function Composer({
       globalDrop
       maxFiles={MAX_ATTACHMENTS}
       maxFileSize={MAX_ATTACHMENT_BYTES}
-      onError={(error) => toast.error(error.code === "max_files" ? "每次最多上传 4 个附件" : error.code === "max_file_size" ? "单个附件不能超过 4 MB" : "请选择图片、文本或 PDF 文件")}
+      onError={(error) => toast.error(error.code === "max_files" ? "每次最多上传 4 个附件" : error.code === "max_file_size" ? "单个附件不能超过 4 MB" : "请选择图片、PDF、Word 或文本文件")}
       className="rounded-3xl border-border bg-card shadow-[0_0_0_1px_var(--border),0_20px_60px_-20px_oklch(0_0_0/0.8)]"
     >
       <DropOverlay />
@@ -87,7 +87,7 @@ export function Composer({
         <PromptInputTools className="flex-wrap">
           <AttachmentButton disabled={busy} />
           <VoiceInputButton
-            disabled={busy}
+            {...(busy && onStop ? { onBeforeStart: onStop } : {})}
             onTranscript={(spoken, autoSend) => {
               if (autoSend) { void onSend(spoken); return; }
               setText((prev) => (prev.trim() ? `${prev.trimEnd()} ${spoken}` : spoken));

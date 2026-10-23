@@ -41,10 +41,37 @@ export function encodeWav(chunks: readonly Float32Array[], sampleRate: number): 
 
 export type Recorder = { stop: () => Promise<File>; cancel: () => void; level: () => number };
 
-export async function recordWav(): Promise<Recorder> {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+// The microphone stays warm briefly between turns so the first words of the next recording are not lost
+// to device start-up delay; it is fully released after a short idle period.
+const MIC_IDLE_MS = 45_000;
+let warm: { stream: MediaStream; context: AudioContext } | null = null;
+let releaseTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function warmMic() {
+  if (releaseTimer) { clearTimeout(releaseTimer); releaseTimer = null; }
+  if (warm && warm.stream.getAudioTracks().some((t) => t.readyState === "live") && warm.context.state !== "closed") {
+    await warm.context.resume();
+    return warm;
+  }
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
   const context = new AudioContext();
   await context.resume();
+  warm = { stream, context };
+  return warm;
+}
+
+function scheduleMicRelease() {
+  if (releaseTimer) clearTimeout(releaseTimer);
+  releaseTimer = setTimeout(() => {
+    releaseTimer = null;
+    const w = warm; warm = null;
+    w?.stream.getTracks().forEach((t) => t.stop());
+    void w?.context.close().catch(() => undefined);
+  }, MIC_IDLE_MS);
+}
+
+export async function recordWav(): Promise<Recorder> {
+  const { stream, context } = await warmMic();
   const source = context.createMediaStreamSource(stream);
   const node = context.createScriptProcessor(4096, 1, 1);
   const chunks: Float32Array[] = [];
@@ -61,9 +88,8 @@ export async function recordWav(): Promise<Recorder> {
   let done = false;
   const release = async () => {
     done = true;
-    stream.getTracks().forEach((t) => t.stop());
     node.disconnect(); source.disconnect(); node.onaudioprocess = null;
-    await context.close().catch(() => undefined);
+    scheduleMicRelease();
   };
   return {
     level: () => lastLevel,

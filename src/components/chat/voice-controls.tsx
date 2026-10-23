@@ -23,9 +23,12 @@ const AUTO_SEND_KEY = "oxford-voice-autosend";
 /** Hold to talk. Release fills the composer, or sends directly when 「直接发送」 is on. */
 export function VoiceInputButton({
   disabled,
+  onBeforeStart,
   onTranscript,
 }: {
   disabled?: boolean;
+  /** Called when recording starts while an answer is still running (stops it, so the user can interrupt). */
+  onBeforeStart?: () => void;
   onTranscript: (text: string, autoSend: boolean) => void;
 }) {
   const [state, setState] = useState<"idle" | "recording" | "transcribing">("idle");
@@ -48,6 +51,7 @@ export function VoiceInputButton({
   const start = () => {
     if (disabled || state !== "idle") return;
     released.current = false;
+    onBeforeStart?.();
     setState("recording");
     starting.current = recordWav()
       .then((r) => { recorder.current = r; if (released.current) void finish(); })
