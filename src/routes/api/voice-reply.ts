@@ -22,8 +22,8 @@ export const Route = createFileRoute("/api/voice-reply")({
     if (lines.at(-1)?.role !== "user" || !lines.at(-1)?.text.trim()) return Response.json({ error: "没有听清，请再说一次" }, { status: 400 });
 
     const { serverPaymentsEnv } = await import("@/lib/stripe.server");
-    const { FREE_DAILY_MESSAGES, PRO_DAILY_MESSAGES, quotaDeniedMessage } = await import("@/lib/quota");
-    const { data: quota, error: quotaErr } = await supabase.rpc("consume_daily_message" as never, { check_env: serverPaymentsEnv() ?? "live", free_limit: FREE_DAILY_MESSAGES, pro_limit: PRO_DAILY_MESSAGES } as never);
+    const { FREE_DAILY_MESSAGES, PRO_DAILY_MESSAGES, ULTRA_DAILY_MESSAGES, quotaDeniedMessage } = await import("@/lib/quota");
+    const { data: quota, error: quotaErr } = await supabase.rpc("consume_daily_message" as never, { check_env: serverPaymentsEnv() ?? "live", free_limit: FREE_DAILY_MESSAGES, pro_limit: PRO_DAILY_MESSAGES, ultra_limit: ULTRA_DAILY_MESSAGES } as never);
     if (quotaErr) return Response.json({ error: "额度检查失败，请稍后重试" }, { status: 500 });
     const q = quota as unknown as import("@/lib/quota").QuotaResult;
     if (!q?.allowed) return Response.json({ error: quotaDeniedMessage(q) }, { status: 429 });
