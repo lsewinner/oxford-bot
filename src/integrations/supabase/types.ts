@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           banned: boolean
           daily_limit: number | null
+          granted_tier: string
           pro_granted: boolean
           pro_until: string | null
           updated_at: string
@@ -26,6 +27,7 @@ export type Database = {
         Insert: {
           banned?: boolean
           daily_limit?: number | null
+          granted_tier?: string
           pro_granted?: boolean
           pro_until?: string | null
           updated_at?: string
@@ -34,6 +36,7 @@ export type Database = {
         Update: {
           banned?: boolean
           daily_limit?: number | null
+          granted_tier?: string
           pro_granted?: boolean
           pro_until?: string | null
           updated_at?: string
@@ -680,7 +683,12 @@ export type Database = {
     }
     Functions: {
       consume_daily_message: {
-        Args: { check_env: string; free_limit: number; pro_limit: number }
+        Args: {
+          check_env: string
+          free_limit: number
+          pro_limit: number
+          ultra_limit?: number
+        }
         Returns: Json
       }
       has_active_subscription: {

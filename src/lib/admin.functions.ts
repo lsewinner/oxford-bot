@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { effectiveDailyLimit } from "@/lib/quota";
+import { effectiveDailyLimit, type Tier } from "@/lib/quota";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -12,7 +12,7 @@ async function requireAdmin(context: Ctx) {
   return supabaseAdmin as any;
 }
 
-export type AdminUserRow = { id: string; email: string; nickname: string; createdAt: string; lastSignIn: string | null; paidPro: boolean; grantedPro: boolean; proUntil: string | null; isPro: boolean; banned: boolean; dailyLimitOverride: number | null; dailyLimit: number; usedToday: number };
+export type AdminUserRow = { id: string; email: string; nickname: string; createdAt: string; lastSignIn: string | null; paidPro: boolean; grantedPro: boolean; proUntil: string | null; isPro: boolean; tier: Tier; grantedTier: "pro" | "ultra" | null; banned: boolean; dailyLimitOverride: number | null; dailyLimit: number; usedToday: number };
 export type AdminAuditRow = { id: string; action: string; details: Record<string, unknown> | null; createdAt: string; target: string | null; admin: string };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -48,6 +48,8 @@ export const loadAdminData = createServerFn({ method: "GET" })
       const c: any = ctl.get(u.id);
       const granted = Boolean(c?.pro_granted && (!c.pro_until || Date.parse(c.pro_until) > now));
       const isPro = paid.has(u.id) || granted;
+      const grantedTier = granted ? ((c?.granted_tier === "ultra" ? "ultra" : "pro") as "pro" | "ultra") : null;
+      const tier: Tier = grantedTier === "ultra" ? "ultra" : isPro ? "pro" : "free";
       emails.set(u.id, u.email ?? "");
       return {
         id: u.id as string,
@@ -59,9 +61,11 @@ export const loadAdminData = createServerFn({ method: "GET" })
         grantedPro: granted,
         proUntil: (c?.pro_granted ? c.pro_until : null) as string | null,
         isPro,
+        tier,
+        grantedTier,
         banned: Boolean(c?.banned),
         dailyLimitOverride: (c?.daily_limit ?? null) as number | null,
-        dailyLimit: effectiveDailyLimit(c?.daily_limit, isPro),
+        dailyLimit: effectiveDailyLimit(c?.daily_limit, tier),
         usedToday: Number(used.get(u.id) ?? 0),
       };
     });
@@ -82,7 +86,7 @@ const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("reset_all") }),
   z.object({ type: z.literal("reset_usage"), userId: z.string().uuid() }),
   z.object({ type: z.literal("set_limit"), userId: z.string().uuid(), dailyLimit: z.number().int().min(0).max(100000).nullable() }),
-  z.object({ type: z.literal("grant_pro"), userId: z.string().uuid(), until: z.string().datetime().nullable() }),
+  z.object({ type: z.literal("grant_pro"), userId: z.string().uuid(), until: z.string().datetime().nullable(), tier: z.enum(["pro", "ultra"]).default("pro") }),
   z.object({ type: z.literal("revoke_pro"), userId: z.string().uuid() }),
   z.object({ type: z.literal("ban"), userId: z.string().uuid() }),
   z.object({ type: z.literal("unban"), userId: z.string().uuid() }),
@@ -104,8 +108,8 @@ export const runAdminAction = createServerFn({ method: "POST" })
       case "reset_all": { const { error } = await admin.from("usage_daily").delete().eq("day", today()); if (error) throw new Error("重置失败"); break; }
       case "reset_usage": { const { error } = await admin.from("usage_daily").delete().eq("day", today()).eq("user_id", data.userId); if (error) throw new Error("重置失败"); break; }
       case "set_limit": await upsert(data.userId, { daily_limit: data.dailyLimit }); break;
-      case "grant_pro": await upsert(data.userId, { pro_granted: true, pro_until: data.until }); break;
-      case "revoke_pro": await upsert(data.userId, { pro_granted: false, pro_until: null }); break;
+      case "grant_pro": await upsert(data.userId, { pro_granted: true, pro_until: data.until, granted_tier: data.tier }); break;
+      case "revoke_pro": await upsert(data.userId, { pro_granted: false, pro_until: null, granted_tier: "pro" }); break;
       case "ban": await upsert(data.userId, { banned: true }); await admin.auth.admin.updateUserById(data.userId, { ban_duration: "876000h" }); break;
       case "unban": await upsert(data.userId, { banned: false }); await admin.auth.admin.updateUserById(data.userId, { ban_duration: "none" }); break;
     }
