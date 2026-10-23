@@ -29,6 +29,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [method, setMethod] = useState<"phone" | "email">(PHONE_SIGNIN_ENABLED ? "phone" : "email");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -56,7 +58,13 @@ function AuthPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    if (mode === "signup") {
+    if (forgot) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) toast.error("发送失败，请稍后重试");
+      else setResetSent(true);
+    } else if (mode === "signup") {
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -119,7 +127,7 @@ function AuthPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <img src={logo} alt="Oxford Bot" width={56} height={56} className="size-14 rounded-2xl" />
-          <h1 className="text-2xl font-semibold tracking-tight">{mode === "signin" ? "欢迎回来" : "创建账号"}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{forgot ? "找回密码" : mode === "signin" ? "欢迎回来" : "创建账号"}</h1>
           <p className="text-sm text-muted-foreground">对话会保存在云端，多设备同步</p>
         </div>
 
@@ -211,19 +219,36 @@ function AuthPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="h-11 rounded-xl"
                   />
-                  <Input
-                    type="password"
-                    required
-                    minLength={6}
-                    placeholder="密码"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 rounded-xl"
-                  />
+                  {!forgot && (
+                    <Input
+                      type="password"
+                      required
+                      minLength={6}
+                      placeholder="密码"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-11 rounded-xl"
+                    />
+                  )}
+                  {resetSent && (
+                    <p role="status" className="text-sm leading-6 text-foreground">
+                      重置邮件已发送到 {email}，请点击邮件中的链接设置新密码（也请检查垃圾邮件）。
+                    </p>
+                  )}
                   <Button type="submit" disabled={loading} className="h-11 rounded-xl">
-                    {loading ? "请稍候…" : mode === "signin" ? "登录" : "注册"}
+                    {loading ? "请稍候…" : forgot ? (resetSent ? "重新发送" : "发送重置邮件") : mode === "signin" ? "登录" : "注册"}
                   </Button>
+                  {mode === "signin" && (
+                    <button
+                      type="button"
+                      className="text-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                      onClick={() => { setForgot(!forgot); setResetSent(false); }}
+                    >
+                      {forgot ? "返回登录" : "忘记密码？"}
+                    </button>
+                  )}
                 </form>
+                {!forgot && (
                 <p className="mt-5 text-center text-sm text-muted-foreground">
                   {mode === "signin" ? "还没有账号？" : "已有账号？"}
                   <button
@@ -234,6 +259,7 @@ function AuthPage() {
                     {mode === "signin" ? "注册" : "登录"}
                   </button>
                 </p>
+                )}
               </>
             )}
           </>
