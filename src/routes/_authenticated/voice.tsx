@@ -28,16 +28,23 @@ function VoicePage() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [lines, setLines] = useState<Line[]>([]);
   const lastRole = useRef<Line["role"] | null>(null);
+  // After a manual interrupt, the rest of the current answer stays silent until the user speaks again.
+  const interrupted = useRef(false);
 
   const onEvent = (event: LiveEvent) => {
     const t = event.type;
     if (t === "app.connected") setPhase("listening");
-    else if (t === "app.closed") setPhase("idle");
-    else if (t === "app.delegation.pending") setPhase("thinking");
+    else if (t === "app.closed") { setPhase("idle"); interrupted.current = false; }
+    else if (t === "app.delegation.pending") { if (!interrupted.current) setPhase("thinking"); }
     else if (t === "session.input_transcript.delta" || t === "session.output_transcript.delta") {
       const role = t === "session.input_transcript.delta" ? "user" : "assistant";
       const delta = typeof event["delta"] === "string" ? event["delta"] : "";
       if (!delta) return;
+      if (role === "user" && interrupted.current) {
+        interrupted.current = false;
+        if (call.audioRef.current) call.audioRef.current.muted = false;
+      }
+      if (role === "assistant" && interrupted.current) return;
       setPhase(role === "user" ? "listening" : "speaking");
       setLines((prev) => {
         const next = [...prev];
@@ -54,6 +61,17 @@ function VoicePage() {
     onEvent,
     getToken: async () => (await supabase.auth.getSession()).data.session?.access_token,
   });
+  const interruptLive = () => {
+    interrupted.current = true;
+    if (call.audioRef.current) call.audioRef.current.muted = true;
+    if (call.muted) call.setMuted(false);
+    setPhase("listening");
+  };
+  const startLive = () => {
+    interrupted.current = false;
+    if (call.audioRef.current) call.audioRef.current.muted = false;
+    setLines([]); lastRole.current = null; call.start();
+  };
   // Compatibility mode: turn-based recording → transcription → reply → read aloud.
   const [compat, setCompat] = useState(false);
   const [compatBusy, setCompatBusy] = useState<"idle" | "recording" | "thinking" | "speaking">("idle");
