@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { checkAdmin, loadAdminData, runAdminAction, type AdminAction, type AdminAuditRow } from "@/lib/admin.functions";
-import { FREE_DAILY_MESSAGES, PRO_DAILY_MESSAGES, ULTRA_DAILY_MESSAGES } from "@/lib/quota";
+import { FREE_DAILY_MESSAGES, PRO_DAILY_MESSAGES, PAID_PRO_DAILY_MESSAGES, ULTRA_DAILY_MESSAGES } from "@/lib/quota";
 import { cn } from "@/lib/utils";
 import { MemoryCenter } from "@/components/admin/memory-center";
 
@@ -82,7 +82,7 @@ function AdminPage() {
             </div>
           ))}
         </section>
-        <p className="mt-3 text-xs text-muted-foreground">默认每日额度：免费 {FREE_DAILY_MESSAGES} 条，Pro {PRO_DAILY_MESSAGES} 条，Ultra {ULTRA_DAILY_MESSAGES} 条（UTC 0 点重置）。</p>
+        <p className="mt-3 text-xs text-muted-foreground">默认每日额度：免费 {FREE_DAILY_MESSAGES} 条，付费 Pro {PAID_PRO_DAILY_MESSAGES} 条，授予 Pro {PRO_DAILY_MESSAGES} 条，Ultra {ULTRA_DAILY_MESSAGES} 条（UTC 0 点重置）。</p>
 
         <div className="mt-6 flex items-center gap-2">
           {(["users", "audit", "memory"] as const).map((t) => (

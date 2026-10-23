@@ -1,9 +1,12 @@
 /** Default daily message quotas (UTC day). Admin overrides replace these per account. */
 export const FREE_DAILY_MESSAGES = 30;
+/** Admin-granted Pro. */
 export const PRO_DAILY_MESSAGES = 100;
-export const ULTRA_DAILY_MESSAGES = 500;
+/** Stripe-paid Pro. */
+export const PAID_PRO_DAILY_MESSAGES = 300;
+export const ULTRA_DAILY_MESSAGES = 800;
 
-export type Tier = "free" | "pro" | "ultra";
+export type Tier = "free" | "pro" | "paid_pro" | "ultra";
 
 export type QuotaResult = { allowed: boolean; reason?: "auth" | "banned" | "quota"; used?: number; limit?: number };
 
@@ -14,7 +17,7 @@ export function quotaDeniedMessage(result: QuotaResult) {
 }
 
 export function tierDailyLimit(tier: Tier) {
-  return tier === "ultra" ? ULTRA_DAILY_MESSAGES : tier === "pro" ? PRO_DAILY_MESSAGES : FREE_DAILY_MESSAGES;
+  return tier === "ultra" ? ULTRA_DAILY_MESSAGES : tier === "paid_pro" ? PAID_PRO_DAILY_MESSAGES : tier === "pro" ? PRO_DAILY_MESSAGES : FREE_DAILY_MESSAGES;
 }
 
 export function effectiveDailyLimit(override: number | null | undefined, tier: Tier | boolean) {
