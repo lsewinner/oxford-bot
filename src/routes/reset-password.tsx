@@ -42,12 +42,12 @@ function ResetPasswordPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) return toast.error("密码至少 6 位");
-    if (password !== confirm) return toast.error("两次输入的密码不一致");
+    if (password.length < 6) { toast.error("密码至少 6 位"); return; }
+    if (password !== confirm) { toast.error("两次输入的密码不一致"); return; }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (error) return toast.error("重置失败：链接可能已过期，请重新申请");
+    if (error) { toast.error("重置失败：链接可能已过期，请重新申请"); return; }
     toast.success("密码已重置，正在进入 Oxford Bot");
     navigate({ to: "/chat", replace: true });
   };
