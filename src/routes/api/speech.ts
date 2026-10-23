@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MAX_SPEECH_CHARS, isAbort, passthrough, requestSpeech, verifyOptionalCaller, voiceCredentialsFromEnv } from "@/lib/voice-gateway.server";
+import { MAX_SPEECH_CHARS, isAbort, gatewayFallbackFromEnv, withVoiceFallback, requestSpeech, verifyOptionalCaller, voiceCredentialsFromEnv } from "@/lib/voice-gateway.server";
 
 export const Route = createFileRoute("/api/speech")({
   server: { handlers: { POST: async ({ request }) => {
@@ -13,7 +13,8 @@ export const Route = createFileRoute("/api/speech")({
       return Response.json({ error: "朗读内容无效" }, { status: 400 });
     }
     try {
-      return passthrough(await requestSpeech(apiKey, body.text, request.signal));
+      const text = body.text;
+      return await withVoiceFallback(apiKey, gatewayFallbackFromEnv(), (c) => requestSpeech(c, text, request.signal));
     } catch (error) {
       if (isAbort(error)) return new Response(null, { status: 499 });
       return Response.json({ error: "语音朗读服务暂时不可用" }, { status: 502 });

@@ -85,3 +85,37 @@ export function passthrough(upstream: Response) {
 export function isAbort(error: unknown) {
   return error instanceof Error && error.name === "AbortError";
 }
+
+/** Gateway credentials used when the direct OpenAI call is region-refused. */
+export function gatewayFallbackFromEnv(): VoiceCredentials | null {
+  const key = process.env["LOVABLE_API_KEY"]?.trim();
+  return key ? { apiKey: key, direct: false } : null;
+}
+
+const REGION_MESSAGE = "当前网络地区暂时无法使用语音服务，请先用文字对话";
+
+/** Direct OpenAI first; on a region refusal (403) or network failure switch once to the backup channel. */
+export async function withVoiceFallback(
+  primary: VoiceCredentials,
+  fallback: VoiceCredentials | null,
+  call: (creds: VoiceCredentials) => Promise<Response>,
+): Promise<Response> {
+  const canFallback = primary.direct && !!fallback;
+  let upstream: Response;
+  try {
+    upstream = await call(primary);
+  } catch (error) {
+    if (isAbort(error) || !canFallback) throw error;
+    return friendly(await call(fallback!));
+  }
+  if (upstream.status === 403 && canFallback) {
+    await upstream.body?.cancel();
+    return friendly(await call(fallback!));
+  }
+  return friendly(upstream);
+}
+
+function friendly(upstream: Response) {
+  if (upstream.status === 403) return Response.json({ error: REGION_MESSAGE }, { status: 403 });
+  return passthrough(upstream);
+}
