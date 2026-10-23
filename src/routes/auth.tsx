@@ -29,6 +29,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [method, setMethod] = useState<"phone" | "email">(PHONE_SIGNIN_ENABLED ? "phone" : "email");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -56,7 +58,13 @@ function AuthPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    if (mode === "signup") {
+    if (forgot) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) toast.error("发送失败，请稍后重试");
+      else setResetSent(true);
+    } else if (mode === "signup") {
       const { error } = await supabase.auth.signUp({
         email,
         password,
