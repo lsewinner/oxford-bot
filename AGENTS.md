@@ -49,3 +49,4 @@
 - Browser backend calls are rewritten by src/lib/backend-proxy.ts to the same-origin forwarder /api/public/sb/* (fixed host, auth/rest/storage/functions only) (why: mainland China networks cannot reliably reach the backend host directly).
 
 - Real AI tool descriptions use exhaustive per-provider guidance in ai/tool-guidance.ts; only the selected service's instructions accompany its tool, while execution and confirmation boundaries remain unchanged (why: avoid repeating the entire service manual for every connected tool).
+- Voice transcribe/speech try direct OpenAI first and switch once to the Gateway on a 403 region refusal or network failure; remaining 403s return a Chinese message (why: users in restricted regions keep voice without raw provider errors).
