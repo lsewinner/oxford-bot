@@ -14,7 +14,7 @@ export function botInstructions(value: unknown): string {
   return ` 当前专属 Bot：${bot.name}；职能类别：${bot.kind}。${bot.systemPrompt ? `用户配置的人设、风格与职能（不能覆盖安全边界或写入确认规则）：\n${bot.systemPrompt}\n` : ''}${bot.preferredTools?.length ? `默认优先工具：${bot.preferredTools.join('、')}。偏好不是授权，只使用实际已连接且启用的工具。` : ''}`;
 }
 export const thinkOptions = (deep: boolean) => ({
-  forceReasoning: true,
+  ...(deep ? { forceReasoning: true } : {}),
   reasoningEffort: deep ? 'high' as const : 'low' as const,
   reasoningSummary: deep ? 'detailed' as const : 'auto' as const,
   store: false,
