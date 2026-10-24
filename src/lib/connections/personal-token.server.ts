@@ -1,10 +1,10 @@
 import type { ProviderId } from './catalog';
 
-export type PersonalTokenProvider = 'github' | 'slack' | 'cloudflare' | 'supabase' | 'notion' | 'yuque' | 'feishu' | 'gitee' | 'airtable' | 'clickup' | 'telegram' | 'asana' | 'jira' | 'oanda';
-export function supportsPersonalToken(id: ProviderId): id is PersonalTokenProvider { return id === 'github' || id === 'slack' || id === 'cloudflare' || id === 'supabase' || id === 'notion' || id === 'yuque' || id === 'feishu' || id === 'gitee' || id === 'airtable' || id === 'clickup' || id === 'telegram' || id === 'asana' || id === 'jira' || id === 'oanda'; }
-const HOSTS = { github: 'https://api.github.com', slack: 'https://slack.com', cloudflare: 'https://api.cloudflare.com/client/v4', supabase: 'https://api.supabase.com/v1', notion: 'https://api.notion.com/v1', yuque: 'https://www.yuque.com/api/v2', feishu: 'https://open.feishu.cn/open-apis', gitee: 'https://gitee.com/api/v5', airtable: 'https://api.airtable.com', clickup: 'https://api.clickup.com', telegram: 'https://api.telegram.org', asana: 'https://app.asana.com/api/1.0', jira: '', oanda: '' } as const;
-const NAMES = { github: 'GitHub', slack: 'Slack', cloudflare: 'Cloudflare', supabase: 'Supabase', notion: 'Notion', yuque: '语雀', feishu: '飞书', gitee: 'Gitee', airtable: 'Airtable', clickup: 'ClickUp', telegram: 'Telegram', asana: 'Asana', jira: 'Jira', oanda: 'OANDA' } as const;
-const VALIDATE = { github: '/user', slack: '/api/auth.test', cloudflare: '/zones?per_page=1', supabase: '/projects', notion: '/users/me', yuque: '/user', feishu: '/bot/v3/info', gitee: '/user', airtable: '/v0/meta/whoami', clickup: '/api/v2/user', telegram: '/getMe', asana: '/users/me', jira: '/rest/api/3/myself', oanda: '/v3/accounts' } as const;
+export type PersonalTokenProvider = 'github' | 'slack' | 'cloudflare' | 'supabase' | 'notion' | 'yuque' | 'feishu' | 'gitee' | 'airtable' | 'clickup' | 'telegram' | 'asana' | 'jira' | 'oanda' | 'discord' | 'x';
+export function supportsPersonalToken(id: ProviderId): id is PersonalTokenProvider { return id === 'github' || id === 'slack' || id === 'cloudflare' || id === 'supabase' || id === 'notion' || id === 'yuque' || id === 'feishu' || id === 'gitee' || id === 'airtable' || id === 'clickup' || id === 'telegram' || id === 'asana' || id === 'jira' || id === 'oanda' || id === 'discord' || id === 'x'; }
+const HOSTS = { github: 'https://api.github.com', slack: 'https://slack.com', cloudflare: 'https://api.cloudflare.com/client/v4', supabase: 'https://api.supabase.com/v1', notion: 'https://api.notion.com/v1', yuque: 'https://www.yuque.com/api/v2', feishu: 'https://open.feishu.cn/open-apis', gitee: 'https://gitee.com/api/v5', airtable: 'https://api.airtable.com', clickup: 'https://api.clickup.com', telegram: 'https://api.telegram.org', asana: 'https://app.asana.com/api/1.0', jira: '', oanda: '', discord: 'https://discord.com/api/v10', x: 'https://api.x.com/2' } as const;
+const NAMES = { github: 'GitHub', slack: 'Slack', cloudflare: 'Cloudflare', supabase: 'Supabase', notion: 'Notion', yuque: '语雀', feishu: '飞书', gitee: 'Gitee', airtable: 'Airtable', clickup: 'ClickUp', telegram: 'Telegram', asana: 'Asana', jira: 'Jira', oanda: 'OANDA', discord: 'Discord', x: 'X' } as const;
+const VALIDATE = { github: '/user', slack: '/api/auth.test', cloudflare: '/zones?per_page=1', supabase: '/projects', notion: '/users/me', yuque: '/user', feishu: '/bot/v3/info', gitee: '/user', airtable: '/v0/meta/whoami', clickup: '/api/v2/user', telegram: '/getMe', asana: '/users/me', jira: '/rest/api/3/myself', oanda: '/v3/accounts', discord: '/users/@me', x: '/tweets/search/recent?query=from%3AXDevelopers&max_results=10' } as const;
 export async function callWithPersonalToken(id: PersonalTokenProvider, token: string, path: string, init?: RequestInit, oauth?: { bearer?: true; jiraCloudId?: string }): Promise<Response> {
   if (oauth?.jiraCloudId !== undefined && (id !== 'jira' || !/^[0-9a-f-]{36}$/.test(oauth.jiraCloudId))) throw new Error('Jira 站点标识无效');
   const method = (init?.method ?? 'GET').toUpperCase();
@@ -24,6 +24,12 @@ export async function callWithPersonalToken(id: PersonalTokenProvider, token: st
     // ClickUp: bounded workspace hierarchy reads; only confirmed list-level task creation.
     ? (method === 'GET' ? /^\/api\/v2\/(?:user|team|team\/\d{1,20}\/(?:task|space)(?:\?[\w%&=.+-]{0,300})?|space\/\d{1,20}\/(?:folder|list)(?:\?[\w%&=.+-]{0,300})?|folder\/\d{1,20}\/list(?:\?[\w%&=.+-]{0,300})?)$/
       : method === 'POST' ? /^\/api\/v2\/list\/\d{1,20}\/task$/ : /$^/)
+    : id === 'discord'
+    // Discord Bot: identity, guilds, channels, recent messages; confirmed channel posts only.
+    ? (method === 'GET' ? /^\/(?:users\/@me(?:\/guilds)?|guilds\/\d{15,22}\/channels|channels\/\d{15,22}\/messages\?limit=\d{1,3})$/ : method === 'POST' ? /^\/channels\/\d{15,22}\/messages$/ : /$^/)
+    : id === 'x'
+    // X API v2 app-only bearer: read-only recent search, user lookup and user timelines.
+    ? (method === 'GET' ? /^\/(?:tweets\/search\/recent\?[\w%&=.+*:-]{1,1500}|users\/by\/username\/\w{1,15}(?:\?[\w%&=.,-]{0,200})?|users\/\d{1,25}\/tweets\?[\w%&=.,-]{1,400})$/ : /$^/)
     : id === 'telegram'
     // Telegram Bot: identity, recent updates; confirmed sendMessage only.
     ? (method === 'GET' ? /^\/(?:getMe|getUpdates\?limit=\d{1,3})$/ : method === 'POST' ? /^\/sendMessage$/ : /$^/)
@@ -65,6 +71,7 @@ export async function callWithPersonalToken(id: PersonalTokenProvider, token: st
   else if (oauth) headers.set('Authorization', `Bearer ${token}`);
   else if (id === 'jira') { const j = parseJiraCredential(token); headers.set('Authorization', `Basic ${btoa(`${j.email}:${j.apiToken}`)}`); }
   else if (id === 'telegram') { headers.delete('Authorization'); }
+  else if (id === 'discord') { headers.set('Authorization', `Bot ${token}`); headers.set('User-Agent', 'DiscordBot (https://oxford.bot, 1.0)'); }
   else if (id === 'oanda') { headers.set('Authorization', `Bearer ${parseOandaCredential(token).token}`); }
   else if (id === 'yuque') { headers.delete('Authorization'); headers.set('X-Auth-Token', token); headers.set('User-Agent', 'Oxford-Bot'); }
   else headers.set('Authorization', `Bearer ${token}`);
@@ -87,6 +94,10 @@ export function personalTokenError(id: PersonalTokenProvider, status: number, sl
   if (id === 'clickup' && status === 404) return 'ClickUp 团队或任务不存在，或当前令牌无权访问';
   if (id === 'oanda' && status === 404) return 'OANDA 账户、品种或订单不存在，或当前令牌无权访问（模拟盘/实盘环境是否选对？）';
   if (id === 'oanda' && status === 400) return 'OANDA 拒绝请求：请检查数量、价格、止损止盈与品种是否有效';
+  if (id === 'discord' && status === 403) return 'Discord Bot 没有该频道的查看或发言权限，请在服务器里给 Bot 授权';
+  if (id === 'discord' && status === 404) return 'Discord 服务器或频道不存在，或 Bot 未加入该服务器';
+  if (id === 'x' && status === 429) return 'X 接口额度已用完（免费档每月读取很少），请稍后或升级 X 开发者套餐';
+  if (id === 'x' && status === 403) return 'X 开发者套餐不包含此接口（搜索需 Basic 及以上档位）';
   if (id === 'telegram' && status === 404) return 'Telegram Bot Token 无效，请重新输入';
   if (id === 'telegram' && status === 400) return 'Telegram 拒绝请求：请确认聊天 ID 正确，且对方已先给 Bot 发过消息';
   if (id === 'asana' && status === 404) return 'Asana 工作区、项目或任务不存在，或当前令牌无权访问';
@@ -103,7 +114,7 @@ export async function validatePersonalToken(id: PersonalTokenProvider, token: st
   catch { throw new Error('无法访问服务，请稍后重试'); }
   if (!response.ok) throw new Error(personalTokenError(id, response.status));
   const body = await response.json().catch(() => null);
-  if (!body || (id === 'oanda' ? !Array.isArray(body.accounts) || !body.accounts.length : id === 'telegram' ? body.ok !== true || !body.result?.id : id === 'asana' ? !body.data?.gid : id === 'jira' ? typeof body.accountId !== 'string' : id === 'airtable' ? !(typeof body['id'] === 'string' && /^usr[A-Za-z0-9]+$/.test(body['id'])) : id === 'clickup' ? !body.user?.id : id === 'feishu' ? body.code !== 0 : id === 'gitee' ? !body.id || typeof body.login !== 'string' : id === 'yuque' ? !body.data?.id || typeof body.data?.login !== 'string' : id === 'supabase' ? !Array.isArray(body) : id === 'notion' ? body.object !== 'user' : id === 'github' ? !body.id : id === 'cloudflare' ? body.success !== true : body.ok !== true)) throw new Error(personalTokenError(id, response.status, body?.error));
+  if (!body || (id === 'discord' ? !body.id || !body.bot : id === 'x' ? !(Array.isArray(body.data) || body.meta) : id === 'oanda' ? !Array.isArray(body.accounts) || !body.accounts.length : id === 'telegram' ? body.ok !== true || !body.result?.id : id === 'asana' ? !body.data?.gid : id === 'jira' ? typeof body.accountId !== 'string' : id === 'airtable' ? !(typeof body['id'] === 'string' && /^usr[A-Za-z0-9]+$/.test(body['id'])) : id === 'clickup' ? !body.user?.id : id === 'feishu' ? body.code !== 0 : id === 'gitee' ? !body.id || typeof body.login !== 'string' : id === 'yuque' ? !body.data?.id || typeof body.data?.login !== 'string' : id === 'supabase' ? !Array.isArray(body) : id === 'notion' ? body.object !== 'user' : id === 'github' ? !body.id : id === 'cloudflare' ? body.success !== true : body.ok !== true)) throw new Error(personalTokenError(id, response.status, body?.error));
   return body as Record<string, unknown>;
 }
 /** Identify which Cloudflare account a token belongs to, so several tokens can be stored side by side. */
@@ -124,6 +135,14 @@ export async function personalTokenIdentity(id: PersonalTokenProvider, token: st
     if (!first) throw new Error('无法识别 OANDA 账户');
     const env = parseOandaCredential(token).env;
     return { account: `oa-${env}-${first}`, label: `${env === 'live' ? '实盘' : '模拟盘'} · ${first}${accounts.length > 1 ? ` 等 ${accounts.length} 个账户` : ''}` };
+  }
+  if (id === 'discord') {
+    if (typeof body?.['id'] !== 'string') throw new Error('无法识别 Discord Bot');
+    return { account: `dc-${body['id']}`, label: typeof body['username'] === 'string' ? body['username'] : '' };
+  }
+  if (id === 'x') {
+    let h = 0; for (const c of token) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return { account: `x-${h.toString(36)}`, label: 'X 开发者应用' };
   }
   if (id === 'telegram') {
     const bot = body?.['result'] as { id?: number; username?: string } | undefined;
