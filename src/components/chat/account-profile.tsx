@@ -1,6 +1,6 @@
 import { useEffect,useId,useRef,useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { CameraIcon,LoaderCircleIcon,LogOutIcon,Trash2Icon,FlameIcon,SparklesIcon,ShieldCheckIcon,DownloadIcon,PencilIcon,ChevronsUpDownIcon,SunriseIcon,NotebookPenIcon,AudioLinesIcon,LayoutGridIcon } from 'lucide-react';
+import { UserRoundIcon,CameraIcon,LoaderCircleIcon,LogOutIcon,Trash2Icon,FlameIcon,SparklesIcon,ShieldCheckIcon,DownloadIcon,PencilIcon,ChevronsUpDownIcon,SunriseIcon,NotebookPenIcon,AudioLinesIcon,LayoutGridIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuLabel,DropdownMenuSeparator,DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { usePro } from '@/components/pro/pro-context';
