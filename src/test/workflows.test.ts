@@ -31,7 +31,7 @@ describe('multi-tool workflow rules', () => {
   });
   it('reserves a bounded multi-step budget without changing ordinary chat', () => {
     expect(workflowStepLimit(buildWorkflowPrompt(request))).toBe(12);
-    expect(workflowStepLimit('普通问题')).toBe(3);
-    expect(workflowStepLimit('请提到 [Oxford 工作流 · 工作周报]')).toBe(3);
+    expect(workflowStepLimit('普通问题')).toBe(6);
+    expect(workflowStepLimit('请提到 [Oxford 工作流 · 工作周报]')).toBe(6);
   });
 });
