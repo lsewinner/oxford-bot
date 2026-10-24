@@ -139,6 +139,26 @@ After the signed iOS build succeeds, submit its **specific build ID**:
 npx eas-cli@25.2.0 submit --platform ios --profile testflight --id BUILD_ID
 ```
 
+## Native OAuth delivery (2026-10-24 UTC)
+
+- Native OAuth source: `c68398e0608bf452fecaeb1c5bc7ec1118155a84`.
+- iOS **0.1.0 (2)**: [EAS build f6724737](https://expo.dev/accounts/lsewinner/projects/oxford-bot/builds/f6724737-35e0-4513-b9ea-391b763a3b77) succeeded.
+- [EAS submission 7281f72d](https://expo.dev/accounts/lsewinner/projects/oxford-bot/submissions/7281f72d-adc0-4086-8758-f8fece46e4f1) succeeded.
+- Submission logs confirm assignment to the existing **Oxford Bot Internal**
+  group (`1624c515-1ddb-45cc-8b2a-774f7abd53a9`). No new tester invitations or
+  public store release were performed.
+- The artifact was built from the local snapshot commit `795426f`, whose native
+  OAuth source matches upstream `c68398e`; the source commit is also recorded in
+  the EAS build message.
+- The Google authorize endpoint still returned HTTP 400,
+  `validation_failed: Unsupported provider: missing OAuth secret`, during
+  preflight. Auth-provider setup and the native redirect allow-list remain
+  separate server-side checks. Physical-device OAuth sign-in is not yet verified.
+
+The successful submission used the existing EAS-managed App Store Connect API key
+and `--groups 'Oxford Bot Internal'`. Do not add `--what-to-test` on the current
+Expo plan: EAS rejects that optional changelog parameter as Enterprise-only.
+
 ## Verified cloud builds (2026-10-20)
 
 | Platform | Version | EAS build | Result |
