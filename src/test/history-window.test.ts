@@ -21,5 +21,15 @@ describe('cost controls', () => {
     expect('forceReasoning' in thinkOptions(false)).toBe(false);
     expect(thinkOptions(true).forceReasoning).toBe(true);
   });
-  it('normal questions use at most 3 tool steps', () => { expect(workflowStepLimit('你好')).toBe(3); });
+  it('normal questions allow 6 steps so lookup chains reach the write', () => { expect(workflowStepLimit('你好')).toBe(6); });
+});
+
+describe('unfinished tool calls', () => {
+  it('drops tool parts without a result from recent turns', () => {
+    const out = trimHistory([
+      { id: 'u', role: 'user', parts: [{ type: 'text', text: 'hi' }] },
+      { id: 'a', role: 'assistant', parts: [{ type: 'text', text: 'ok' }, { type: 'tool-demo_x', toolCallId: 't', state: 'input-available', input: {} } as never, { type: 'tool-demo_y', toolCallId: 'd', state: 'output-available', input: {}, output: {} } as never] },
+    ]);
+    expect(out[1]!.parts.map(p => p.type)).toEqual(['text', 'tool-demo_y']);
+  });
 });
