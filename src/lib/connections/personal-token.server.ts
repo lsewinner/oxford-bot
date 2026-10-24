@@ -96,8 +96,9 @@ export function personalTokenError(id: PersonalTokenProvider, status: number, sl
   if (id === 'oanda' && status === 400) return 'OANDA 拒绝请求：请检查数量、价格、止损止盈与品种是否有效';
   if (id === 'discord' && status === 403) return 'Discord Bot 没有该频道的查看或发言权限，请在服务器里给 Bot 授权';
   if (id === 'discord' && status === 404) return 'Discord 服务器或频道不存在，或 Bot 未加入该服务器';
+  if (id === 'x' && status === 401) return 'X 不认这个 Token：请复制 Keys and tokens 页里的 Bearer Token（不是 API Key / Secret 或 Access Token），重新生成后再粘贴';
   if (id === 'x' && status === 429) return 'X 接口额度已用完（免费档每月读取很少），请稍后或升级 X 开发者套餐';
-  if (id === 'x' && status === 403) return 'X 开发者套餐不包含此接口（搜索需 Basic 及以上档位）';
+  if (id === 'x' && status === 403) return 'X 免费档不允许读取推文，需要在 X 开发者后台升级到 Basic 及以上套餐，或确认应用已放在某个 Project 里';
   if (id === 'telegram' && status === 404) return 'Telegram Bot Token 无效，请重新输入';
   if (id === 'telegram' && status === 400) return 'Telegram 拒绝请求：请确认聊天 ID 正确，且对方已先给 Bot 发过消息';
   if (id === 'asana' && status === 404) return 'Asana 工作区、项目或任务不存在，或当前令牌无权访问';
