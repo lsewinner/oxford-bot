@@ -46,7 +46,7 @@ describe('own-account AI routing', () => {
         expect(captured.url).toBe(kind === 'openai' ? 'https://api.openai.com/v1/responses' : 'https://ai.gateway.lovable.dev/v1/responses');
         expect(captured.body['model']).toBe(kind === 'openai' ? 'gpt-6-sol' : 'openai/gpt-6-sol');
         expect(captured.body['store']).toBe(false);
-        expect(captured.body['reasoning']).toMatchObject({ effort: 'high', summary: 'detailed' });
+        expect(captured.body['reasoning']).toMatchObject({ effort: 'high', summary: 'auto' });
       }
       expect(captured.headers.get('Lovable-API-Key')).toBe(kind === 'gateway' ? 'gateway-test' : null);
       expect(captured.headers.get('X-Lovable-AIG-Run-ID')).toBe(kind === 'gateway' ? 'incoming-run' : null);

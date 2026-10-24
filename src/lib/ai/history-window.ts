@@ -1,6 +1,6 @@
 import type { UIMessage } from "ai";
 
-export const HISTORY_WINDOW = 16;
+export const HISTORY_WINDOW = 8;
 
 /** Keeps recent turns; older turns keep only text/file parts so old search results and tool payloads are not replayed. */
 export function trimHistory(messages: UIMessage[], windowSize = HISTORY_WINDOW): UIMessage[] {
