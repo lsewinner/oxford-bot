@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import type { UIMessage } from "ai";
+import { acquireChat, chatIsRunning, mountChat, type ChatContext } from "@/lib/chat-pool";
 import { CheckIcon, CopyIcon, FileTextIcon, GlobeIcon, RefreshCcwIcon, SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -60,31 +61,36 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null, botSha
   const botRef = useRef(activeBot);
   botRef.current = activeBot;
 
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        api: "/api/chat",
-        headers: async (): Promise<Record<string, string>> => {
-          const { data } = await supabase.auth.getSession();
-          const token = data.session?.access_token;
-          return token ? { Authorization: `Bearer ${token}` } : {};
-        },
-        body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, deepThink:deepThinkRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind, systemPrompt:botRef.current.systemPrompt, preferredTools:botRef.current.preferredTools } : null, ...(botShare ? { botShare } : {}) }),
-      }),
-    [threadId, botShare],
-  );
-
-  const { messages, setMessages, sendMessage, status, stop, regenerate } = useChat({
-    id: threadId,
-    messages: initialMessages,
-    transport,
-    onError: (e) => toast.error(errorText(e)),
-    onFinish: ({ messages: finished }) => {
-      // Keep the cached thread current so reopening it after switching Bots shows the replies.
-      if (!isGuestConversation(threadId)) queryClient.setQueryData(["messages", threadId], { exists: true, messages: finished });
-      queryClient.invalidateQueries({ queryKey: ["threads"] }); queryClient.invalidateQueries({ queryKey: ["bot-history"] }); queryClient.invalidateQueries({ queryKey: ["thread-previews"] });
+  const botShareRef = useRef(botShare);
+  botShareRef.current = botShare;
+  const { report, settle, entries, register } = useBotPresence();
+  const mountedRef = useRef(true);
+  const presenceBotRef = useRef<BotIdentity | null>(activeBot);
+  const ctx: ChatContext = {
+    headers: async (): Promise<Record<string, string>> => {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      return token ? { Authorization: `Bearer ${token}` } : {};
     },
-  });
+    body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, deepThink:deepThinkRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind, systemPrompt:botRef.current.systemPrompt, preferredTools:botRef.current.preferredTools } : null, ...(botShareRef.current ? { botShare: botShareRef.current } : {}) }),
+    onError: (e) => toast.error(errorText(e)),
+    onFinish: (finished) => {
+      // Keep the cached thread current so reopening it (even after it finished in the background) shows the replies.
+      if (!isGuestConversation(threadId)) queryClient.setQueryData(["messages", threadId], { exists: true, messages: finished });
+      else { try { localStorage.setItem(guestMessagesKey(threadId), JSON.stringify(finished)); } catch { /* storage full */ } }
+      queryClient.invalidateQueries({ queryKey: ["threads"] }); queryClient.invalidateQueries({ queryKey: ["bot-history"] }); queryClient.invalidateQueries({ queryKey: ["thread-previews"] });
+      if (!mountedRef.current) settle(threadId);
+    },
+    onStatus: (s) => { if (!mountedRef.current) report(threadId, { bot: presenceBotRef.current, status: s }); },
+  };
+  const entry = acquireChat(threadId, initialMessages, ctx);
+  useEffect(() => {
+    mountedRef.current = true;
+    const release = mountChat(threadId);
+    return () => { mountedRef.current = false; release(); };
+  }, [threadId]);
+
+  const { messages, setMessages, sendMessage, status, stop, regenerate } = useChat({ chat: entry.chat });
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
 
@@ -106,7 +112,6 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null, botSha
   }, [threadId, initialMessages.length, sendMessage, queryClient]);
 
   const busy = status === "submitted" || status === "streaming";
-  const { report, settle, entries, register } = useBotPresence();
   const requests = useMemo(() => botsFromMessages(threadId, messages), [threadId, messages]);
   useEffect(() => register(requests), [register, requests]);
   useEffect(() => {
@@ -116,10 +121,12 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null, botSha
   }, [threadId, messages]);
   const lastRequest = requests.at(-1);
   const bot = activeBot ?? entries.find((entry) => entry.id === lastRequest?.id)?.bot ?? lastRequest?.bot ?? null;
+  presenceBotRef.current = bot;
   useEffect(() => {
     report(threadId, { bot, status });
   }, [threadId, bot, status, report]);
-  useEffect(() => () => settle(threadId), [threadId, settle]);
+  // Leaving a thread keeps its Bot "working" in the sidebar while the reply continues in the background.
+  useEffect(() => () => { if (!chatIsRunning(threadId)) settle(threadId); }, [threadId, settle]);
   const lastMessage = messages.at(-1);
   const lastAssistantHasText =
     lastMessage?.role === "assistant" &&
