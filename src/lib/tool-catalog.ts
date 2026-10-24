@@ -18,7 +18,7 @@ export const TOOL_CATALOG = [
   { id: "telegram", name: "Telegram", category: "即时协作", detail: "Bot 最近消息 · 发送消息", action: "读取 Telegram 消息并发送通知" },
   { id: "oanda", name: "OANDA", category: "交易与行情", detail: "外汇/黄金/原油 · 持仓 · 确认后下单", action: "查询持仓行情并提交待确认交易" },
   { id: "discord", name: "Discord", category: "即时协作", detail: "服务器频道 · 读取讨论 · 确认后发消息", action: "读取 Discord 频道并发送通知" },
-  { id: "x", name: "X (Twitter)", category: "社交与舆情", detail: "关键词舆情 · 博主最新推文", action: "检索 X 推文并总结舆情" },
+  { id: "x", name: "X (Twitter)", category: "社交与舆情", detail: "推文检索（读取需 X 付费 API）", action: "检索 X 推文并总结舆情" },
   { id: "slack", name: "Slack", category: "即时协作", detail: "频道消息 · 工作简报", action: "检索频道并整理简报" },
   { id: "microsoft_teams", name: "Teams", category: "即时协作", detail: "频道消息 · 工作简报", action: "检索频道并整理简报" },
 ] as const;
