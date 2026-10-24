@@ -198,6 +198,16 @@ export async function handleChat(request: Request): Promise<Response> {
     tools: {
       ...createDemoTools(body.demoTools),
       ...realTools,
+      market_quotes: tool({
+        description: "查询美股/港股/A股/指数/ETF/外汇/加密货币的实时行情与近期走势（公开数据，无需账户）。symbols 用 Yahoo 代码：AAPL、NVDA、0700.HK、600519.SS、^GSPC、^HSI、EURUSD=X、GC=F、BTC-USD；range 为 1d/5d/1mo/3mo/6mo/1y/5y。界面会自动显示行情卡片与走势图，回答里只做简要解读并注明数据可能有延迟、不构成投资建议。",
+        inputSchema: (await import("./market.server")).marketInput,
+        execute: async (input) => (await import("./market.server")).fetchQuotes(input),
+      }),
+      render_chart: tool({
+        description: "把用户上传的 CSV/Excel、Google 表格或对话中的结构化数据画成图表（柱状 bar、折线 line、面积 area、饼图 pie）。先自行汇总/透视数据，data 为对象数组（最多 200 行），xKey 为分类或时间字段，series 为数值字段。界面会直接渲染图表，回答里给出关键结论即可。",
+        inputSchema: (await import("./market.server")).chartInput,
+        execute: async (spec) => ({ ...spec, status: "图表已显示" }),
+      }),
       generate_image: tool({
         description: "用户要求画图、生成图片或海报时调用。提交图片描述，界面会实际生成图片；不要声称已完成，也不要只给文字提示词。",
         inputSchema: jsonSchema<{ prompt: string }>({ type: "object", properties: { prompt: { type: "string" } }, required: ["prompt"], additionalProperties: false }),
