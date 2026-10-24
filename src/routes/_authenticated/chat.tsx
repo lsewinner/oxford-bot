@@ -57,10 +57,18 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { data: history } = useQuery(botHistoryQuery(user.id));
   useEffect(() => { if (history) register(history); }, [history, register]);
   const bots = entries;
-  const createBot = async (bot: (typeof entries)[number]["bot"]) => {
+  const createBot = async (bot: (typeof entries)[number]["bot"], trial: TrialMessage[] = []) => {
     const threadId = await createThread();
     const { error } = await supabase.from("threads").update({ title: bot.name }).eq("id", threadId);
     if (error) throw error;
+    if (trial.length) {
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        const rows = trial.map((m) => ({ thread_id: threadId, user_id: u.user!.id, ui_id: `trial-${crypto.randomUUID()}`, role: m.role, parts: [{ type: "text", text: m.text }] }));
+        // Inserted one by one so created_at preserves the trial order.
+        for (const row of rows) { const { error: e } = await supabase.from("messages").insert(row); if (e) break; }
+      }
+    }
     const messageId = `manual-${crypto.randomUUID()}`;
     register([{ id: `${threadId}:${messageId}`, threadId, conversationId: threadId, messageId, bot }]);
     await queryClient.invalidateQueries({ queryKey: ["threads"] });
@@ -72,10 +80,11 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   // Bots copied from a share link arrive through a one-shot handoff after mount.
   useEffect(() => {
     const timer = setTimeout(() => {
-      const bot = takeBotCopy();
-      if (!bot) return;
+      const copied = takeBotCopy();
+      if (!copied) return;
+      const { trial, ...bot } = copied;
       if (!canAddBot(isPro, entries.length)) { openUpgrade("bot"); toast.error("免费账户只能养 1 只自建 Bot，升级 Pro 后可复制更多"); return; }
-      void createBot(bot).then(() => toast.success(`已复制「${bot.name}」到我的 Bots`), () => toast.error("复制 Bot 失败，请重试"));
+      void createBot(bot, trial).then(() => toast.success(trial.length ? `已复制「${bot.name}」和试聊记录到我的 Bots` : `已复制「${bot.name}」到我的 Bots`), () => toast.error("复制 Bot 失败，请重试"));
     }, 0);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
