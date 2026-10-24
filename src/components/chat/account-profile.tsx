@@ -1,6 +1,6 @@
 import { useEffect,useId,useRef,useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { CameraIcon,LoaderCircleIcon,LogOutIcon,Trash2Icon,FlameIcon,SparklesIcon,ShieldCheckIcon,DownloadIcon,PencilIcon,ChevronsUpDownIcon,SunriseIcon,NotebookPenIcon,AudioLinesIcon,LayoutGridIcon } from 'lucide-react';
+import { UserRoundIcon,CameraIcon,LoaderCircleIcon,LogOutIcon,Trash2Icon,FlameIcon,SparklesIcon,ShieldCheckIcon,DownloadIcon,PencilIcon,ChevronsUpDownIcon,SunriseIcon,NotebookPenIcon,AudioLinesIcon,LayoutGridIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuLabel,DropdownMenuSeparator,DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { usePro } from '@/components/pro/pro-context';
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog,DialogContent,DialogTitle,DialogDescription,DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-function ProfileAvatar({profile,large=false}:{profile:Profile;large?:boolean}){return <Avatar className={large?'size-20':'size-9'}><AvatarImage src={profile.avatar} alt={profile.nickname} className="object-cover"/><AvatarFallback className={large?'text-2xl':'text-sm'}>{Array.from(profile.nickname).slice(0,2).join('')}</AvatarFallback></Avatar>;}
+function ProfileAvatar({profile,large=false}:{profile:Profile;large?:boolean}){return <Avatar className={large?'size-20':'size-9'}><AvatarImage src={profile.avatar} alt={profile.nickname} className="object-cover"/><AvatarFallback className={large?'text-2xl':'text-sm'}>{profile.nickname==='我的账户'?<UserRoundIcon className={large?'size-9':'size-4'}/>:Array.from(profile.nickname).slice(0,2).join('')}</AvatarFallback></Avatar>;}
 export function AccountProfile({user,onSignOut,isAdmin=false}:{user:User;onSignOut:()=>void|Promise<void>;isAdmin?:boolean}){
  const {isPro,openUpgrade}=usePro();const desk=useDesktopInstall();const [trends,setTrends]=useState(false);
  const [profile,setProfile]=useState(()=>accountProfile(user.user_metadata));const [draft,setDraft]=useState(profile),[open,setOpen]=useState(false),[saving,setSaving]=useState(false),[processing,setProcessing]=useState(false);const upload=useRef<HTMLInputElement>(null);const id=useId();

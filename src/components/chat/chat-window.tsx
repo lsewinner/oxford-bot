@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport, type UIMessage } from "ai";
@@ -360,7 +361,17 @@ function ChatMessage({
           if (part.type.startsWith('tool-service_')) {
             const step = part as { state?: string; output?: ToolResult; errorText?: string };
             if (step.state === 'output-error') return <p key={i} role="alert" className="text-sm text-destructive">{step.errorText ?? '执行失败'}</p>;
-            if (step.output) return <RealToolResult key={i} output={step.output} />;
+            if (step.output) {
+              const pending = message.parts.flatMap((p) => {
+                const o = (p as { output?: ToolResult }).output;
+                return p.type.startsWith('tool-service_') && o?.status === 'confirmation_required' && o.actionId ? [o.actionId] : [];
+              });
+              const first = pending.length > 1 && pending[0] === step.output.actionId;
+              return <div key={i}>
+                {first && <Button size="sm" variant="secondary" className="mb-2" onClick={() => window.dispatchEvent(new CustomEvent('oxford:confirm-all', { detail: pending }))}>一键确认全部 {pending.length} 项</Button>}
+                <RealToolResult output={step.output} />
+              </div>;
+            }
             return <Shimmer key={i}>{`正在调用 ${part.type.replace('tool-service_', '')}…`}</Shimmer>;
           }
           if (part.type === "text") {

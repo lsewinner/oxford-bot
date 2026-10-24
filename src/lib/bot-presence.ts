@@ -5,7 +5,7 @@ import type { ProviderId } from './connections/catalog';
 export type { CatBreed, BotKind } from "./cat-breeds";
 
 export type BotIdentity = { name: string; kind: BotKind; breed?: CatBreed; systemPrompt?:string; preferredTools?:ProviderId[] };
-export type BotEntry = { id: string; threadId: string; messageId: string; bot: BotIdentity; conversationId?: string; overrides?: { name: string; breed?: CatBreed } };
+export type BotEntry = { id: string; threadId: string; messageId: string; bot: BotIdentity; conversationId?: string; hidden?: true; overrides?: { name: string; breed?: CatBreed } };
 export type BotActivity = { bot: BotIdentity | null; status: "ready" | "submitted" | "streaming" | "error" };
 
 // Presentation only: recognizing a request does not create or connect an automation.

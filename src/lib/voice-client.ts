@@ -199,7 +199,10 @@ export function playSpeech(markdown: string): SpeechPlayer {
     let failed: string | null = null;
     const parser = createParser({
       onEvent(event) {
-        const p = JSON.parse(event.data) as { type: string; audio?: string; error?: { message?: string } };
+        const raw = event.data?.trim();
+        if (!raw || raw === "[DONE]") { completed = true; return; }
+        let p: { type: string; audio?: string; error?: { message?: string } };
+        try { p = JSON.parse(raw); } catch { return; }
         if (p.type === "error" || p.error) { failed = p.error?.message ?? "朗读失败"; return; }
         if (p.type === "speech.audio.done") { completed = true; return; }
         if (p.type !== "speech.audio.delta" || !p.audio) return;

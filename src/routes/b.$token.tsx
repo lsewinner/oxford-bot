@@ -12,7 +12,8 @@ import { BotAvatar } from "@/components/chat/bot-presence";
 import { supabase } from "@/integrations/supabase/client";
 import { sharedBotQuery } from "@/lib/bot-share-query";
 import { isShareOwnerOrAdmin, revokeBotShare, setBotFeatured } from "@/lib/bot-shares.functions";
-import { queueBotCopy, shareToIdentity } from "@/lib/bot-copy";
+import { queueBotCopy, shareToIdentity, trialFromMessages } from "@/lib/bot-copy";
+import { guestMessagesKey, parseGuestMessages } from "@/lib/guest-conversations";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/b/$token")({
@@ -54,7 +55,7 @@ function SharedBotPage() {
   const bot = shareToIdentity(shared);
 
   const copy = () => {
-    queueBotCopy(bot);
+    queueBotCopy(bot, trialFromMessages(parseGuestMessages(localStorage.getItem(guestMessagesKey(`guest:share:${token}`)))));
     void navigate({ to: signedIn ? "/chat" : "/guest" });
   };
 

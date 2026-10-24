@@ -20,7 +20,7 @@ import { AccountProfile } from '@/components/chat/account-profile';
 import { ProBadge } from '@/components/pro/upgrade-dialog';
 import { usePro } from '@/components/pro/pro-context';
 import { LockIcon, BrainCircuitIcon } from 'lucide-react';
-import { takeBotCopy } from "@/lib/bot-copy";
+import { takeBotCopy, type TrialMessage } from "@/lib/bot-copy";
 import { canAddBot } from "@/lib/pro";
 
 export const Route = createFileRoute("/_authenticated/chat")({
@@ -57,10 +57,18 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { data: history } = useQuery(botHistoryQuery(user.id));
   useEffect(() => { if (history) register(history); }, [history, register]);
   const bots = entries;
-  const createBot = async (bot: (typeof entries)[number]["bot"]) => {
+  const createBot = async (bot: (typeof entries)[number]["bot"], trial: TrialMessage[] = []) => {
     const threadId = await createThread();
     const { error } = await supabase.from("threads").update({ title: bot.name }).eq("id", threadId);
     if (error) throw error;
+    if (trial.length) {
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        const rows = trial.map((m) => ({ thread_id: threadId, user_id: u.user!.id, ui_id: `trial-${crypto.randomUUID()}`, role: m.role, parts: [{ type: "text", text: m.text }] }));
+        // Inserted one by one so created_at preserves the trial order.
+        for (const row of rows) { const { error: e } = await supabase.from("messages").insert(row); if (e) break; }
+      }
+    }
     const messageId = `manual-${crypto.randomUUID()}`;
     register([{ id: `${threadId}:${messageId}`, threadId, conversationId: threadId, messageId, bot }]);
     await queryClient.invalidateQueries({ queryKey: ["threads"] });
@@ -72,10 +80,11 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   // Bots copied from a share link arrive through a one-shot handoff after mount.
   useEffect(() => {
     const timer = setTimeout(() => {
-      const bot = takeBotCopy();
-      if (!bot) return;
+      const copied = takeBotCopy();
+      if (!copied) return;
+      const { trial, ...bot } = copied;
       if (!canAddBot(isPro, entries.length)) { openUpgrade("bot"); toast.error("免费账户只能养 1 只自建 Bot，升级 Pro 后可复制更多"); return; }
-      void createBot(bot).then(() => toast.success(`已复制「${bot.name}」到我的 Bots`), () => toast.error("复制 Bot 失败，请重试"));
+      void createBot(bot, trial).then(() => toast.success(trial.length ? `已复制「${bot.name}」和试聊记录到我的 Bots` : `已复制「${bot.name}」到我的 Bots`), () => toast.error("复制 Bot 失败，请重试"));
     }, 0);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,7 +125,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     const { error } = await supabase.from("threads").delete().eq("id", id);
     if (error) {
       toast.error("删除失败");
-      return;
+      throw error;
     }
     removeThread(id);
     queryClient.invalidateQueries({ queryKey: ["threads"] });
@@ -156,8 +165,8 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               {!isPro && <LockIcon aria-label="Pro 专属" className="absolute left-1 top-1 z-10 size-3 text-muted-foreground" />}<BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} preview={previews[entry.conversationId ?? entry.threadId]?.preview} time={previews[entry.conversationId ?? entry.threadId]?.updatedAt} />
             </Button>
             <div className="absolute bottom-2 right-2 flex h-6 items-center gap-1">
-            <BotSettings entry={entry} onRename={async (name) => { await renameBotThread(entry, name); await queryClient.invalidateQueries({ queryKey: ["threads"] }); }} />
-            {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => remove(entry.conversationId ?? entry.threadId)} className="size-6 shrink-0 text-muted-foreground hover:text-destructive [&_svg]:size-3.5 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}
+            <BotSettings entry={entry} onRename={async (name) => { await renameBotThread(entry, name); await queryClient.invalidateQueries({ queryKey: ["threads"] }); }} onDelete={async () => { const target = entry.conversationId ?? (entry.messageId.startsWith("manual-") ? entry.threadId : null); if (target) await remove(target); }} />
+            {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => void remove(entry.conversationId ?? entry.threadId).catch(() => {})} className="size-6 shrink-0 text-muted-foreground hover:text-destructive [&_svg]:size-3.5 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}
             </div>
           </div>)}
         </section>
@@ -188,7 +197,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     <button
                       type="button"
                       aria-label="删除对话"
-                      onClick={() => remove(t.id)}
+                      onClick={() => void remove(t.id).catch(() => {})}
                       className="mr-1 rounded-md p-1.5 text-muted-foreground opacity-100 transition hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
                     >
                       <Trash2Icon className="size-3.5" />
