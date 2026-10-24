@@ -20,7 +20,7 @@ import { AccountProfile } from '@/components/chat/account-profile';
 import { ProBadge } from '@/components/pro/upgrade-dialog';
 import { usePro } from '@/components/pro/pro-context';
 import { LockIcon, BrainCircuitIcon } from 'lucide-react';
-import { takeBotCopy } from "@/lib/bot-copy";
+import { takeBotCopy, type TrialMessage } from "@/lib/bot-copy";
 import { canAddBot } from "@/lib/pro";
 
 export const Route = createFileRoute("/_authenticated/chat")({
