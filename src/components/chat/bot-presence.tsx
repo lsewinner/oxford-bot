@@ -18,9 +18,9 @@ import { usePro } from "@/components/pro/pro-context";
 import { canAddBot } from "@/lib/pro";
 import { supabase } from "@/integrations/supabase/client";
 
-type PresenceContext = { entries: BotEntry[]; register: (entries: BotEntry[]) => void; update: (id: string, bot: BotIdentity) => void; removeThread: (id: string) => void; linkConversation: (id: string, conversationId: string) => void; activities: Record<string, BotActivity>; report: (id: string, activity: BotActivity) => void; settle: (id: string) => void };
+type PresenceContext = { entries: BotEntry[]; register: (entries: BotEntry[]) => void; update: (id: string, bot: BotIdentity) => void; removeThread: (id: string) => void; hideEntry: (id: string) => void; linkConversation: (id: string, conversationId: string) => void; activities: Record<string, BotActivity>; report: (id: string, activity: BotActivity) => void; settle: (id: string) => void };
 const noop = () => {};
-const Context = createContext<PresenceContext>({ entries: [], register: noop, update: noop, removeThread: noop, linkConversation: noop, activities: {}, report: noop, settle: noop });
+const Context = createContext<PresenceContext>({ entries: [], register: noop, update: noop, removeThread: noop, hideEntry: noop, linkConversation: noop, activities: {}, report: noop, settle: noop });
 
 export function BotPresenceProvider({ children, scope = "guest" }: { children: ReactNode; scope?: string }) {
   // Reset all registry state before restoring a different account's storage.
@@ -74,6 +74,8 @@ function ScopedBotPresenceProvider({ children, scope }: { children: ReactNode; s
     setEntries((previous) => previous.map((entry) => entry.id === id ? { ...entry, bot, overrides: { name: bot.name, ...(bot.breed ? { breed: bot.breed } : {}) } } : entry));
   }, []);
   const removeThread = useCallback((id: string) => setEntries((previous) => previous.filter((entry) => entry.conversationId !== id && entry.threadId !== id)), []);
+  // Deleted Bots stay as hidden tombstones so history parsing cannot resurrect them.
+  const hideEntry = useCallback((id: string) => setEntries((previous) => previous.map((entry) => entry.id === id ? { ...entry, hidden: true as const } : entry)), []);
   const linkConversation = useCallback((id: string, conversationId: string) => setEntries((previous) => previous.map((entry) => entry.id === id ? { ...entry, conversationId } : entry)), []);
   const [activities, setActivities] = useState<Record<string, BotActivity>>({});
   const report = useCallback((id: string, activity: BotActivity) => {
@@ -85,7 +87,8 @@ function ScopedBotPresenceProvider({ children, scope }: { children: ReactNode; s
       return current ? { ...prev, [id]: { ...current, status: "ready" } } : prev;
     });
   }, []);
-  const value = useMemo(() => ({ entries, register, update, removeThread, linkConversation, activities, report, settle }), [entries, register, update, removeThread, linkConversation, activities, report, settle]);
+  const visible = useMemo(() => entries.filter((entry) => !entry.hidden), [entries]);
+  const value = useMemo(() => ({ entries: visible, register, update, removeThread, hideEntry, linkConversation, activities, report, settle }), [visible, register, update, removeThread, hideEntry, linkConversation, activities, report, settle]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 
