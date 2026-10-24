@@ -5,7 +5,7 @@ export const TOOL_CATALOG = [
   { id: "yuque", name: "语雀", category: "云盘与文档", detail: "知识库 · 文档 · 新建与更新", action: "查询知识库并整理文档" },
   { id: "google_calendar", name: "Google Calendar", category: "日程与会议", detail: "查看日程 · 创建日程", action: "查看并安排日程" },
   { id: "microsoft_calendar", name: "Outlook 日历", category: "日程与会议", detail: "查看日程 · 创建日程", action: "查看并安排日程" },
-  { id: "google_drive", name: "Google 云盘", category: "云盘与文档", detail: "浏览文件夹 · 检索文件 · 读取正文", action: "浏览并读取云盘文件" },
+  { id: "google_drive", name: "Google 云盘", category: "云盘与文档", detail: "浏览文件夹 · 检索文件 · 读写 Google 表格", action: "浏览云盘文件并读写表格" },
   { id: "github", name: "GitHub", category: "开发与运维", detail: "代码库 · Issue · PR", action: "查询代码库、Issue 和 PR" },
   { id: "cloudflare", name: "Cloudflare", category: "开发与运维", detail: "DNS · 站点管理", action: "查询 DNS 与站点状态" },
   { id: "supabase", name: "Supabase", category: "开发与运维", detail: "项目 · 表结构 · 只读查询 · 健康检查", action: "查询数据库结构与数据" },
@@ -17,6 +17,8 @@ export const TOOL_CATALOG = [
   { id: "jira", name: "Jira", category: "开发与运维", detail: "项目 · Issue · 新建 Issue", action: "查询并整理 Jira Issue" },
   { id: "telegram", name: "Telegram", category: "即时协作", detail: "Bot 最近消息 · 发送消息", action: "读取 Telegram 消息并发送通知" },
   { id: "oanda", name: "OANDA", category: "交易与行情", detail: "外汇/黄金/原油 · 持仓 · 确认后下单", action: "查询持仓行情并提交待确认交易" },
+  { id: "discord", name: "Discord", category: "即时协作", detail: "服务器频道 · 读取讨论 · 确认后发消息", action: "读取 Discord 频道并发送通知" },
+  { id: "x", name: "X (Twitter)", category: "社交与舆情", detail: "关键词舆情 · 博主最新推文", action: "检索 X 推文并总结舆情" },
   { id: "slack", name: "Slack", category: "即时协作", detail: "频道消息 · 工作简报", action: "检索频道并整理简报" },
   { id: "microsoft_teams", name: "Teams", category: "即时协作", detail: "频道消息 · 工作简报", action: "检索频道并整理简报" },
 ] as const;
