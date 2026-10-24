@@ -100,7 +100,8 @@ export async function callWithGoogleToken(provider: GoogleProvider, refreshToken
   const accessToken = await getGoogleAccessToken(refreshToken);
   const headers = new Headers(init?.headers);
   headers.set('Authorization', `Bearer ${accessToken}`);
-  const res = await fetch(`${HOSTS[provider]}${path.startsWith('/') ? path : `/${path}`}`, { ...init, headers, redirect: 'manual' });
+  const host = provider === 'google_drive' && path.startsWith('/v4/spreadsheets/') ? 'https://sheets.googleapis.com' : HOSTS[provider];
+  const res = await fetch(`${host}${path.startsWith('/') ? path : `/${path}`}`, { ...init, headers, redirect: 'manual' });
   // Never follow redirects off the fixed provider host; surface them as a gateway error.
   if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) return new Response(JSON.stringify({ error: 'unexpected_redirect' }), { status: 502, headers: { 'content-type': 'application/json' } });
   return res;
