@@ -208,6 +208,23 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 function ChatLayout() {
   const [open, setOpen] = useState(false);
   const { user } = Route.useRouteContext();
+  // Swiping right from the left edge opens the Bot list instead of feeling like "back".
+  useEffect(() => {
+    let startX = -1, startY = 0;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      startX = t && t.clientX < 40 ? t.clientX : -1;
+      startY = t?.clientY ?? 0;
+    };
+    const onMove = (e: TouchEvent) => {
+      if (startX < 0) return;
+      const t = e.touches[0];
+      if (t && t.clientX - startX > 50 && Math.abs(t.clientY - startY) < 40) { startX = -1; setOpen(true); }
+    };
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchmove", onMove, { passive: true });
+    return () => { window.removeEventListener("touchstart", onStart); window.removeEventListener("touchmove", onMove); };
+  }, []);
   return (
     <ModeProvider>
       <WebSearchProvider>
