@@ -39,16 +39,19 @@ function AuthPage() {
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const phonePending = useRef(false);
 
+  // Hide the form until we know the visitor is signed out, so a Safari back-swipe never flashes it.
+  const [checked, setChecked] = useState(false);
   useEffect(() => {
     const check = () => supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/chat", replace: true });
+      else setChecked(true);
     });
     void check();
     const { data } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session) navigate({ to: "/chat", replace: true });
     });
     // Safari back-swipe restores this page from cache; send signed-in users straight back.
-    const onShow = () => { void check(); };
+    const onShow = (e: PageTransitionEvent) => { if (e.persisted) setChecked(false); void check(); };
     const onVisible = () => { if (document.visibilityState === "visible") void check(); };
     window.addEventListener("pageshow", onShow);
     document.addEventListener("visibilitychange", onVisible);
@@ -131,6 +134,8 @@ function AuthPage() {
       setLoading(false);
     }
   };
+
+  if (!checked) return <div className="min-h-dvh bg-background bg-glow" aria-busy="true" />;
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background bg-glow px-4">
