@@ -22,24 +22,46 @@ completed native rewrite or an App Store release.
 - Native microphone/camera usage descriptions. Android microphone permission is
   enabled through Help → Enable microphone, on explicit user action.
 - EAS profiles for iOS simulator, Android APK, and iOS store-signed TestFlight.
+- Google/Apple login messages open a system authentication session and return the
+  resulting session to the same Oxford Bot WebView document. Cancellation and
+  failures return `NATIVE_OAUTH_ERROR`; the existing download bridge is retained.
+
+## Native login contract
+
+The web page sends `{"type":"NATIVE_OAUTH","provider":"google"}` (or `apple`)
+through `window.ReactNativeWebView.postMessage`. The native app opens
+`https://oxford.bot/api/public/sb/auth/v1/authorize` using
+`WebBrowser.openAuthSessionAsync`, with `redirect_to=oxfordbot://oauth-callback`.
+`app.json` already registers the `oxfordbot` scheme. No additional native
+dependency is needed for this fixed callback URL.
+
+The auth service must allow **`oxfordbot://oauth-callback`** as a redirect URL.
+Its provider settings and the deployed web handler are separate from this Expo
+package. The web handler must receive `NATIVE_OAUTH_SUCCESS` and call its existing
+Supabase client's `auth.setSession({ access_token, refresh_token })`. On
+`NATIVE_OAUTH_ERROR`, it should reset the pending UI and let the user retry.
+
+This implements the requested Supabase implicit-flow fragment callback. A PKCE
+`code` alone is rejected, not reported as a successful login. Callback URLs,
+tokens and provider error payloads are never logged or persisted by the shell.
+Only the exact HTTPS app origin can request login; only the registered callback
+destination is accepted. Results are discarded if the originating WebView
+document was replaced, reloaded or navigated while authentication was open.
+
+The client uses an explicit `https://oxford.bot` target origin for its injected
+`window.postMessage`, preserving the requested message shape. Direct provider
+navigation and unrelated connector OAuth remain blocked inside the WebView.
 
 ## Current limitations
 
-Email/password and guest chat are the intended first device-test paths. Google
-sign-in and new connection authorizations are not supported in this build.
-Existing OAuth implementations use browser popup/opener callbacks; opening a
-system browser cannot transfer its session into this WebView. Popup actions show
-a clear fallback, and known OAuth redirects are blocked. Do not relax the origin
-policy or put session tokens into a deep link to work around this.
-
-For full OAuth support, implement a reviewed native PKCE or short-lived one-time
-handoff flow, with verified callback ownership and replay protection. Keep the
-server's current identity/ownership checks and provider write confirmations.
+New tool-connection authorizations still use browser popup/opener callbacks and
+need the website. Do not treat native account login as support for those flows.
+Email/password and guest chat remain available. The server's identity/ownership
+checks and provider-write confirmations are unchanged.
 
 The existing website uses Stripe web checkout. Mobile purchase/account deletion
-flows, privacy disclosures and full OAuth must be reviewed before external beta
-or public store submission. The `oxfordbot` URL scheme is reserved only; no auth
-callback or associated-domain entitlement is claimed yet.
+flows and privacy disclosures must be reviewed before external beta or public
+store submission. No universal-link/associated-domain entitlement is claimed.
 
 Native binaries, microphone playback/recording, actual device upload/sharing,
 keyboard behavior and session persistence still require iPhone/Android testing.
@@ -49,6 +71,12 @@ recommended for final store artwork. Do not treat JavaScript export or native
 project generation as a successful cloud build, TestFlight upload, or Apple review.
 
 ## Local checks
+
+Native login update (2026-10-24): strict TypeScript and all 22 navigation,
+download and OAuth tests passed. Both iOS and Android Hermes exports succeeded.
+These checks cover callback validation, cancellation/error messages, exact-origin
+delivery and injection escaping; they do not establish a real provider login or
+TestFlight availability for the new source revision.
 
 Preparation validation (2026-10-20): strict TypeScript check and 13 navigation /
 download tests passed. Expo resolved SDK 58 compatible dependencies from its
@@ -138,14 +166,21 @@ are separate from TestFlight.
 ## Device acceptance before wider testing
 
 - Email login/logout, restart with preserved session, account separation.
+- Google/Apple login through the system window, return to app, persisted session.
+- Cancel, denied consent, invalid callback and retry; no pending spinner left behind.
+- Confirm the auth redirect allow-list. If consent returns to the website instead
+  of the app, report that separately from the build/upload result.
 - Guest chat, existing threads, first send, streamed reply, cancellation, error.
 - Image/PDF/text attachments, cancellation, supported-size limit and denial.
 - Markdown/text and generated-image exports; share cancellation and cleanup.
 - Voice permission denial/grant, recording, playback, background/resume.
 - Small iPhone keyboard, Android back, tablet/split view, rotation, offline retry.
 - External source links stay outside the WebView; popup/OAuth shows honest fallback.
-- No private messages/tokens in logs, crash reports, URLs or build artifacts.
+- No private messages/tokens in logs, crash reports or build artifacts. Session
+  tokens from the requested auth callback fragment must never be copied into a
+  navigated WebView URL or forwarded to an external origin.
 
 References: [Expo WebView](https://docs.expo.dev/versions/v58.0.0/sdk/webview/),
 [EAS TestFlight](https://docs.expo.dev/submit/testflight/),
 [WebView reference](https://github.com/react-native-webview/react-native-webview/blob/master/docs/Reference.md).
+

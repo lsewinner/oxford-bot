@@ -2,7 +2,7 @@ export const strings = {
   en: {
     beta: 'PRIVATE BETA',
     intro: 'Your conversations, on your phone.',
-    note: 'For this test build, use email and password or guest chat. Google sign-in and new tool connections are not available in the app yet.',
+    note: 'Use email and password, Google or Apple sign-in, or try guest chat. Google and Apple open a secure system sign-in window. New tool connections still need the website.',
     continue: 'Open Oxford Bot',
     browser: 'Open website',
     loading: 'Connecting to Oxford Bot…',
@@ -24,7 +24,7 @@ export const strings = {
   zh: {
     beta: '内测版本',
     intro: '在手机上，继续你的对话。',
-    note: '此测试版请使用邮箱密码登录，或使用游客聊天。Google 登录和新增工具授权暂未在 App 内开放。',
+    note: '可使用邮箱密码、Google 或 Apple 登录，也可使用游客聊天。Google 和 Apple 登录将在系统安全窗口中完成。新增工具授权仍需使用网页版。',
     continue: '打开 Oxford Bot',
     browser: '打开网页版',
     loading: '正在连接 Oxford Bot…',
@@ -44,3 +44,4 @@ export const strings = {
     voiceNote: '在对话中点击麦克风，出现 iOS 提示时允许访问。',
   },
 };
+

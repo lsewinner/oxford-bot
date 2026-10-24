@@ -12,7 +12,10 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { APP_URL, destination, isAppUrl } from './src/navigation';
 import { DOWNLOAD_BRIDGE_SCRIPT, parseDownloadMessage } from './src/bridge';
+import { completeOAuth, oauthReplyScript, parseOAuthRequest } from './src/oauth';
 import { strings } from './src/strings';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const exportDirectory = new Directory(Paths.cache, 'oxford-exports');
 async function prepareExportDirectory() {
@@ -32,6 +35,8 @@ function OxfordBot() {
   const web = useRef<WebView<object>>(null);
   const currentUrl = useRef(APP_URL);
   const sharing = useRef(false);
+  const authenticating = useRef(false);
+  const pageRevision = useRef(0);
   const [entered, setEntered] = useState(false);
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -80,6 +85,7 @@ function OxfordBot() {
   }
 
   function retry() {
+    pageRevision.current++;
     currentUrl.current = APP_URL;
     setFailed(false);
     setLoading(true);
@@ -88,7 +94,30 @@ function OxfordBot() {
   }
 
   async function onMessage(event: WebViewMessageEvent) {
-    if (!isAppUrl(currentUrl.current) || sharing.current) return;
+    if (!isAppUrl(currentUrl.current)) return;
+    const request = parseOAuthRequest(event.nativeEvent.data, event.nativeEvent.url);
+    if (request) {
+      // Ignore duplicate taps while the system owns the current auth session.
+      if (authenticating.current) return;
+      const view = web.current;
+      const revision = pageRevision.current;
+      // The message URL also covers SPA route changes on Android WebViews.
+      const pageUrl = event.nativeEvent.url;
+      currentUrl.current = pageUrl;
+      authenticating.current = true;
+      try {
+        const reply = request.provider
+          ? await completeOAuth(request.provider, (url, redirectUrl) => WebBrowser.openAuthSessionAsync(url, redirectUrl))
+          : { type: 'NATIVE_OAUTH_ERROR' as const };
+        if (view && web.current === view && pageRevision.current === revision && currentUrl.current === pageUrl) {
+          view.injectJavaScript(oauthReplyScript(reply, pageUrl));
+        }
+      } finally {
+        authenticating.current = false;
+      }
+      return;
+    }
+    if (sharing.current) return;
     const message = parseDownloadMessage(event.nativeEvent.data, event.nativeEvent.url);
     if (!message) return;
     if (message.type === 'oxford-download-unavailable') {
@@ -165,10 +194,15 @@ function OxfordBot() {
                 else unavailable();
               }}
               onNavigationStateChange={state => {
-                if (isAppUrl(state.url)) currentUrl.current = state.url;
+                currentUrl.current = state.url;
                 setCanGoBack(state.canGoBack);
               }}
-              onLoadStart={() => { setLoading(true); setFailed(false); }}
+              onLoadStart={event => {
+                pageRevision.current++;
+                currentUrl.current = event.nativeEvent.url;
+                setLoading(true);
+                setFailed(false);
+              }}
               onLoadEnd={() => setLoading(false)}
               onError={() => { setLoading(false); setFailed(true); }}
               onHttpError={event => {
@@ -240,3 +274,4 @@ const styles = StyleSheet.create({
   loadingText: { color: '#ddd', fontSize: 12 },
   error: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#000', padding: 30, justifyContent: 'center' },
 });
+
