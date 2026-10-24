@@ -65,6 +65,19 @@ function Index() {
         <h2 id="about-heading" className="text-base font-semibold text-foreground">{t.about}</h2>
         <p className="mt-3">{t.body}</p>
       </section>
+      {lang === "zh" ? (
+        <section lang="zh-CN" aria-labelledby="what-heading" className="mt-10 w-full max-w-2xl border-t border-border pt-10 text-left text-sm leading-7 text-muted-foreground">
+          <h2 id="what-heading" className="text-base font-semibold text-foreground">Oxford Bot 能做什么</h2>
+          <p className="mt-3">Oxford Bot 是英国 Oxford Intelligence Limited 推出的 AI 助手网页应用。无需注册即可游客试用；注册免费账户后你可以：</p>
+          <ul className="mt-3 list-disc space-y-1 pl-5">
+            <li>与 AI 助手对话：回答问题、联网搜索、分析图片和 PDF。</li>
+            <li>创建有名字的助手「Bot」，录制会议并获得转写与纪要，建立私人知识库。</li>
+            <li>按需连接你自己的工具（如 Google 日历、Gmail、Google 云端硬盘、Notion、GitHub、Slack），让助手读取你询问的内容。</li>
+          </ul>
+          <h3 className="mt-6 font-semibold text-foreground">Oxford Bot 如何使用 Google 数据</h3>
+          <p className="mt-2">Google 授权完全可选，只有在「工具与连接」中点击某项 Google 服务的「连接」后才会开始。Oxford Bot 仅在你于对话中询问时读取 Gmail 邮件、云端硬盘文件或日历事件；起草或发送邮件、创建文件、添加日历事件都必须在你点击确认按钮后才会执行。Google 数据绝不出售、绝不用于广告、绝不用于训练 AI 模型，你可随时断开连接。详见<Link to="/privacy" className="text-foreground underline">隐私政策</Link>。</p>
+        </section>
+      ) : (
       <section lang="en" aria-labelledby="what-heading" className="mt-10 w-full max-w-2xl border-t border-border pt-10 text-left text-sm leading-7 text-muted-foreground">
         <h2 id="what-heading" className="text-base font-semibold text-foreground">What Oxford Bot does</h2>
         <p className="mt-3">Oxford Bot is an AI assistant web app made by Oxford Intelligence Limited (UK). Anyone can try it as a guest without an account. With a free account you can:</p>
@@ -76,6 +89,7 @@ function Index() {
         <h3 className="mt-6 font-semibold text-foreground">How Oxford Bot uses Google data</h3>
         <p className="mt-2">Google access is optional and only starts when you click “Connect” for a Google service in Tools &amp; Connections. Oxford Bot reads Gmail messages, Drive files or Calendar events only when you ask about them in chat, and it drafts or sends an email, creates a file or adds a calendar event only after you click a confirmation button. Google data is never sold, never used for advertising and never used to train AI models. You can disconnect at any time. Details are in our <Link to="/privacy" className="text-foreground underline">Privacy Policy</Link>.</p>
       </section>
+      )}
       <div className="mt-6"><LegalLinks lang={lang} /></div>
     </div>
   );
