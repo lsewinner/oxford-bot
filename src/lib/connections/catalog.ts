@@ -1,12 +1,12 @@
 import { z } from 'zod';
-export const providerId = z.enum(['github','google_mail','microsoft_outlook','google_drive','google_calendar','microsoft_calendar','slack','cloudflare','microsoft_teams','supabase','notion','yuque','feishu','linear','gitee','airtable','clickup','telegram','asana','jira','oanda']);
+export const providerId = z.enum(['github','google_mail','microsoft_outlook','google_drive','google_calendar','microsoft_calendar','slack','cloudflare','microsoft_teams','supabase','notion','yuque','feishu','linear','gitee','airtable','clickup','telegram','asana','jira','oanda','discord','x']);
 export type ProviderId = z.infer<typeof providerId>;
 export const PROVIDERS = {
  github: { name:'GitHub', scopes:['read:user','repo'], setup:'https://github.com/settings/developers', operations:['repos','issues','pulls','read_file','create_issue','write_file'] },
  google_mail: { name:'Gmail', scopes:['https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/gmail.readonly','https://www.googleapis.com/auth/gmail.compose','https://www.googleapis.com/auth/gmail.send'], setup:'https://console.cloud.google.com/apis/credentials', operations:['search','read','draft','send'] },
  microsoft_outlook: { name:'Outlook', scopes:['openid','profile','email','offline_access','User.Read','Mail.Read','Mail.ReadWrite','Mail.Send'], setup:'https://entra.microsoft.com/', operations:['search','read','draft','send'] },
  microsoft_teams: { name:'Teams', scopes:['openid','profile','email','offline_access','User.Read','Team.ReadBasic.All','Channel.ReadBasic.All','ChannelMessage.Read.All','ChannelMessage.Send'], setup:'https://entra.microsoft.com/', operations:['teams','channels','messages','send'] },
- google_drive: { name:'Google 云盘', scopes:['https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/drive.readonly','https://www.googleapis.com/auth/drive.file'], setup:'https://console.cloud.google.com/apis/credentials', operations:['search','folders','read','create_file'] },
+ google_drive: { name:'Google 云盘', scopes:['https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/drive.readonly','https://www.googleapis.com/auth/drive.file','https://www.googleapis.com/auth/spreadsheets'], setup:'https://console.cloud.google.com/apis/credentials', operations:['search','folders','read','create_file','sheet_read','sheet_append','sheet_update'] },
  google_calendar: { name:'Google Calendar', scopes:['https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/calendar.readonly','https://www.googleapis.com/auth/calendar.events'], setup:'https://console.cloud.google.com/apis/credentials', operations:['calendars','events','create_event'] },
  microsoft_calendar: { name:'Outlook 日历', scopes:['openid','profile','email','offline_access','User.Read','Calendars.ReadWrite'], setup:'https://entra.microsoft.com/', operations:['calendars','events','create_event'] },
  cloudflare: { name:'Cloudflare', scopes:[], setup:'https://dash.cloudflare.com/profile/api-tokens', operations:['zones','dns_records'] },
@@ -22,11 +22,13 @@ export const PROVIDERS = {
  asana: { name:'Asana', scopes:[], setup:'https://app.asana.com/0/my-apps', operations:['workspaces','projects','tasks','create_task'] },
  jira: { name:'Jira', scopes:[], setup:'https://id.atlassian.com/manage-profile/security/api-tokens', operations:['projects','issues','issue','create_issue'] },
  oanda: { name:'OANDA', scopes:[], setup:'https://www.oanda.com/account/tpa/personal_token', operations:['accounts','summary','positions','trades','orders','prices','create_order','close_position','close_trade','cancel_order'] },
+ discord: { name:'Discord', scopes:[], setup:'https://discord.com/developers/applications', operations:['guilds','channels','messages','send_message'] },
+ x: { name:'X (Twitter)', scopes:[], setup:'https://developer.x.com/en/portal/dashboard', operations:['search','user_tweets'] },
  linear: { name:'Linear', scopes:['read','write','issues:create','comments:create'], setup:'https://linear.app/settings/api', operations:['teams','issues','issue','create_issue','create_comment'] },
 } as const;
 export const operationInput = z.object({ operation:z.string(), offset:z.number().int().min(0).max(100000).optional(), account:z.string().max(320).optional(), teamId:z.string().uuid().optional(), channelId:z.string().min(1).max(500).regex(/^[\w:@.-]+$/).optional(), query:z.string().max(8000).optional(), id:z.string().max(500).optional(), repo:z.string().max(200).optional(), path:z.string().max(500).optional(), title:z.string().max(300).optional(), text:z.string().max(30000).optional(), to:z.string().email().optional(), sha:z.string().max(100).optional(), start:z.string().max(40).optional(), end:z.string().max(40).optional(), timeZone:z.string().max(60).regex(/^[\w/+-]+$/).optional(), units:z.string().regex(/^-?\d{1,9}$/).optional(), orderType:z.enum(['MARKET','LIMIT']).optional(), price:z.string().regex(/^\d{1,7}(?:\.\d{1,6})?$/).optional(), stopLoss:z.string().regex(/^\d{1,7}(?:\.\d{1,6})?$/).optional(), takeProfit:z.string().regex(/^\d{1,7}(?:\.\d{1,6})?$/).optional(), side:z.enum(['long','short','all']).optional(), ref:z.string().regex(/^\d{1,20}$/).optional() }).strict();
 export type OperationInput = z.infer<typeof operationInput>;
-export function isWrite(operation:string) { return ['draft','send','create_issue','write_file','create_file','append','create_page','create_doc','update_doc','add_record','create_event','create_comment','create_memo','create_record','create_task','send_message','create_order','close_position','close_trade','cancel_order'].includes(operation); }
+export function isWrite(operation:string) { return ['draft','send','create_issue','write_file','create_file','append','create_page','create_doc','update_doc','add_record','create_event','create_comment','create_memo','create_record','create_task','send_message','create_order','close_position','close_trade','cancel_order','sheet_append','sheet_update'].includes(operation); }
 export function validateOperation(provider:ProviderId,input:OperationInput) {
  if (!(PROVIDERS[provider].operations as readonly string[]).includes(input.operation)) throw new Error('不支持的操作');
   if (provider==='feishu') {
@@ -53,6 +55,20 @@ export function validateOperation(provider:ProviderId,input:OperationInput) {
    if (allDay.test(input.start!)!==allDay.test(input.end!)) throw new Error('开始和结束时间格式需一致');
    if (Date.parse(input.end!)<=Date.parse(input.start!)) throw new Error('结束时间必须晚于开始时间');
   }
+ }
+ if (provider==='google_drive' && input.operation.startsWith('sheet_')) {
+  if (!/^[\w-]{20,100}$/.test(input.id ?? '')) throw new Error('请指定 Google 表格 ID（链接中 /d/ 与 /edit 之间那段）');
+  if (!/^(?:'[^']{1,100}'|[^!'\/?#]{1,100})(?:![A-Za-z]{1,3}\d{0,7}(?::[A-Za-z]{1,3}\d{0,7})?)?$/.test(input.repo ?? '')) throw new Error('请指定表格范围 repo（如 Sheet1!A1:E50 或 Sheet1）');
+  if (input.operation!=='sheet_read') { let v:unknown; try { v=JSON.parse(input.text ?? ''); } catch { v=null; } if (!Array.isArray(v) || !v.length || v.length>500 || !v.every(r=>Array.isArray(r) && r.length<=50)) throw new Error('请在 text 中提供二维数组 JSON，如 [["姓名","金额"],["张三",100]]（最多 500 行 × 50 列）'); }
+ }
+ if (provider==='discord') {
+  if (['channels'].includes(input.operation) && !/^\d{15,22}$/.test(input.id ?? '')) throw new Error('请指定 Discord 服务器 ID（来自服务器列表）');
+  if (['messages','send_message'].includes(input.operation) && !/^\d{15,22}$/.test(input.id ?? '')) throw new Error('请指定 Discord 频道 ID（来自频道列表）');
+  if (input.operation==='send_message' && (!input.text?.trim() || input.text.length>2000)) throw new Error('请提供 2000 字以内的消息正文');
+ }
+ if (provider==='x') {
+  if (input.operation==='search' && (!input.query?.trim() || input.query.length>512)) throw new Error('请提供搜索关键词（512 字以内，支持 X 搜索语法）');
+  if (input.operation==='user_tweets' && !/^@?\w{1,15}$/.test(input.repo ?? '')) throw new Error('请在 repo 中指定 X 用户名（如 elonmusk）');
  }
  if (provider==='gitee' && input.operation!=='repos' && !/^[\w.-]+\/[\w.-]+$/.test(input.repo ?? '')) throw new Error('请指定 Gitee 仓库 owner/repo');
  if (provider==='airtable') {

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { providerId,PROVIDERS,operationInput,type ToolResult } from './connections/catalog';
 const BASE='https://connector-gateway.lovable.dev';
 const selection=z.object({id:providerId});
-export const connectPersonalToken=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['github','slack','cloudflare','supabase','notion','yuque','gitee','airtable','clickup','telegram','asana','jira','oanda']),token:z.string().trim().min(1).max(4096).regex(/^[\x21-\x7E]+$/),label:z.string().trim().max(60).optional()}).strict().parse(v)).handler(async({data,context})=>{await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
+export const connectPersonalToken=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(v=>z.object({id:z.enum(['github','slack','cloudflare','supabase','notion','yuque','gitee','airtable','clickup','telegram','asana','jira','oanda','discord','x']),token:z.string().trim().min(1).max(4096).regex(/^[\x21-\x7E]+$/),label:z.string().trim().max(60).optional()}).strict().parse(v)).handler(async({data,context})=>{await (await import('./pro.server')).requirePro(context.supabase as never,context.userId);
  const {validatePersonalToken,personalTokenIdentity}=await import('./connections/personal-token.server');
  const {saveConnection}=await import('./connections/storage.server');
  const body=await validatePersonalToken(data.id,data.token);
@@ -17,7 +17,7 @@ export const connectionStatus=createServerFn({method:'POST'}).middleware([requir
  const {getConnections,decryptConnectionKey}=await import('./connections/storage.server');
  const {callAsAppUser,appUserReconnectRequired}=await import('@/integrations/lovable/appUserConnector');
  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
- const paths={github:'/user',google_mail:'/gmail/v1/users/me/profile',microsoft_outlook:'/me?$select=displayName',microsoft_teams:'/me/joinedTeams',microsoft_calendar:'/me/calendars?$top=1',google_drive:'/drive/v3/about?fields=user(displayName,emailAddress)',google_calendar:'/calendar/v3/users/me/calendarList/primary',slack:'/api/auth.test',cloudflare:'/zones?per_page=1',supabase:'/projects',notion:'/users/me',yuque:'/user',feishu:'/bot/v3/info',linear:'',gitee:'/user',airtable:'/v0/meta/whoami',clickup:'/api/v2/user',telegram:'/getMe',asana:'/users/me',jira:'/rest/api/3/myself',oanda:'/v3/accounts'};
+ const paths={github:'/user',google_mail:'/gmail/v1/users/me/profile',microsoft_outlook:'/me?$select=displayName',microsoft_teams:'/me/joinedTeams',microsoft_calendar:'/me/calendars?$top=1',google_drive:'/drive/v3/about?fields=user(displayName,emailAddress)',google_calendar:'/calendar/v3/users/me/calendarList/primary',slack:'/api/auth.test',cloudflare:'/zones?per_page=1',supabase:'/projects',notion:'/users/me',yuque:'/user',feishu:'/bot/v3/info',linear:'',gitee:'/user',airtable:'/v0/meta/whoami',clickup:'/api/v2/user',telegram:'/getMe',asana:'/users/me',jira:'/rest/api/3/myself',oanda:'/v3/accounts',discord:'/users/@me',x:'/users/by/username/XDevelopers'};
  const withRetry=async<T>(fn:()=>Promise<T>)=>{try{return await fn();}catch(first){await new Promise(r=>setTimeout(r,800));try{return await fn();}catch{throw first;}}};
 
  const perProvider=await Promise.all(providerId.options.map(async(id)=>{
