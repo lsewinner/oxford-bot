@@ -34,6 +34,7 @@ import { SpeakControls } from "./voice-controls";
 import { RealToolResult } from './real-tool-result';
 import type { ToolResult } from '@/lib/connections/catalog';
 import { ConversationTools } from './conversation-tools';
+import { DataChart, MarketQuotes, type ChartOutput, type MarketOutput } from './data-cards';
 
 function errorText(err: Error) {
   try {
@@ -349,6 +350,12 @@ function ChatMessage({
               <p className="mt-2">{step.errorText ?? step.output?.summary ?? "正在准备模拟结果…"}</p>
               {step.output?.sample && <p className="mt-2">{step.output.sample}</p>}
             </details>;
+          }
+          if (part.type === "tool-market_quotes" || part.type === "tool-render_chart") {
+            const step = part as { state?: string; output?: unknown; errorText?: string };
+            if (step.state === "output-error") return <p key={i} role="alert" className="text-sm text-destructive">{step.errorText ?? "执行失败"}</p>;
+            if (!step.output) return <Shimmer key={i}>{part.type === "tool-market_quotes" ? "正在获取实时行情…" : "正在绘制图表…"}</Shimmer>;
+            return part.type === "tool-market_quotes" ? <MarketQuotes key={i} output={step.output as MarketOutput} /> : <DataChart key={i} spec={step.output as ChartOutput} />;
           }
           if (part.type.startsWith('tool-service_')) {
             const step = part as { state?: string; output?: ToolResult; errorText?: string };
