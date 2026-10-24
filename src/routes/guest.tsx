@@ -81,10 +81,14 @@ function GuestSurface() {
   const { register } = useBotPresence();
   useEffect(() => {
     const timer = setTimeout(() => {
-      const bot = takeBotCopy();
-      if (!bot) return;
+      const copied = takeBotCopy();
+      if (!copied) return;
+      const { trial, ...bot } = copied;
       const messageId = `manual-${crypto.randomUUID()}`;
       const entry = { id: `guest:${messageId}`, threadId: "guest", messageId, bot };
+      if (trial.length) {
+        try { localStorage.setItem(guestMessagesKey(guestConversationId(entry.id)), JSON.stringify(trial.map((m) => ({ id: `trial-${crypto.randomUUID()}`, role: m.role, parts: [{ type: "text", text: m.text }] })))); } catch { /* storage full: start empty */ }
+      }
       register([entry]);
       select(entry);
     }, 0);
