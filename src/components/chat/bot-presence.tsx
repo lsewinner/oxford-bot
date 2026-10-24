@@ -11,7 +11,7 @@ import { TOOL_CATALOG } from '@/lib/tool-catalog';
 import type { ProviderId } from '@/lib/connections/catalog';
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { botIsWorking, botStorageKey, parseBotEntries, mergeBotEntries, type BotEntry, type CatBreed, type BotActivity, type BotIdentity, type BotKind } from "@/lib/bot-presence";
-import { catBreeds } from "@/lib/cat-breeds";
+import { catBreeds, catIntros } from "@/lib/cat-breeds";
 import { BotListLabel } from "@/components/chat/bot-list-label";
 import { cn } from "@/lib/utils";
 import { usePro } from "@/components/pro/pro-context";
@@ -99,8 +99,9 @@ const images = import.meta.glob("/src/assets/cat-*.webp", { eager: true, import:
 function CatPicker({ bot, breed, onChange }: { bot: BotIdentity; breed: CatBreed; onChange: (breed: CatBreed) => void }) {
   const [search, setSearch] = useState("");
   return <fieldset className="min-h-0"><legend className="mb-3 text-sm">猫咪品种 · {catBreeds.length}</legend>
-    <Input aria-label="搜索猫咪品种" placeholder="搜索品种…" value={search} onChange={(event) => setSearch(event.target.value)} className="mb-3" />
-    <div className="grid max-h-[40dvh] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-5">{catBreeds.filter((cat) => cat.name.includes(search)).map((cat) => <Button key={cat.id} type="button" variant="outline" aria-label={cat.name} aria-pressed={breed === cat.id} onClick={() => onChange(cat.id)} className={cn("relative h-24 flex-col gap-2 px-1 py-2", breed === cat.id && "border-primary bg-accent")}><BotAvatar bot={{ ...bot, breed: cat.id }} /><span className="whitespace-normal text-center text-[11px] leading-4">{cat.name}</span>{breed === cat.id && <CheckIcon className="absolute right-1 top-1 size-3" />}</Button>)}</div>
+    <Input aria-label="搜索猫咪品种" placeholder="搜索品种或性格，如：粘人、安静…" value={search} onChange={(event) => setSearch(event.target.value)} className="mb-3" />
+    <div className="grid max-h-[40dvh] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-5">{catBreeds.filter((cat) => cat.name.includes(search) || catIntros[cat.id].includes(search)).map((cat) => <Button key={cat.id} type="button" variant="outline" aria-label={cat.name} title={catIntros[cat.id]} aria-pressed={breed === cat.id} onClick={() => onChange(cat.id)} className={cn("relative h-24 flex-col gap-2 px-1 py-2", breed === cat.id && "border-primary bg-accent")}><BotAvatar bot={{ ...bot, breed: cat.id }} /><span className="whitespace-normal text-center text-[11px] leading-4">{cat.name}</span>{breed === cat.id && <CheckIcon className="absolute right-1 top-1 size-3" />}</Button>)}</div>
+    <p className="mt-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"><span className="text-foreground">{catBreeds.find((c) => c.id === breed)?.name}</span> · {catIntros[breed]}</p>
   </fieldset>;
 }
 
