@@ -36,7 +36,7 @@ export function MarketQuotes({ output }: { output: MarketOutput }) {
 export type ChartOutput = { type: "bar" | "line" | "area" | "pie"; title: string; xKey: string; series: { key: string; label?: string }[]; data: Record<string, string | number | null>[] };
 
 export function DataChart({ spec }: { spec: ChartOutput }) {
-  const series = spec.series.map((s, i) => ({ ...s, name: s.label ?? s.key, color: COLORS[i % COLORS.length] }));
+  const series = spec.series.map((s, i) => ({ ...s, name: s.label ?? s.key, color: COLORS[i % COLORS.length] ?? "var(--primary)" }));
   const common = <><CartesianGrid stroke="var(--border)" vertical={false} /><XAxis dataKey={spec.xKey} {...axis} /><YAxis {...axis} width={48} /><Tooltip {...tip} />{series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}</>;
   return (
     <figure className="my-3 rounded-xl border border-border bg-card p-3">
@@ -44,7 +44,7 @@ export function DataChart({ spec }: { spec: ChartOutput }) {
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           {spec.type === "pie" ? (
-            <PieChart><Tooltip {...tip} /><Legend wrapperStyle={{ fontSize: 12 }} /><Pie data={spec.data} dataKey={series[0]!.key} nameKey={spec.xKey} innerRadius="45%" outerRadius="80%" stroke="var(--card)">{spec.data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie></PieChart>
+            <PieChart><Tooltip {...tip} /><Legend wrapperStyle={{ fontSize: 12 }} /><Pie data={spec.data} dataKey={series[0]!.key} nameKey={spec.xKey} innerRadius="45%" outerRadius="80%" stroke="var(--card)">{spec.data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length] ?? "var(--primary)"} />)}</Pie></PieChart>
           ) : spec.type === "bar" ? (
             <BarChart data={spec.data}>{common}{series.map((s) => <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} radius={[4, 4, 0, 0]} />)}</BarChart>
           ) : spec.type === "area" ? (
