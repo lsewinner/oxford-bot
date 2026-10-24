@@ -92,7 +92,28 @@ function AuthPage() {
     setLoading(false);
   };
 
+  // Inside the Expo iOS app, hand OAuth to the native ASWebAuthenticationSession and
+  // receive the session back via injected window.postMessage.
+  useEffect(() => {
+    const onMessage = async (event: MessageEvent) => {
+      if (event.source !== window) return;
+      let data: { type?: string; access_token?: string; refresh_token?: string; error?: string } | null = null;
+      try { data = typeof event.data === "string" ? JSON.parse(event.data) : event.data; } catch { return; }
+      if (data?.type === "NATIVE_OAUTH_ERROR") { toast.error("登录未完成，请重试"); return; }
+      if (data?.type !== "NATIVE_OAUTH_SUCCESS" || typeof data.access_token !== "string" || typeof data.refresh_token !== "string") return;
+      const { error } = await supabase.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
+      if (error) toast.error("登录失败，请重试");
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
   const oauth = async (provider: "google" | "apple") => {
+    const rn = (window as unknown as { ReactNativeWebView?: { postMessage: (m: string) => void } }).ReactNativeWebView;
+    if (rn) {
+      rn.postMessage(JSON.stringify({ type: "NATIVE_OAUTH", provider }));
+      return;
+    }
     const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
     if (result.error) toast.error("登录失败，请重试");
   };
