@@ -135,3 +135,13 @@
 - [ ] DeepSeek 接入：国内 Deep Think 自动切 deepseek-reasoner（等用户提供 DEEPSEEK_API_KEY；代码先行，测试通过）
 - [ ] 排查语音兼容模式「识别后消失」反馈：自动切换兼容模式时无任何提示，需补可见提示；并请朋友复测确认具体环节
 - [ ] 国内无 VPN 复测：聊天/语音经同域转发后是否正常（待发布+测试人员）
+
+## 新工具（10 月第 4 周）
+- [x] 全球行情：美股/港股/A股/指数/外汇/加密货币报价与走势卡片，游客可用；实测 NVDA/BTC 通过
+- [x] 图表：CSV/Excel 上传解析 + 柱状/折线/面积/饼图；实测柱状图通过
+- [x] Google 表格：读取范围、追加行、覆盖单元格（写入需确认）；5 项规则测试
+- [ ] Google 表格真实验收（需在 Google Cloud 启用 Sheets API，并在授权页加 spreadsheets 权限；已连 Google 云盘的用户需重新授权一次）
+- [x] Discord：Bot Token、服务器/频道/消息读取、确认后发消息
+- [ ] Discord 真实验收（用户建 Bot、开启 Message Content Intent 并拉进服务器）
+- [x] X：Bearer Token 只读，关键词检索与博主最新推文
+- [ ] X 代发推文（需每位用户 OAuth 2.0 用户授权 + X 付费开发者套餐，待决定）
