@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isWrite, validateOperation } from '@/lib/connections/catalog';
+import { PROVIDERS, isWrite, validateOperation } from '@/lib/connections/catalog';
 import { normaliseSymbol } from '@/lib/ai/market.server';
 
 const SHEET = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms';
