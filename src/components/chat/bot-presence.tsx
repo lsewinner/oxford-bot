@@ -130,8 +130,8 @@ export function BotAvatar({ bot, working = false }: { bot: BotIdentity; working?
   return <img src={images[`/src/assets/cat-${cat.asset}.webp`]} alt={`${bot.name} · ${cat.name}`} title={cat.name} width={32} height={32} loading="lazy" className={cn("size-8 shrink-0 rounded-full object-cover ring-1 ring-sidebar-border", working && "bot-working")} />;
 }
 
-export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (name: string) => Promise<void> }) {
-  const { update } = useBotPresence();
+export function BotSettings({ entry, onRename, onDelete }: { entry: BotEntry; onRename?: (name: string) => Promise<void>; onDelete?: () => Promise<void> | void }) {
+  const { update, hideEntry } = useBotPresence();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(entry.bot.name);
   const [breed, setBreed] = useState<CatBreed>(entry.bot.breed ?? entry.bot.kind);
@@ -199,7 +199,10 @@ export function BotSettings({ entry, onRename }: { entry: BotEntry; onRename?: (
             </div>)}</div>
           </div>}
         </fieldset>
-        <DialogFooter><Button type="submit" disabled={!name.trim() || saving}>{saving ? "正在保存…" : "保存"}</Button></DialogFooter>
+        <DialogFooter className="gap-2 sm:justify-between"><Button type="button" variant="ghost" className="text-destructive" disabled={saving} onClick={async () => {
+          if (!window.confirm(`确定删除「${entry.bot.name}」吗？它的对话也会一起删除。`)) return;
+          try { await onDelete?.(); hideEntry(entry.id); setOpen(false); toast.success("Bot 已删除"); } catch { toast.error("删除 Bot 失败，请重试"); }
+        }}><Trash2Icon className="size-4" />删除 Bot</Button><Button type="submit" disabled={!name.trim() || saving}>{saving ? "正在保存…" : "保存"}</Button></DialogFooter>
       </form>
     </DialogContent></Dialog>
   </>;
