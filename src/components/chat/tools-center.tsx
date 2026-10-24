@@ -1,4 +1,4 @@
-import { CloudIcon,FolderIcon,MailIcon,MessageSquareIcon,PlugIcon,RefreshCcwIcon,UnplugIcon,LoaderCircleIcon, CalendarDaysIcon, CandlestickChartIcon } from 'lucide-react';
+import { CloudIcon,FolderIcon,MailIcon,MessageSquareIcon,PlugIcon,RefreshCcwIcon,UnplugIcon,LoaderCircleIcon, CalendarDaysIcon, CandlestickChartIcon, AtSignIcon } from 'lucide-react';
 import { useEffect,useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { Link } from '@tanstack/react-router';
@@ -15,7 +15,7 @@ import { waitForOAuth } from '@/lib/connections/oauth-client';
 import { RealToolResult } from './real-tool-result';
 import { usePro } from '@/components/pro/pro-context';
 import { WechatKfPanel } from './wechat-kf-panel';
-const icons={'邮件助手':MailIcon,'云盘与文档':FolderIcon,'开发与运维':CloudIcon,'即时协作':MessageSquareIcon,'日程与会议':CalendarDaysIcon,'交易与行情':CandlestickChartIcon};
+const icons={'邮件助手':MailIcon,'云盘与文档':FolderIcon,'开发与运维':CloudIcon,'即时协作':MessageSquareIcon,'日程与会议':CalendarDaysIcon,'交易与行情':CandlestickChartIcon,'社交与舆情':AtSignIcon};
 type Connection=Awaited<ReturnType<typeof connectionStatus>>[number];
 export function ToolsCenter(){
  const [open,setOpen]=useState(false),[signedIn,setSignedIn]=useState(false),[rows,setRows]=useState<Connection[]>([]),[busy,setBusy]=useState<string|null>(null),[error,setError]=useState(''),[selected,setSelected]=useState<ProviderId|null>(null),[selectedAccount,setSelectedAccount]=useState(''),[query,setQuery]=useState(''),[result,setResult]=useState<ToolResult|null>(null);
