@@ -40,13 +40,23 @@ function AuthPage() {
   const phonePending = useRef(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    const check = () => supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/chat", replace: true });
     });
+    void check();
     const { data } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session) navigate({ to: "/chat", replace: true });
     });
-    return () => data.subscription.unsubscribe();
+    // Safari back-swipe restores this page from cache; send signed-in users straight back.
+    const onShow = () => { void check(); };
+    const onVisible = () => { if (document.visibilityState === "visible") void check(); };
+    window.addEventListener("pageshow", onShow);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      data.subscription.unsubscribe();
+      window.removeEventListener("pageshow", onShow);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [navigate]);
 
   useEffect(() => {

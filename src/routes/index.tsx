@@ -38,9 +38,13 @@ function Index() {
   const t = COPY[lang];
   const switchLang = () => { const next: Lang = lang === "zh" ? "en" : "zh"; setLang(next); localStorage.setItem("oxford-lang", next); };
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    const check = () => supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/chat", replace: true });
     });
+    void check();
+    const onShow = () => { void check(); };
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
   }, [navigate]);
 
   return (
