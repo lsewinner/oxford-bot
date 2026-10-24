@@ -3,7 +3,7 @@ import { PROVIDERS, validateOperation } from '@/lib/connections/catalog';
 
 describe('Google Drive connection', () => {
   it('offers browsing, search, reading and confirmed file creation', () => {
-    expect(PROVIDERS.google_drive.operations).toEqual(['search', 'folders', 'read', 'create_file', 'sheet_read', 'sheet_append', 'sheet_update']);
+    expect(PROVIDERS.google_drive.operations).toEqual(['search', 'folders', 'read', 'create_file', 'sheet_read']);
     expect(() => validateOperation('google_drive', { operation: 'folders' })).not.toThrow();
     expect(() => validateOperation('google_drive', { operation: 'folders', id: '1Ab_-9' })).not.toThrow();
   });
