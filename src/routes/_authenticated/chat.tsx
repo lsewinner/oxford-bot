@@ -166,7 +166,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             </Button>
             <div className="absolute bottom-2 right-2 flex h-6 items-center gap-1">
             <BotSettings entry={entry} onRename={async (name) => { await renameBotThread(entry, name); await queryClient.invalidateQueries({ queryKey: ["threads"] }); }} onDelete={async () => { const target = entry.conversationId ?? (entry.messageId.startsWith("manual-") ? entry.threadId : null); if (target) await remove(target); }} />
-            {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => remove(entry.conversationId ?? entry.threadId)} className="size-6 shrink-0 text-muted-foreground hover:text-destructive [&_svg]:size-3.5 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}
+            {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => void remove(entry.conversationId ?? entry.threadId).catch(() => {})} className="size-6 shrink-0 text-muted-foreground hover:text-destructive [&_svg]:size-3.5 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}
             </div>
           </div>)}
         </section>
@@ -197,7 +197,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     <button
                       type="button"
                       aria-label="删除对话"
-                      onClick={() => remove(t.id)}
+                      onClick={() => void remove(t.id).catch(() => {})}
                       className="mr-1 rounded-md p-1.5 text-muted-foreground opacity-100 transition hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
                     >
                       <Trash2Icon className="size-3.5" />
