@@ -116,42 +116,57 @@ export type Database = {
       bot_shares: {
         Row: {
           breed: string | null
+          category: string
           created_at: string
+          creator_name: string
           featured: boolean
           featured_at: string | null
           id: string
           intro: string
           kind: string
           name: string
+          reviewed_at: string | null
           revoked_at: string | null
+          submission_status: string
+          submitted_at: string | null
           system_prompt: string
           token: string
           user_id: string
         }
         Insert: {
           breed?: string | null
+          category?: string
           created_at?: string
+          creator_name?: string
           featured?: boolean
           featured_at?: string | null
           id?: string
           intro?: string
           kind?: string
           name: string
+          reviewed_at?: string | null
           revoked_at?: string | null
+          submission_status?: string
+          submitted_at?: string | null
           system_prompt?: string
           token?: string
           user_id: string
         }
         Update: {
           breed?: string | null
+          category?: string
           created_at?: string
+          creator_name?: string
           featured?: boolean
           featured_at?: string | null
           id?: string
           intro?: string
           kind?: string
           name?: string
+          reviewed_at?: string | null
           revoked_at?: string | null
+          submission_status?: string
+          submitted_at?: string | null
           system_prompt?: string
           token?: string
           user_id?: string
@@ -710,6 +725,19 @@ export type Database = {
           intro: string
           kind: string
           name: string
+          token: string
+        }[]
+      }
+      list_square_bots: {
+        Args: never
+        Returns: {
+          breed: string
+          category: string
+          creator_name: string
+          intro: string
+          kind: string
+          name: string
+          official: boolean
           token: string
         }[]
       }
