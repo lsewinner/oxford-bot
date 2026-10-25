@@ -17,7 +17,7 @@ import { AttachmentButton, AttachmentPreviews, AttachmentSubmit } from "./compos
 import { VoiceInputButton } from "./voice-controls";
 import { ATTACHMENT_ACCEPT, MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES, prepareAttachments, type ChatInput } from "@/lib/chat-attachments";
 import { useMode } from './mode-context';
-import { BrainIcon, AudioLinesIcon } from 'lucide-react';
+import { BrainIcon, AudioLinesIcon, PlusIcon, XIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { TrendsDrawer } from './trends-drawer';
@@ -36,6 +36,7 @@ export function Composer({
   placeholder?: string;
 }) {
   const [text, setText] = useState("");
+  const [moreOpen, setMoreOpen] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
   const busy = status === "submitted" || status === "streaming";
   const {deepThink,setDeepThink,analysis,clearAnalysis}=useMode();
@@ -75,26 +76,16 @@ export function Composer({
     >
       <DropOverlay />
       <AttachmentPreviews />
-      <PromptInputTextarea
-        ref={ref}
-        autoFocus
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder={placeholder}
-        className="min-h-14 px-5 pt-4 text-[15px]"
-      />
-      <PromptInputFooter className="px-3 pb-3">
-        <PromptInputTools className="flex-wrap">
-          <AttachmentButton disabled={busy} />
-          <Button asChild type="button" variant="ghost" size="sm" className="gap-1.5 px-2" title="全屏实时语音对讲"><Link to="/voice" aria-label="全屏实时语音"><AudioLinesIcon className="size-4"/><span className="text-xs">实时语音</span></Link></Button>
-          <ModeToggle />
-          <WebSearchToggle />
-          <Button type="button" variant={deepOn?'secondary':'ghost'} size="sm" aria-label="Deep Think 深度思考" aria-pressed={deepOn} title="深度思考 · 推理摘要与核查" disabled={busy} className="gap-1.5 px-2" onClick={()=>{ if(!requirePro('deep_think'))return; setDeepThink(!deepThink); }}><BrainIcon className="size-4"/><span className="text-xs">Deep Think</span></Button>
-          <TrendsDrawer compact />
-          <WorkflowsDrawer busy={busy} onRun={onSend} />
-          <ToolsCenter />
-        </PromptInputTools>
-        <div className="flex shrink-0 items-center gap-1">
+      <div className="relative w-full">
+        <PromptInputTextarea
+          ref={ref}
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={placeholder}
+          className="min-h-14 py-4 pl-5 pr-14 text-[15px]"
+        />
+        <div className="absolute right-2.5 top-2.5">
           <VoiceInputButton
             {...(busy && onStop ? { onBeforeStart: onStop } : {})}
             onTranscript={(spoken, autoSend) => {
@@ -103,6 +94,31 @@ export function Composer({
               ref.current?.focus();
             }}
           />
+        </div>
+      </div>
+      <PromptInputFooter className="px-3 pb-3">
+        <PromptInputTools className="flex-wrap">
+          <Button type="button" variant={moreOpen ? "secondary" : "ghost"} size="icon" className="size-8 rounded-full" aria-label={moreOpen ? "收起更多功能" : "更多功能"} aria-expanded={moreOpen} title="上传文件与更多功能" onClick={() => setMoreOpen((v) => !v)}>
+            <PlusIcon className={`size-4 transition-transform ${moreOpen ? "rotate-45" : ""}`} />
+          </Button>
+          {moreOpen ? (
+            <>
+              <AttachmentButton disabled={busy} />
+              <Button asChild type="button" variant="ghost" size="sm" className="gap-1.5 px-2" title="全屏实时语音对讲"><Link to="/voice" aria-label="全屏实时语音"><AudioLinesIcon className="size-4"/><span className="text-xs">实时语音</span></Link></Button>
+              <ModeToggle />
+              <WebSearchToggle />
+              <Button type="button" variant={deepOn?'secondary':'ghost'} size="sm" aria-label="Deep Think 深度思考" aria-pressed={deepOn} title="深度思考 · 推理摘要与核查" disabled={busy} className="gap-1.5 px-2" onClick={()=>{ if(!requirePro('deep_think'))return; setDeepThink(!deepThink); }}><BrainIcon className="size-4"/><span className="text-xs">Deep Think</span></Button>
+              <TrendsDrawer compact />
+              <WorkflowsDrawer busy={busy} onRun={onSend} />
+              <ToolsCenter />
+            </>
+          ) : deepOn ? (
+            <Button type="button" variant="secondary" size="sm" className="h-7 gap-1 rounded-full px-2.5 text-xs" aria-label="关闭 Deep Think" onClick={() => setDeepThink(false)}>
+              <BrainIcon className="size-3.5" />Deep Think<XIcon className="size-3" />
+            </Button>
+          ) : null}
+        </PromptInputTools>
+        <div className="flex shrink-0 items-center gap-1">
           <AttachmentSubmit text={text} busy={busy}>{(disabled) => <PromptInputSubmit
             status={status}
             {...(onStop ? { onStop } : {})}
