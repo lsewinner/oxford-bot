@@ -6,6 +6,8 @@ import logo from "@/assets/logo.png";
 import { Composer } from "@/components/chat/composer";
 import { useMode } from "@/components/chat/mode-context";
 import { createThread, pendingKey } from "@/lib/chat-data";
+import { useLang } from "@/lib/i18n";
+import { Showcase } from "@/components/chat/showcase";
 import type { ChatInput } from "@/lib/chat-attachments";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
@@ -20,12 +22,11 @@ export const Route = createFileRoute("/_authenticated/chat/")({
   component: NewChat,
 });
 
-const SUGGESTIONS = ["用一句话解释量子纠缠", "写一个 Python 快速排序", "帮我想 5 个产品名", "今晚吃什么？给我惊喜"];
-
 function NewChat() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { mode } = useMode();
+  const { t } = useLang();
   const [creating, setCreating] = useState(false);
 
   const start = async (text: string, files: ChatInput["files"] = []) => {
@@ -48,22 +49,11 @@ function NewChat() {
         <div className="mb-8 flex flex-col items-center gap-4 text-center">
           <img src={logo} alt="Oxford Bot" width={64} height={64} className="size-16 rounded-2xl" />
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            {mode === "fun" ? "来吧，问点刺激的。" : "今天想了解什么？"}
+            {mode === "fun" ? t.newChatTitleFun : t.newChatTitle}
           </h1>
         </div>
         <Composer onSend={start} status={creating ? "submitted" : "ready"} />
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
-          {SUGGESTIONS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => start(s)}
-              className="rounded-full border border-border px-3.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        <div className="mt-8"><Showcase signedIn onPick={(p) => start(p)} /></div>
       </div>
     </div>
   );

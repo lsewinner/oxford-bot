@@ -1,3 +1,4 @@
+import { LangProvider } from "@/lib/i18n";
 import "@/lib/backend-proxy";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -143,9 +144,11 @@ function RootComponent() {
       <TooltipProvider>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <ProProvider>
+      <LangProvider>
       <DesktopInstallProvider>
       <Outlet />
       </DesktopInstallProvider>
+      </LangProvider>
       </ProProvider>
       <Toaster theme="dark" position="top-center" />
       </TooltipProvider>
