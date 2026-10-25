@@ -1,4 +1,4 @@
-import { useLang } from "@/lib/i18n";
+import { useLang, tz } from "@/lib/i18n";
 import { botListRowClass } from "@/components/chat/bot-list-label";
 import { MainBotLabel } from "@/components/chat/main-bot";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -22,10 +22,10 @@ import { takeBotCopy } from "@/lib/bot-copy";
 
 export const Route = createFileRoute("/guest")({
   head: () => ({ meta: [
-    { title: "游客对话 · Oxford Bot" },
-    { name: "description", content: "无需登录即可与 Oxford Bot 对话；游客对话不保存到云端。" },
-    { property: "og:title", content: "游客对话 · Oxford Bot" },
-    { property: "og:description", content: "无需登录即可与 Oxford Bot 对话；游客对话不保存到云端。" },
+    { title: tz("游客对话 · Oxford Bot") },
+    { name: "description", content: tz("无需登录即可与 Oxford Bot 对话；游客对话不保存到云端。") },
+    { property: "og:title", content: tz("游客对话 · Oxford Bot") },
+    { property: "og:description", content: tz("无需登录即可与 Oxford Bot 对话；游客对话不保存到云端。") },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
@@ -51,10 +51,10 @@ function GuestBots({ activeId, onSelect }: { activeId: string; onSelect: (entry:
     <div className="-mx-3 mb-3"><UpgradeEntry /></div>
     <TrendsDrawer />
     <div className="min-h-0 flex-1 overflow-y-auto">
-    <div className="flex items-center justify-between px-2 pb-2"><span className="text-[11px] text-muted-foreground">我的 Bots</span><NewBot onCreate={(bot) => { const messageId = `manual-${crypto.randomUUID()}`; const entry = { id: `guest:${messageId}`, threadId: "guest", messageId, bot }; register([entry]); onSelect(entry); }} /></div>
-    <Button variant="ghost" aria-label="打开主 Bot Oxonian" onClick={() => onSelect(null)} className={cn(botListRowClass, "justify-start hover:bg-sidebar-accent", !entries.some((e) => activeId === guestConversationId(e.id)) && "bg-sidebar-accent")}><MainBotLabel active={!entries.some((e) => activeId === guestConversationId(e.id))} preview={previews["guest"]?.preview} time={previews["guest"]?.time} /></Button>
+    <div className="flex items-center justify-between px-2 pb-2"><span className="text-[11px] text-muted-foreground">{tz("我的 Bots")}</span><NewBot onCreate={(bot) => { const messageId = `manual-${crypto.randomUUID()}`; const entry = { id: `guest:${messageId}`, threadId: "guest", messageId, bot }; register([entry]); onSelect(entry); }} /></div>
+    <Button variant="ghost" aria-label={tz("打开主 Bot Oxonian")} onClick={() => onSelect(null)} className={cn(botListRowClass, "justify-start hover:bg-sidebar-accent", !entries.some((e) => activeId === guestConversationId(e.id)) && "bg-sidebar-accent")}><MainBotLabel active={!entries.some((e) => activeId === guestConversationId(e.id))} preview={previews["guest"]?.preview} time={previews["guest"]?.time} /></Button>
     {entries.map((entry) => <div key={entry.id} className="group relative">
-      <Button variant="ghost" aria-label={`打开 ${entry.bot.name}`} onClick={() => onSelect(entry)} className={cn(botListRowClass, "justify-start hover:bg-sidebar-accent", activeId === guestConversationId(entry.id) && "bg-sidebar-accent")}><BotPresenceLabel bot={entry.bot} status={activities[guestConversationId(entry.id)]?.status ?? "ready"} preview={previews[guestConversationId(entry.id)]?.preview} time={previews[guestConversationId(entry.id)]?.time} /></Button>
+      <Button variant="ghost" aria-label={tz("打开 {0}", entry.bot.name)} onClick={() => onSelect(entry)} className={cn(botListRowClass, "justify-start hover:bg-sidebar-accent", activeId === guestConversationId(entry.id) && "bg-sidebar-accent")}><BotPresenceLabel bot={entry.bot} status={activities[guestConversationId(entry.id)]?.status ?? "ready"} preview={previews[guestConversationId(entry.id)]?.preview} time={previews[guestConversationId(entry.id)]?.time} /></Button>
       <div className="absolute bottom-2 right-2 flex h-6 items-center"><BotSettings entry={entry} /></div>
     </div>)}
     </div>
@@ -99,10 +99,10 @@ function GuestSurface() {
   const activeBot = entries.find((entry) => guestConversationId(entry.id) === activeId)?.bot ?? null;
   return <div className="flex h-dvh overflow-hidden bg-background">
     <aside className="hidden w-64 shrink-0 border-r border-sidebar-border md:block"><GuestBots activeId={activeId} onSelect={select} /></aside>
-    <Sheet open={open} onOpenChange={setOpen}><SheetContent side="left" className="w-72 p-0"><SheetTitle className="sr-only">我的 Bots</SheetTitle><GuestBots activeId={activeId} onSelect={select} /></SheetContent></Sheet>
+    <Sheet open={open} onOpenChange={setOpen}><SheetContent side="left" className="w-72 p-0"><SheetTitle className="sr-only">{tz("我的 Bots")}</SheetTitle><GuestBots activeId={activeId} onSelect={select} /></SheetContent></Sheet>
     <main className="flex min-w-0 flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2"><Button variant="ghost" size="icon-sm" className="md:hidden" aria-label="打开我的 Bots" onClick={() => setOpen(true)}><MenuIcon /></Button><img src={logo} width={28} height={28} alt="Oxford Bot" /><span className="text-sm font-medium">Oxford Bot</span></div>
+        <div className="flex items-center gap-2"><Button variant="ghost" size="icon-sm" className="md:hidden" aria-label={tz("打开我的 Bots")} onClick={() => setOpen(true)}><MenuIcon /></Button><img src={logo} width={28} height={28} alt="Oxford Bot" /><span className="text-sm font-medium">Oxford Bot</span></div>
         <div className="flex items-center gap-3"><GuestHeaderActions /></div>
       </header>
       <div className="min-h-0 flex-1">{initialMessages && <ChatWindow key={activeId} threadId={activeId} initialMessages={initialMessages} activeBot={activeBot} />}</div>
@@ -111,5 +111,5 @@ function GuestSurface() {
 }
 function GuestHeaderActions() {
   const { lang, t, setLang } = useLang();
-  return <><Button size="sm" variant="ghost" onClick={() => setLang(lang === "zh" ? "en" : "zh")} aria-label={lang === "zh" ? "Switch to English" : "切换到中文"}>{lang === "zh" ? "EN" : "中文"}</Button><span className="hidden text-xs text-muted-foreground sm:inline">{t.guestBadge}</span><Button asChild size="sm" variant="outline"><Link to="/auth">{t.signIn}</Link></Button></>;
+  return <><Button size="sm" variant="ghost" onClick={() => setLang(lang === "zh" ? "en" : "zh")} aria-label={lang === "zh" ? "Switch to English" : tz("切换到中文")}>{lang === "zh" ? "EN" : tz("中文")}</Button><span className="hidden text-xs text-muted-foreground sm:inline">{t.guestBadge}</span><Button asChild size="sm" variant="outline"><Link to="/auth">{t.signIn}</Link></Button></>;
 }

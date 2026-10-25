@@ -1,3 +1,4 @@
+import { tz } from "@/lib/i18n";
 import { botListRowClass } from "@/components/chat/bot-list-label";
 import { useServerFn } from "@tanstack/react-start";
 import { checkAdmin } from "@/lib/admin.functions";
@@ -26,10 +27,10 @@ import { canAddBot } from "@/lib/pro";
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
     meta: [
-      { title: "Oxford Bot · 对话" },
-      { name: "description", content: "与 Oxford Bot 对话，支持 Fun / Normal 模式与代码高亮。" },
-      { property: "og:title", content: "Oxford Bot · 对话" },
-      { property: "og:description", content: "与 Oxford Bot 对话，支持 Fun / Normal 模式与代码高亮。" },
+      { title: tz("Oxford Bot · 对话") },
+      { name: "description", content: tz("与 Oxford Bot 对话，支持 Fun / Normal 模式与代码高亮。") },
+      { property: "og:title", content: tz("Oxford Bot · 对话") },
+      { property: "og:description", content: tz("与 Oxford Bot 对话，支持 Fun / Normal 模式与代码高亮。") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -41,10 +42,10 @@ function groupLabel(iso: string) {
   const d = new Date(iso);
   const now = new Date();
   const diff = (new Date(now.toDateString()).getTime() - new Date(d.toDateString()).getTime()) / 86400000;
-  if (diff <= 0) return "今天";
-  if (diff <= 1) return "昨天";
-  if (diff <= 7) return "过去 7 天";
-  return "更早";
+  if (diff <= 0) return tz("今天");
+  if (diff <= 1) return tz("昨天");
+  if (diff <= 7) return tz("过去 7 天");
+  return tz("更早");
 }
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -83,8 +84,8 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       const copied = takeBotCopy();
       if (!copied) return;
       const { trial, ...bot } = copied;
-      if (!canAddBot(isPro, entries.length)) { openUpgrade("bot"); toast.error("免费账户只能养 1 只自建 Bot，升级 Pro 后可复制更多"); return; }
-      void createBot(bot, trial).then(() => toast.success(trial.length ? `已复制「${bot.name}」和试聊记录到我的 Bots` : `已复制「${bot.name}」到我的 Bots`), () => toast.error("复制 Bot 失败，请重试"));
+      if (!canAddBot(isPro, entries.length)) { openUpgrade("bot"); toast.error(tz("免费账户只能养 1 只自建 Bot，升级 Pro 后可复制更多")); return; }
+      void createBot(bot, trial).then(() => toast.success(trial.length ? tz("已复制「{0}」和试聊记录到我的 Bots", bot.name) : tz("已复制「{0}」到我的 Bots", bot.name)), () => toast.error(tz("复制 Bot 失败，请重试")));
     }, 0);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -106,7 +107,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       }
       await navigate({ to: "/chat/$threadId", params: { threadId: target } });
       onNavigate?.();
-    } catch { toast.error("打开 Bot 对话失败，请重试"); }
+    } catch { toast.error(tz("打开 Bot 对话失败，请重试")); }
     finally { setOpening(null); }
   };
 
@@ -124,7 +125,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const remove = async (id: string) => {
     const { error } = await supabase.from("threads").delete().eq("id", id);
     if (error) {
-      toast.error("删除失败");
+      toast.error(tz("删除失败"));
       throw error;
     }
     removeThread(id);
@@ -151,27 +152,27 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           className="flex items-center gap-2 rounded-xl border border-sidebar-border px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent"
         >
-          <PenSquareIcon className="size-4" /> 新建对话
+          <PenSquareIcon className="size-4" /> {tz("新建对话")}
         </Link>
       </div>
       <nav className="mt-4 flex-1 overflow-y-auto px-2 pb-4">
-        <section aria-label="我的 Bots" className="mb-5">
-          <div className="flex items-center justify-between px-3 pb-2"><span className="text-[11px] font-medium text-muted-foreground">我的 Bots</span><NewBot onCreate={createBot} /></div>
-          <Link to="/chat" onClick={onNavigate} aria-label="打开主 Bot Oxonian" className={cn(botListRowClass, !params.threadId && "bg-sidebar-accent")}>
+        <section aria-label={tz("我的 Bots")} className="mb-5">
+          <div className="flex items-center justify-between px-3 pb-2"><span className="text-[11px] font-medium text-muted-foreground">{tz("我的 Bots")}</span><NewBot onCreate={createBot} /></div>
+          <Link to="/chat" onClick={onNavigate} aria-label={tz("打开主 Bot Oxonian")} className={cn(botListRowClass, !params.threadId && "bg-sidebar-accent")}>
             <MainBotLabel active={!params.threadId} preview={oxonianPreview} time={oxonianTime} />
           </Link>
           {bots.map((entry) => <div key={entry.id} className="group relative">
-            <Button variant="ghost" disabled={opening !== null} onClick={() => openBot(entry)} className={cn(botListRowClass, "justify-start hover:bg-sidebar-accent", params.threadId === entry.conversationId && "bg-sidebar-accent")} aria-label={`打开 ${entry.bot.name}`}>
-              {!isPro && <LockIcon aria-label="Pro 专属" className="absolute left-1 top-1 z-10 size-3 text-muted-foreground" />}<BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} preview={previews[entry.conversationId ?? entry.threadId]?.preview} time={previews[entry.conversationId ?? entry.threadId]?.updatedAt} />
+            <Button variant="ghost" disabled={opening !== null} onClick={() => openBot(entry)} className={cn(botListRowClass, "justify-start hover:bg-sidebar-accent", params.threadId === entry.conversationId && "bg-sidebar-accent")} aria-label={tz("打开 {0}", entry.bot.name)}>
+              {!isPro && <LockIcon aria-label={tz("Pro 专属")} className="absolute left-1 top-1 z-10 size-3 text-muted-foreground" />}<BotPresenceLabel bot={entry.bot} status={activities[entry.conversationId ?? entry.threadId]?.status ?? "ready"} preview={previews[entry.conversationId ?? entry.threadId]?.preview} time={previews[entry.conversationId ?? entry.threadId]?.updatedAt} />
             </Button>
             <div className="absolute bottom-2 right-2 flex h-6 items-center gap-1">
             <BotSettings entry={entry} onRename={async (name) => { await renameBotThread(entry, name); await queryClient.invalidateQueries({ queryKey: ["threads"] }); }} onDelete={async () => { const target = entry.conversationId ?? (entry.messageId.startsWith("manual-") ? entry.threadId : null); if (target) await remove(target); }} />
-            {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={`删除 ${entry.bot.name} 会话`} onClick={() => void remove(entry.conversationId ?? entry.threadId).catch(() => {})} className="size-6 shrink-0 text-muted-foreground hover:text-destructive [&_svg]:size-3.5 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}
+            {entry.conversationId && <Button variant="ghost" size="icon-sm" aria-label={tz("删除 {0} 会话", entry.bot.name)} onClick={() => void remove(entry.conversationId ?? entry.threadId).catch(() => {})} className="size-6 shrink-0 text-muted-foreground hover:text-destructive [&_svg]:size-3.5 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"><Trash2Icon /></Button>}
             </div>
           </div>)}
         </section>
-        {threads.length === 0 && <p className="px-3 text-xs text-muted-foreground">还没有对话</p>}
-        {["今天", "昨天", "过去 7 天", "更早"].map(
+        {threads.length === 0 && <p className="px-3 text-xs text-muted-foreground">{tz("还没有对话")}</p>}
+        {[tz("今天"), tz("昨天"), tz("过去 7 天"), tz("更早")].map(
           (g) =>
             groups[g] && (
               <div key={g} className="mb-4">
@@ -196,7 +197,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     </Link>
                     <button
                       type="button"
-                      aria-label="删除对话"
+                      aria-label={tz("删除对话")}
                       onClick={() => void remove(t.id).catch(() => {})}
                       className="mr-1 rounded-md p-1.5 text-muted-foreground opacity-100 transition hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
                     >
@@ -244,7 +245,7 @@ function ChatLayout() {
         </aside>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent side="left" className="w-72 border-sidebar-border p-0">
-            <SheetTitle className="sr-only">会话列表</SheetTitle>
+            <SheetTitle className="sr-only">{tz("会话列表")}</SheetTitle>
             <Sidebar onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
@@ -252,14 +253,14 @@ function ChatLayout() {
           <header className="flex items-center gap-2 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] md:hidden">
             <button
               type="button"
-              aria-label="打开会话列表"
+              aria-label={tz("打开会话列表")}
               onClick={() => setOpen(true)}
               className="rounded-lg p-2 text-muted-foreground hover:text-foreground"
             >
               <MenuIcon className="size-5" />
             </button>
             <span className="text-sm font-semibold">Oxford Bot</span>
-            <Link to="/chat" aria-label="新建对话" className="ml-auto rounded-lg p-2 text-muted-foreground hover:text-foreground">
+            <Link to="/chat" aria-label={tz("新建对话")} className="ml-auto rounded-lg p-2 text-muted-foreground hover:text-foreground">
               <PenSquareIcon className="size-5" />
             </Link>
           </header>

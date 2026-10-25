@@ -1,3 +1,4 @@
+import { tz } from "@/lib/i18n";
 import { Loader2Icon, MicIcon, PauseIcon, PlayIcon, SquareIcon, Volume2Icon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -55,7 +56,7 @@ export function VoiceInputButton({
     setState("recording");
     starting.current = recordWav()
       .then((r) => { recorder.current = r; if (released.current) void finish(); })
-      .catch(() => { setState("idle"); toast.error("无法使用麦克风，请在浏览器中允许麦克风权限"); });
+      .catch(() => { setState("idle"); toast.error(tz("无法使用麦克风，请在浏览器中允许麦克风权限")); });
   };
 
   const finish = async () => {
@@ -67,10 +68,10 @@ export function VoiceInputButton({
     try {
       const file = await r.stop();
       const text = await transcribeFile(file);
-      if (!text) toast.error("没有听清，请再说一次", { duration: 8000 });
+      if (!text) toast.error(tz("没有听清，请再说一次"), { duration: 8000 });
       else onTranscript(text, autoSend);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "语音识别失败", { duration: 8000 });
+      toast.error(e instanceof Error ? e.message : tz("语音识别失败"), { duration: 8000 });
     } finally {
       setState("idle");
     }
@@ -80,7 +81,7 @@ export function VoiceInputButton({
     const next = !autoSend;
     setAutoSend(next);
     localStorage.setItem(AUTO_SEND_KEY, next ? "1" : "0");
-    toast(next ? "松开后将直接发送" : "松开后文字放入输入框，确认后再发送");
+    toast(next ? tz("松开后将直接发送") : tz("松开后文字放入输入框，确认后再发送"));
   };
 
   const recording = state === "recording";
@@ -88,8 +89,8 @@ export function VoiceInputButton({
     <div className="flex items-center gap-1">
       <button
         type="button"
-        aria-label={recording ? "松开结束录音" : "按住说话"}
-        title="按住说话"
+        aria-label={recording ? tz("松开结束录音") : tz("按住说话")}
+        title={tz("按住说话")}
         disabled={disabled || state === "transcribing"}
         onPointerDown={(e) => { e.preventDefault(); (e.target as HTMLElement).setPointerCapture?.(e.pointerId); start(); }}
         onPointerUp={() => { if (recording) void finish(); }}
@@ -111,9 +112,9 @@ export function VoiceInputButton({
         {state === "transcribing" ? <Loader2Icon className="size-4 animate-spin" /> : recording ? <Bars /> : <MicIcon className="size-4" />}
       </button>
       {recording ? (
-        <span className="whitespace-nowrap text-xs text-muted-foreground">正在聆听，松开结束</span>
+        <span className="whitespace-nowrap text-xs text-muted-foreground">{tz("正在聆听，松开结束")}</span>
       ) : state === "transcribing" ? (
-        <span className="whitespace-nowrap text-xs text-muted-foreground">识别中…</span>
+        <span className="whitespace-nowrap text-xs text-muted-foreground">{tz("识别中…")}</span>
       ) : (
         <button
           type="button"
@@ -124,7 +125,7 @@ export function VoiceInputButton({
             autoSend ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
-          {autoSend ? "说完直接发送" : "说完先确认"}
+          {autoSend ? tz("说完直接发送") : tz("说完先确认")}
         </button>
       )}
     </div>
@@ -162,23 +163,23 @@ export function SpeakControls({ text }: { text: string }) {
       if (data.some((v) => v > 0)) { setState((s) => (s === "loading" ? "playing" : s)); clearInterval(poll); }
     }, 120);
     p.done
-      .catch((e) => { if (player.current === p) toast.error(e instanceof Error ? e.message : "朗读失败"); })
+      .catch((e) => { if (player.current === p) toast.error(e instanceof Error ? e.message : tz("朗读失败")); })
       .finally(() => { clearInterval(poll); if (player.current === p) stop(); });
   };
 
   const btn = "flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
   if (state === "idle") {
-    return <button type="button" className={btn} onClick={play} aria-label="朗读" title="朗读"><Volume2Icon className="size-3.5" /></button>;
+    return <button type="button" className={btn} onClick={play} aria-label={tz("朗读")} title={tz("朗读")}><Volume2Icon className="size-3.5" /></button>;
   }
   return (
     <div className="voice-metal flex items-center gap-0.5 rounded-full py-0.5 pl-2 pr-0.5 text-foreground">
       {state === "loading" ? <Loader2Icon className="size-3.5 animate-spin" /> : <Bars active={state === "playing"} />}
-      <span className="ml-1 mr-1 text-[11px] text-muted-foreground">{state === "loading" ? "准备朗读" : state === "playing" ? "朗读中" : "已暂停"}</span>
+      <span className="ml-1 mr-1 text-[11px] text-muted-foreground">{state === "loading" ? tz("准备朗读") : state === "playing" ? tz("朗读中") : tz("已暂停")}</span>
       {state !== "loading" && (
         <button
           type="button"
           className={cn(btn, "rounded-full")}
-          aria-label={state === "playing" ? "暂停" : "继续"}
+          aria-label={state === "playing" ? tz("暂停") : tz("继续")}
           onClick={async () => {
             const p = player.current;
             if (!p) return;
@@ -188,7 +189,7 @@ export function SpeakControls({ text }: { text: string }) {
           {state === "playing" ? <PauseIcon className="size-3.5" /> : <PlayIcon className="size-3.5" />}
         </button>
       )}
-      <button type="button" className={cn(btn, "rounded-full")} aria-label="停止朗读" onClick={stop}><SquareIcon className="size-3" /></button>
+      <button type="button" className={cn(btn, "rounded-full")} aria-label={tz("停止朗读")} onClick={stop}><SquareIcon className="size-3" /></button>
     </div>
   );
 }

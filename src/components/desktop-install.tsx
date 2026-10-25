@@ -1,3 +1,4 @@
+import { useLang } from "@/lib/i18n";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { DownloadIcon, MonitorIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -91,7 +92,9 @@ export function DesktopInstallProvider({ children }: { children: ReactNode }) {
   </InstallContext.Provider>;
 }
 
-export function DesktopInstallButton({ sidebar = false, lang = "zh" }: { sidebar?: boolean; lang?: SiteLang }) {
+export function DesktopInstallButton({ sidebar = false, lang: langProp }: { sidebar?: boolean; lang?: SiteLang }) {
+  const siteLang = useLang().lang;
+  const lang = langProp ?? siteLang;
   const t = T[lang];
   const { installed, busy, install } = useContext(InstallContext);
   return <Button variant={sidebar ? "ghost" : "outline"} size="sm" disabled={installed || busy} onClick={() => install(lang)} className={cn("shrink-0 gap-2", sidebar && "w-full justify-start text-muted-foreground hover:text-foreground")}>
