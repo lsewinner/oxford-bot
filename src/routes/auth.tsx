@@ -1,3 +1,4 @@
+import { tz } from "@/lib/i18n";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -11,10 +12,10 @@ import { PHONE_SIGNIN_ENABLED, normalizePhone, phoneAuthError } from "@/lib/phon
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "登录 · Oxford Bot" },
-      { name: "description", content: "登录 Oxford Bot，在手机和电脑间同步你的对话。" },
-      { property: "og:title", content: "登录 · Oxford Bot" },
-      { property: "og:description", content: "登录 Oxford Bot，在手机和电脑间同步你的对话。" },
+      { title: tz("登录 · Oxford Bot") },
+      { name: "description", content: tz("登录 Oxford Bot，在手机和电脑间同步你的对话。") },
+      { property: "og:title", content: tz("登录 · Oxford Bot") },
+      { property: "og:description", content: tz("登录 Oxford Bot，在手机和电脑间同步你的对话。") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -63,7 +64,7 @@ function AuthPage() {
   }, [navigate]);
 
   useEffect(() => {
-    const t = mode === "signup" ? "注册 · Oxford Bot" : "登录 · Oxford Bot";
+    const t = mode === "signup" ? tz("注册 · Oxford Bot") : tz("登录 · Oxford Bot");
     document.title = t;
     document.querySelector('meta[property="og:title"]')?.setAttribute("content", t);
   }, [mode]);
@@ -75,7 +76,7 @@ function AuthPage() {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      if (error) toast.error("发送失败，请稍后重试");
+      if (error) toast.error(tz("发送失败，请稍后重试"));
       else setResetSent(true);
     } else if (mode === "signup") {
       const { error } = await supabase.auth.signUp({
@@ -87,7 +88,7 @@ function AuthPage() {
       else setSent(true);
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) toast.error("邮箱或密码错误");
+      if (error) toast.error(tz("邮箱或密码错误"));
     }
     setLoading(false);
   };
@@ -99,10 +100,10 @@ function AuthPage() {
       if (event.source !== window) return;
       let data: { type?: string; access_token?: string; refresh_token?: string; error?: string } | null = null;
       try { data = typeof event.data === "string" ? JSON.parse(event.data) : event.data; } catch { return; }
-      if (data?.type === "NATIVE_OAUTH_ERROR") { toast.error("登录未完成，请重试"); return; }
+      if (data?.type === "NATIVE_OAUTH_ERROR") { toast.error(tz("登录未完成，请重试")); return; }
       if (data?.type !== "NATIVE_OAUTH_SUCCESS" || typeof data.access_token !== "string" || typeof data.refresh_token !== "string") return;
       const { error } = await supabase.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
-      if (error) toast.error("登录失败，请重试");
+      if (error) toast.error(tz("登录失败，请重试"));
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
@@ -115,13 +116,13 @@ function AuthPage() {
       return;
     }
     const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
-    if (result.error) toast.error("登录失败，请重试");
+    if (result.error) toast.error(tz("登录失败，请重试"));
   };
 
   const sendCode = async () => {
     if (phonePending.current) return;
     const p = normalizePhone(phone);
-    if (!p) { setPhoneError("请输入正确的手机号；海外号码请带国家区号，例如 +44。"); return; }
+    if (!p) { setPhoneError(tz("请输入正确的手机号；海外号码请带国家区号，例如 +44。")); return; }
     phonePending.current = true;
     setPhoneError(null);
     setLoading(true);
@@ -130,7 +131,7 @@ function AuthPage() {
       if (error) { setPhoneError(phoneAuthError(error, "send").message); return; }
       setSentPhone(p);
       setCodeSent(true);
-      toast.success("验证码已发送");
+      toast.success(tz("验证码已发送"));
     } catch (error) {
       setPhoneError(phoneAuthError(error, "send").message);
     } finally {
@@ -163,8 +164,8 @@ function AuthPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <img src={logo} alt="Oxford Bot" width={56} height={56} className="size-14 rounded-2xl" />
-          <h1 className="text-2xl font-semibold tracking-tight">{forgot ? "找回密码" : mode === "signin" ? "欢迎回来" : "创建账号"}</h1>
-          <p className="text-sm text-muted-foreground">对话会保存在云端，多设备同步</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{forgot ? tz("找回密码") : mode === "signin" ? tz("欢迎回来") : tz("创建账号")}</h1>
+          <p className="text-sm text-muted-foreground">{tz("对话会保存在云端，多设备同步")}</p>
         </div>
 
         {sent ? (
@@ -182,7 +183,7 @@ function AuthPage() {
               </Button>
             </div>
             <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-              <div className="h-px flex-1 bg-border" /> 或 <div className="h-px flex-1 bg-border" />
+              <div className="h-px flex-1 bg-border" /> {tz("或")} <div className="h-px flex-1 bg-border" />
             </div>
             {PHONE_SIGNIN_ENABLED && (
               <div className="mb-3 grid grid-cols-2 rounded-xl border border-border p-1 text-sm">
@@ -193,7 +194,7 @@ function AuthPage() {
                     onClick={() => setMethod(m)}
                     className={`rounded-lg py-2 ${method === m ? "bg-secondary text-foreground" : "text-muted-foreground"}`}
                   >
-                    {m === "phone" ? "手机号" : "邮箱"}
+                    {m === "phone" ? tz("手机号") : tz("邮箱")}
                   </button>
                 ))}
               </div>
@@ -203,8 +204,8 @@ function AuthPage() {
                 <Input
                   type="tel"
                   required
-                  placeholder="手机号（默认 +86）"
-                  aria-label="手机号"
+                  placeholder={tz("手机号（默认 +86）")}
+                  aria-label={tz("手机号")}
                   autoComplete="tel"
                   disabled={loading}
                   value={phone}
@@ -220,15 +221,15 @@ function AuthPage() {
                 <div className="flex gap-2">
                   <Input
                     inputMode="numeric"
-                    placeholder="验证码"
-                    aria-label="验证码"
+                    placeholder={tz("验证码")}
+                    aria-label={tz("验证码")}
                     autoComplete="one-time-code"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     className="h-11 rounded-xl"
                   />
                   <Button type="button" variant="outline" disabled={loading} onClick={sendCode} className="h-11 shrink-0 rounded-xl">
-                    {codeSent ? "重新发送" : "获取验证码"}
+                    {codeSent ? tz("重新发送") : tz("获取验证码")}
                   </Button>
                 </div>
                 {phoneError && (
@@ -240,9 +241,9 @@ function AuthPage() {
                   </div>
                 )}
                 <Button type="submit" disabled={loading || !codeSent || !code} className="h-11 rounded-xl">
-                  {loading ? "请稍候…" : "登录 / 注册"}
+                  {loading ? tz("请稍候…") : tz("登录 / 注册")}
                 </Button>
-                <p className="text-center text-xs text-muted-foreground">新手机号验证后自动创建账号</p>
+                <p className="text-center text-xs text-muted-foreground">{tz("新手机号验证后自动创建账号")}</p>
               </form>
             ) : (
               <>
@@ -250,7 +251,7 @@ function AuthPage() {
                   <Input
                     type="email"
                     required
-                    placeholder="邮箱"
+                    placeholder={tz("邮箱")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="h-11 rounded-xl"
@@ -260,7 +261,7 @@ function AuthPage() {
                       type="password"
                       required
                       minLength={6}
-                      placeholder="密码"
+                      placeholder={tz("密码")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="h-11 rounded-xl"
@@ -272,7 +273,7 @@ function AuthPage() {
                     </p>
                   )}
                   <Button type="submit" disabled={loading} className="h-11 rounded-xl">
-                    {loading ? "请稍候…" : forgot ? (resetSent ? "重新发送" : "发送重置邮件") : mode === "signin" ? "登录" : "注册"}
+                    {loading ? tz("请稍候…") : forgot ? (resetSent ? tz("重新发送") : tz("发送重置邮件")) : mode === "signin" ? tz("登录") : tz("注册")}
                   </Button>
                   {mode === "signin" && (
                     <button
@@ -280,19 +281,19 @@ function AuthPage() {
                       className="text-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                       onClick={() => { setForgot(!forgot); setResetSent(false); }}
                     >
-                      {forgot ? "返回登录" : "忘记密码？"}
+                      {forgot ? tz("返回登录") : tz("忘记密码？")}
                     </button>
                   )}
                 </form>
                 {!forgot && (
                 <p className="mt-5 text-center text-sm text-muted-foreground">
-                  {mode === "signin" ? "还没有账号？" : "已有账号？"}
+                  {mode === "signin" ? tz("还没有账号？") : tz("已有账号？")}
                   <button
                     type="button"
                     className="ml-1 text-foreground underline-offset-4 hover:underline"
                     onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
                   >
-                    {mode === "signin" ? "注册" : "登录"}
+                    {mode === "signin" ? tz("注册") : tz("登录")}
                   </button>
                 </p>
                 )}
