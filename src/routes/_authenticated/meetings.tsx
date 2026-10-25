@@ -142,7 +142,7 @@ function MeetingsPage() {
               {!cal ? <p className="text-sm text-muted-foreground">{tz("读取日历中…")}</p> : !cal.connected ? <p className="text-sm text-muted-foreground">{tz("未连接日历。可在「工具与连接」中连接 Google 日历或 Outlook 日历，也可以直接开始录音。")}</p> : cal.events.length === 0 ? <p className="text-sm text-muted-foreground">{tz("今天没有更多日程")}</p> :
                 <div className="flex flex-wrap gap-2">{cal.events.map((e) => <button key={e.id} type="button" disabled={busy} onClick={() => { setEvent(e); setTitle(e.title); }} className={`max-w-full rounded-md border px-3 py-1.5 text-left text-xs ${event?.id === e.id ? "border-primary bg-accent" : "border-border hover:bg-accent/50"}`}><div className="truncate font-medium">{e.title}</div><div className="truncate text-muted-foreground">{e.provider}{e.detail ? ` · ${e.detail.slice(0, 60)}` : ""}</div></button>)}</div>}
             </section>
-            <label className="flex flex-col gap-1.5 text-sm">会议主题
+            <label className="flex flex-col gap-1.5 text-sm">{tz("会议主题")}
               <input value={title} onChange={(e) => setTitle(e.target.value)} disabled={busy} maxLength={200} placeholder={tz("例如：产品周会")} className="h-9 rounded-md border border-border bg-background px-3 text-sm" />
             </label>
             <label className="flex items-start gap-2 text-sm text-muted-foreground"><Checkbox checked={consent} onCheckedChange={(v) => setConsent(v === true)} disabled={busy} className="mt-0.5" />{tz("我已告知所有参会者并获得录音同意")}</label>

@@ -80,7 +80,7 @@ function BriefingPage() {
             <section className="mt-8 space-y-4 rounded-lg border border-border p-5">
               <p className="text-sm font-medium">{tz("推送时间")}</p>
               <div className="flex flex-wrap items-center gap-3 text-sm">
-                每天
+                {tz("每天")}
                 <select className={selectCls} value={hour} onChange={(e) => setHour(Number(e.target.value))} aria-label={tz("推送小时")}>
                   {Array.from({ length: 24 }, (_, h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}
                 </select>
@@ -129,7 +129,7 @@ function BriefingPage() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Button disabled={Boolean(busy) || sources.length === 0} onClick={() => run("save", async () => { await persist(); await qc.invalidateQueries({ queryKey: ["briefing"] }); toast.success(enabled ? tz("已开启，每天 {0}:00 推送", String(hour).padStart(2, "0")) : tz("已保存")); })}>
-                {busy === "save" && <LoaderCircleIcon className="animate-spin" />}保存设置
+                {busy === "save" && <LoaderCircleIcon className="animate-spin" />}{tz("保存设置")}
               </Button>
               <Button variant="outline" disabled={Boolean(busy) || !chatId || sources.length === 0} onClick={() => run("send", async () => { await persist(); await sendNow(); await qc.invalidateQueries({ queryKey: ["briefing"] }); toast.success(tz("早报已发送到 Telegram")); })}>
                 {busy === "send" ? <LoaderCircleIcon className="animate-spin" /> : <SendIcon />}{busy === "send" ? tz("正在整理早报…") : tz("立即发送一份试试")}
