@@ -40,7 +40,7 @@
 - Memory center: admin-only versions, one published per kind, injected server-side before Bot context.
 - Connection eligibility and OAuth/rotation rules live in src/lib/connections/AGENTS.md; callbacks verify the caller before saving (why: prevent credential theft).
 
-- Smart Brain (private RAG): user docs are chunked and embedded server-side into brain_chunks (service-role only, searched via match_brain_chunks with the verified userId) and injected into chat as reference data (why: private knowledge must never be readable across accounts or treated as instructions).
+- Smart Brain: docs embedded server-side into service-role-only brain_chunks, searched by match_brain_chunks with the verified userId, injected as reference data (why: no cross-account reads, no injected instructions).
 - Workflows use the current composer and pending handoff, owner-only credential-free metadata, bounded service tools and existing write confirmations (why: preserve Bot context, isolation and approval).
 - Daily briefings: hourly managed cron → /api/public/cron/briefing; CAS-claim the user's local date, bounded batch, AI 402/403/429 breaker; read-only, saved Telegram target is standing consent (why: no double or silent writes).
 - Meeting Copilot: recordings rotate into complete segments for /api/transcribe; strict-JSON summaries; dispatch hands off to a new chat for normal confirmations; Brain saves use ingestBrainText (why: upload limits, no silent writes).
@@ -51,4 +51,4 @@
 - Real AI tool descriptions use exhaustive per-provider guidance in ai/tool-guidance.ts; only the selected service's instructions accompany its tool, while execution and confirmation boundaries remain unchanged (why: avoid repeating the entire service manual for every connected tool).
 - Voice transcribe/speech try direct OpenAI first and switch once to the Gateway on a 403 region refusal or network failure; remaining 403s return a Chinese message (why: users in restricted regions keep voice without raw provider errors).
 - Public market quotes (Yahoo chart API, fixed host) and render_chart are built-in chat tools available to guests; the client renders their outputs as cards, and Excel is converted to CSV text in the browser (why: no account needed, model only sees text).
-- UI language lives in src/lib/i18n.tsx (LangProvider in __root, saved choice > browser language); chat requests send `lang` so the server adds the English reply style (why: one source of truth for locale across pages and replies).
+- UI language: src/lib/i18n.tsx LangProvider (saved choice > browser); chat sends `lang` for the English reply style (why: one locale source).
