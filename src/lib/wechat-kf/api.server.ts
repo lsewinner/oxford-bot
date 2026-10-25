@@ -2,7 +2,9 @@
 const HOST = 'https://qyapi.weixin.qq.com/cgi-bin';
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${HOST}${path}`, { ...init, redirect: 'error', headers: { 'content-type': 'application/json' } });
+  // Workers only accept "follow" | "manual"; treat any redirect as a failure to keep the fixed host.
+  const res = await fetch(`${HOST}${path}`, { ...init, redirect: 'manual', headers: { 'content-type': 'application/json' } });
+  if (res.status >= 300 && res.status < 400) throw new Error(`企业微信接口异常重定向 ${res.status}`);
   const body = await res.json() as T & { errcode?: number; errmsg?: string };
   if (!res.ok || (body.errcode && body.errcode !== 0)) throw new Error(`企业微信接口错误 ${body.errcode ?? res.status}: ${body.errmsg ?? ''}`.trim());
   return body;
