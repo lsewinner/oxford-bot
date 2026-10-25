@@ -17,5 +17,5 @@ export function BotListLabel({ avatar, name, preview, time }: { avatar: ReactNod
 }
 
 function cleanPreview(text: string) {
-  return text.replace(/<public_summary>[\s\S]*?(<\/public_summary>|$)/g, "").replace(/<\/?[a-z_]+[^>]*>?/gi, "").replace(/\s+/g, " ").trim() || text;
+  return text.replace(/<public_summary>[\s\S]*?(<\/public_summary>|$)/g, "").replace(/<\/?[a-z_]+[^>]*>?/gi, "").replace(/\s+/g, " ").trim();
 }
