@@ -348,7 +348,6 @@ export const EN_PHRASES: Record<string, string> = {
   "全部": "All",
   "准备朗读": "Preparing audio",
   "刷新热点": "Refresh",
-  "实时热点": "Trending now",
   "已暂停": "Paused",
   "按住说话": "Hold to talk",
   "无法使用麦克风，请在浏览器中允许麦克风权限": "Can't use the microphone. Please allow microphone access in your browser",
