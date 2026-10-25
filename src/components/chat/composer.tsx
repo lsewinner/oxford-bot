@@ -23,18 +23,20 @@ import { Button } from '@/components/ui/button';
 import { TrendsDrawer } from './trends-drawer';
 import { usePro } from '@/components/pro/pro-context';
 import { WorkflowsDrawer } from './workflows-drawer';
+import { useLang } from '@/lib/i18n';
 
 export function Composer({
   onSend,
   status = "ready",
   onStop,
-  placeholder = "有什么想问的？",
+  placeholder,
 }: {
   onSend: (text: string, files?: ChatInput["files"]) => void | Promise<void>;
   status?: ChatStatus;
   onStop?: () => void;
   placeholder?: string;
 }) {
+  const { t: tr } = useLang();
   const [text, setText] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -82,7 +84,7 @@ export function Composer({
           autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={placeholder}
+          placeholder={placeholder ?? tr.placeholder}
           className="min-h-14 py-4 pl-5 pr-14 text-[15px]"
         />
         <div className="absolute right-2.5 top-2.5">
@@ -98,13 +100,13 @@ export function Composer({
       </div>
       <PromptInputFooter className="px-3 pb-3">
         <PromptInputTools className="flex-wrap">
-          <Button type="button" variant={moreOpen ? "secondary" : "ghost"} size="icon" className="size-8 rounded-full" aria-label={moreOpen ? "收起更多功能" : "更多功能"} aria-expanded={moreOpen} title="上传文件与更多功能" onClick={() => setMoreOpen((v) => !v)}>
+          <Button type="button" variant={moreOpen ? "secondary" : "ghost"} size="icon" className="size-8 rounded-full" aria-label={moreOpen ? tr.less : tr.more} aria-expanded={moreOpen} title="上传文件与更多功能" onClick={() => setMoreOpen((v) => !v)}>
             <PlusIcon className={`size-4 transition-transform ${moreOpen ? "rotate-45" : ""}`} />
           </Button>
           {moreOpen ? (
             <>
               <AttachmentButton disabled={busy} />
-              <Button asChild type="button" variant="ghost" size="sm" className="gap-1.5 px-2" title="全屏实时语音对讲"><Link to="/voice" aria-label="全屏实时语音"><AudioLinesIcon className="size-4"/><span className="text-xs">实时语音</span></Link></Button>
+              <Button asChild type="button" variant="ghost" size="sm" className="gap-1.5 px-2" title="全屏实时语音对讲"><Link to="/voice" aria-label="全屏实时语音"><AudioLinesIcon className="size-4"/><span className="text-xs">{tr.liveVoice}</span></Link></Button>
               <ModeToggle />
               <WebSearchToggle />
               <Button type="button" variant={deepOn?'secondary':'ghost'} size="sm" aria-label="Deep Think 深度思考" aria-pressed={deepOn} title="深度思考 · 推理摘要与核查" disabled={busy} className="gap-1.5 px-2" onClick={()=>{ if(!requirePro('deep_think'))return; setDeepThink(!deepThink); }}><BrainIcon className="size-4"/><span className="text-xs">Deep Think</span></Button>

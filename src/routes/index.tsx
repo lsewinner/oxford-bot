@@ -1,5 +1,6 @@
+import { useLang } from "@/lib/i18n";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -28,15 +29,9 @@ type Lang = keyof typeof COPY;
 
 function Index() {
   const navigate = useNavigate();
-  const [lang, setLang] = useState<Lang>("zh");
-  useEffect(() => {
-    const saved = localStorage.getItem("oxford-lang");
-    if (saved === "zh" || saved === "en") setLang(saved);
-    else if (!navigator.language.toLowerCase().startsWith("zh")) setLang("en");
-  }, []);
-  useEffect(() => { document.documentElement.lang = lang === "zh" ? "zh-CN" : "en"; }, [lang]);
+  const { lang, setLang } = useLang();
   const t = COPY[lang];
-  const switchLang = () => { const next: Lang = lang === "zh" ? "en" : "zh"; setLang(next); localStorage.setItem("oxford-lang", next); };
+  const switchLang = () => setLang(lang === "zh" ? "en" : "zh");
   useEffect(() => {
     const check = () => supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/chat", replace: true });

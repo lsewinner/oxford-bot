@@ -1,3 +1,4 @@
+import { useLang } from "@/lib/i18n";
 import { botListRowClass } from "@/components/chat/bot-list-label";
 import { MainBotLabel } from "@/components/chat/main-bot";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -102,9 +103,13 @@ function GuestSurface() {
     <main className="flex min-w-0 flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2"><Button variant="ghost" size="icon-sm" className="md:hidden" aria-label="打开我的 Bots" onClick={() => setOpen(true)}><MenuIcon /></Button><img src={logo} width={28} height={28} alt="Oxford Bot" /><span className="text-sm font-medium">Oxford Bot</span></div>
-        <div className="flex items-center gap-3"><span className="text-xs text-muted-foreground">游客 · 本机保存</span><Button asChild size="sm" variant="outline"><Link to="/auth">登录</Link></Button></div>
+        <div className="flex items-center gap-3"><GuestHeaderActions /></div>
       </header>
       <div className="min-h-0 flex-1">{initialMessages && <ChatWindow key={activeId} threadId={activeId} initialMessages={initialMessages} activeBot={activeBot} />}</div>
     </main>
   </div>;
+}
+function GuestHeaderActions() {
+  const { lang, t, setLang } = useLang();
+  return <><Button size="sm" variant="ghost" onClick={() => setLang(lang === "zh" ? "en" : "zh")} aria-label={lang === "zh" ? "Switch to English" : "切换到中文"}>{lang === "zh" ? "EN" : "中文"}</Button><span className="hidden text-xs text-muted-foreground sm:inline">{t.guestBadge}</span><Button asChild size="sm" variant="outline"><Link to="/auth">{t.signIn}</Link></Button></>;
 }

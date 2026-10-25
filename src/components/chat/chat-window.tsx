@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { UIMessage } from "ai";
+import { useLang } from "@/lib/i18n";
+import { Showcase } from "./showcase";
 import { acquireChat, chatIsRunning, mountChat, type ChatContext } from "@/lib/chat-pool";
 import { CheckIcon, CopyIcon, FileTextIcon, GlobeIcon, RefreshCcwIcon, SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -50,6 +52,9 @@ function errorText(err: Error) {
 
 export function ChatWindow({ threadId, initialMessages, activeBot = null, botShare }: { threadId: string; initialMessages: UIMessage[]; activeBot?: BotIdentity | null; botShare?: string }) {
   const { mode, deepThink } = useMode();
+  const { lang, t: tr } = useLang();
+  const langRef = useRef(lang);
+  langRef.current = lang;
   const deepThinkRef=useRef(deepThink);
   deepThinkRef.current=deepThink;
   const modeRef = useRef(mode);
@@ -72,7 +77,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null, botSha
       const token = data.session?.access_token;
       return token ? { Authorization: `Bearer ${token}` } : {};
     },
-    body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, deepThink:deepThinkRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind, systemPrompt:botRef.current.systemPrompt, preferredTools:botRef.current.preferredTools } : null, ...(botShareRef.current ? { botShare: botShareRef.current } : {}) }),
+    body: () => ({ threadId: isGuestConversation(threadId) ? "guest" : threadId, mode: modeRef.current, lang: langRef.current, deepThink:deepThinkRef.current, webSearch: webSearchRef.current, bot: botRef.current ? { name: botRef.current.name, kind: botRef.current.kind, systemPrompt:botRef.current.systemPrompt, preferredTools:botRef.current.preferredTools } : null, ...(botShareRef.current ? { botShare: botShareRef.current } : {}) }),
     onError: (e) => toast.error(errorText(e)),
     onFinish: (finished) => {
       // Keep the cached thread current so reopening it (even after it finished in the background) shows the replies.
@@ -138,7 +143,8 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null, botSha
       <ConversationTools messages={messages} threadId={threadId} busy={busy} />
       <Conversation className="min-h-0 flex-1">
         <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 pb-10 pt-6">
-          {activeBot && messages.length === 0 && <p className="text-sm text-muted-foreground">你需要我为你做什么？</p>}
+          {activeBot && messages.length === 0 && <p className="text-sm text-muted-foreground">{tr.askBot}</p>}
+          {!activeBot && messages.length === 0 && isGuestConversation(threadId) && <div className="flex min-h-[45vh] items-end"><Showcase signedIn={false} onPick={(p) => sendMessage({ text: p })} /></div>}
           {messages.map((m, idx) => (
             <div key={m.id} id={`message-${m.id}`}>
             <ChatMessage
@@ -165,7 +171,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null, botSha
           {busy && !lastAssistantHasText && (
             <div className="flex items-center gap-3 px-1 text-sm">
               {bot && lastMessage?.role !== "assistant" && <BotAvatar bot={bot} working />}
-              <Shimmer>{mode === "fun" ? "正在憋个大招…" : "思考中…"}</Shimmer>
+              <Shimmer>{mode === "fun" ? tr.thinkingFun : tr.thinking}</Shimmer>
             </div>
           )}
         </ConversationContent>
@@ -178,7 +184,6 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null, botSha
           onSend={(text, files) => {
             sendMessage(files?.length ? { text, files } : { text });
           }}
-          placeholder="有什么想问的？"
         />
       </div>
     </div>
