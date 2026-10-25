@@ -2,7 +2,8 @@ import { tz } from "@/lib/i18n";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Settings2Icon, CheckIcon, PlusIcon, Share2Icon, CopyIcon, Trash2Icon } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { createBotShare, listMyBotShares, revokeBotShare } from "@/lib/bot-shares.functions";
+import { createBotShare, listMyBotShares, listMySubmissions, revokeBotShare, submitBotToSquare } from "@/lib/bot-shares.functions";
+import { CATEGORY_LABEL, SQUARE_CATEGORIES, type SquareCategory, type SubmissionStatus } from "@/lib/bot-square";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,11 +148,21 @@ export function BotSettings({ entry, onRename, onDelete }: { entry: BotEntry; on
   const listShares = useServerFn(listMyBotShares);
   const revokeShare = useServerFn(revokeBotShare);
   const [shares, setShares] = useState<{ token: string; name: string; created_at: string }[]>([]);
+  const listSubs = useServerFn(listMySubmissions);
+  const submitSquare = useServerFn(submitBotToSquare);
+  const [statuses, setStatuses] = useState<Record<string, SubmissionStatus>>({});
+  const [category, setCategory] = useState<SquareCategory>('productivity');
+  const submitOne = async (token: string) => {
+    if (!isPro) { openUpgrade("persona"); return; }
+    try { await submitSquare({ data: { token, category, ...(intro.trim() ? { intro: intro.trim() } : {}) } }); setStatuses(m => ({ ...m, [token]: 'pending' })); toast.success(tz("已提交审核，通过后会出现在 Bot 广场")); }
+    catch (e) { toast.error(e instanceof Error ? tz(e.message) : tz("提交失败")); }
+  };
   const refreshShares = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) { setShares([]); return; }
     try { setShares(await listShares()); } catch { /* list is optional */ }
-  }, [listShares]);
+    try { setStatuses(Object.fromEntries((await listSubs()).map(r => [r.token, r.status]))); } catch { /* optional */ }
+  }, [listShares, listSubs]);
   useEffect(() => { if (open) void refreshShares(); }, [open, refreshShares]);
   const linkFor = (token: string) => `${window.location.origin}/b/${token}`;
   const revokeOne = async (token: string) => {
@@ -194,8 +205,15 @@ export function BotSettings({ entry, onRename, onDelete }: { entry: BotEntry; on
           <Button type="button" variant="outline" size="sm" disabled={sharing} onClick={share}><Share2Icon className="size-4" />{sharing ? tz("正在生成…") : tz("生成分享链接")}</Button>
           {shares.length > 0 && <div className="space-y-1 pt-2">
             <p className="text-xs text-muted-foreground">{tz("我已分享的 Bot 链接（撤销后立即失效）")}</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground"><span>{tz("广场分类")}</span>
+              <select aria-label={tz("广场分类")} value={category} onChange={(e) => setCategory(e.target.value as SquareCategory)} className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground">
+                {SQUARE_CATEGORIES.map(c => <option key={c} value={c}>{tz(CATEGORY_LABEL[c])}</option>)}</select>
+              {!isPro && <button type="button" className="underline" onClick={() => openUpgrade("persona")}>{tz("上架广场为 Pro 权益")}</button>}</div>
             <div className="max-h-48 overflow-auto">{shares.map(s => <div key={s.token} className="flex min-w-0 items-center gap-2 border-b border-border py-1.5">
               <a href={`/b/${s.token}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-sm">{s.name} · <span className="text-muted-foreground">{new Date(s.created_at).toLocaleDateString()}</span></a>
+              {(() => { const st = statuses[s.token] ?? 'none'; return st === 'pending' ? <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">{tz("待审核")}</span>
+                : st === 'approved' ? <span className="shrink-0 rounded-full border border-foreground px-2 py-0.5 text-[11px]">{tz("已上架广场")}</span>
+                : <Button type="button" variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-xs" onClick={() => void submitOne(s.token)}>{st === 'rejected' ? tz("未通过 · 重新提交") : tz("申请上架广场")}</Button>; })()}
               <Button type="button" variant="ghost" size="icon-sm" aria-label={tz("复制分享链接")} title={tz("复制链接")} onClick={() => { void navigator.clipboard.writeText(linkFor(s.token)).then(() => toast.success(tz("已复制"))).catch(() => toast.error(tz("复制失败"))); }}><CopyIcon className="size-4" /></Button>
               <Button type="button" variant="ghost" size="icon-sm" className="text-destructive" aria-label={tz("撤销分享链接")} title={tz("撤销分享")} onClick={() => void revokeOne(s.token)}><Trash2Icon className="size-4" /></Button>
             </div>)}</div>

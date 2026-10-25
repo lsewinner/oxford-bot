@@ -155,6 +155,13 @@
       "when": 1792739486798,
       "tag": "0021_paid_ultra_quota",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792911385649,
+      "tag": "0022_bot_square_submissions",
+      "breakpoints": true
     }
   ]
 }

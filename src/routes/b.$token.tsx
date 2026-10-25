@@ -77,7 +77,7 @@ function SharedBotPage() {
       <p className="text-xs text-muted-foreground">{tz("点「直接试聊」即可在本页聊天；点「复制到我的 Bots」会加入你自己的 Bot 列表。分享者看不到你的对话，你也看不到分享者的任何记录。")}</p>
       {(role?.admin || role?.owner) && <div className="flex flex-wrap justify-center gap-2 pt-2">
         {role.admin && <Button size="sm" variant="ghost" onClick={async () => {
-          try { await feature({ data: { token, featured: !shared.featured } }); await queryClient.invalidateQueries({ queryKey: ["shared-bot", token] }); await queryClient.invalidateQueries({ queryKey: ["featured-bots"] }); toast.success(shared.featured ? tz("已从官方精选移除") : tz("已加入官方精选")); }
+          try { await feature({ data: { token, featured: !shared.featured } }); await queryClient.invalidateQueries({ queryKey: ["shared-bot", token] }); await queryClient.invalidateQueries({ queryKey: ["square-bots"] }); toast.success(shared.featured ? tz("已从官方精选移除") : tz("已加入官方精选")); }
           catch (e) { toast.error(e instanceof Error ? e.message : tz("操作失败")); }
         }}>{shared.featured ? <StarOffIcon className="size-4" /> : <StarIcon className="size-4" />}{shared.featured ? tz("移出官方精选") : tz("设为官方精选")}</Button>}
         {role.owner && <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => {
