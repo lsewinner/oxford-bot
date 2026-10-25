@@ -86,14 +86,6 @@ export function Composer({
       <PromptInputFooter className="px-3 pb-3">
         <PromptInputTools className="flex-wrap">
           <AttachmentButton disabled={busy} />
-          <VoiceInputButton
-            {...(busy && onStop ? { onBeforeStart: onStop } : {})}
-            onTranscript={(spoken, autoSend) => {
-              if (autoSend) { void onSend(spoken); return; }
-              setText((prev) => (prev.trim() ? `${prev.trimEnd()} ${spoken}` : spoken));
-              ref.current?.focus();
-            }}
-          />
           <Button asChild type="button" variant="ghost" size="sm" className="gap-1.5 px-2" title="全屏实时语音对讲"><Link to="/voice" aria-label="全屏实时语音"><AudioLinesIcon className="size-4"/><span className="text-xs">实时语音</span></Link></Button>
           <ModeToggle />
           <WebSearchToggle />
@@ -102,12 +94,22 @@ export function Composer({
           <WorkflowsDrawer busy={busy} onRun={onSend} />
           <ToolsCenter />
         </PromptInputTools>
-        <AttachmentSubmit text={text} busy={busy}>{(disabled) => <PromptInputSubmit
-          status={status}
-          {...(onStop ? { onStop } : {})}
-          disabled={disabled}
-          className="rounded-full"
-        />}</AttachmentSubmit>
+        <div className="flex shrink-0 items-center gap-1">
+          <VoiceInputButton
+            {...(busy && onStop ? { onBeforeStart: onStop } : {})}
+            onTranscript={(spoken, autoSend) => {
+              if (autoSend) { void onSend(spoken); return; }
+              setText((prev) => (prev.trim() ? `${prev.trimEnd()} ${spoken}` : spoken));
+              ref.current?.focus();
+            }}
+          />
+          <AttachmentSubmit text={text} busy={busy}>{(disabled) => <PromptInputSubmit
+            status={status}
+            {...(onStop ? { onStop } : {})}
+            disabled={disabled}
+            className="rounded-full"
+          />}</AttachmentSubmit>
+        </div>
       </PromptInputFooter>
     </PromptInput>
   );

@@ -164,7 +164,7 @@ export function ChatWindow({ threadId, initialMessages, activeBot = null, botSha
           ))}
           {busy && !lastAssistantHasText && (
             <div className="flex items-center gap-3 px-1 text-sm">
-              {bot && <BotAvatar bot={bot} working />}
+              {bot && lastMessage?.role !== "assistant" && <BotAvatar bot={bot} working />}
               <Shimmer>{mode === "fun" ? "正在憋个大招…" : "思考中…"}</Shimmer>
             </div>
           )}
