@@ -1,3 +1,4 @@
+import { tz } from "@/lib/i18n";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)", "var(--primary)"];
@@ -22,13 +23,13 @@ export function MarketQuotes({ output }: { output: MarketOutput }) {
               <div className="text-right"><p className="font-mono text-base">{fmt(q.price)} <span className="text-xs text-muted-foreground">{q.currency}</span></p><p className="font-mono text-xs" style={{ color }}>{up ? "+" : ""}{q.rangeChangePercent ?? "-"}% · {output.range}</p></div>
             </div>
             {q.series && q.series.length > 1 && (
-              <div className="mt-2 h-24"><ResponsiveContainer width="100%" height="100%"><AreaChart data={q.series}><defs><linearGradient id={`g-${q.symbol}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.35} /><stop offset="100%" stopColor={color} stopOpacity={0} /></linearGradient></defs><YAxis hide domain={["auto", "auto"]} /><Tooltip {...tip} labelFormatter={(t) => new Date(Number(t)).toLocaleString()} formatter={(v) => [fmt(Number(v)), "收盘"]} /><XAxis dataKey="t" hide /><Area dataKey="close" stroke={color} fill={`url(#g-${q.symbol})`} strokeWidth={1.5} dot={false} /></AreaChart></ResponsiveContainer></div>
+              <div className="mt-2 h-24"><ResponsiveContainer width="100%" height="100%"><AreaChart data={q.series}><defs><linearGradient id={`g-${q.symbol}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.35} /><stop offset="100%" stopColor={color} stopOpacity={0} /></linearGradient></defs><YAxis hide domain={["auto", "auto"]} /><Tooltip {...tip} labelFormatter={(t) => new Date(Number(t)).toLocaleString()} formatter={(v) => [fmt(Number(v)), tz("收盘")]} /><XAxis dataKey="t" hide /><Area dataKey="close" stroke={color} fill={`url(#g-${q.symbol})`} strokeWidth={1.5} dot={false} /></AreaChart></ResponsiveContainer></div>
             )}
-            <p className="mt-1 font-mono text-[11px] text-muted-foreground">52 周 {fmt(q.low52w)} – {fmt(q.high52w)}</p>
+            <p className="mt-1 font-mono text-[11px] text-muted-foreground">{tz("52 周")} {fmt(q.low52w)} – {fmt(q.high52w)}</p>
           </div>
         );
       })}
-      {output.source && <p className="text-[11px] text-muted-foreground sm:col-span-2">数据来源：{output.source}</p>}
+      {output.source && <p className="text-[11px] text-muted-foreground sm:col-span-2">{tz("数据来源：")}{output.source}</p>}
     </div>
   );
 }

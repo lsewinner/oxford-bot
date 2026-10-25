@@ -1,3 +1,4 @@
+import { tz } from "@/lib/i18n";
 import { GlobeIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWebSearch } from "./web-search-context";
@@ -9,8 +10,8 @@ export function WebSearchToggle() {
       type="button"
       role="switch"
       aria-checked={enabled}
-      aria-label="联网搜索"
-      title={enabled ? "联网搜索已开启" : "开启联网搜索"}
+      aria-label={tz("联网搜索")}
+      title={enabled ? tz("联网搜索已开启") : tz("开启联网搜索")}
       onClick={() => setEnabled(!enabled)}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",

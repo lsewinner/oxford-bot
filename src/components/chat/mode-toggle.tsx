@@ -1,3 +1,4 @@
+import { tz } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useMode } from "./mode-context";
 
@@ -6,7 +7,7 @@ export function ModeToggle() {
   return (
     <div
       role="radiogroup"
-      aria-label="回答模式"
+      aria-label={tz("回答模式")}
       className="inline-flex items-center rounded-full border border-border bg-card p-0.5 text-xs font-medium"
     >
       {(["normal", "fun"] as const).map((m) => (
