@@ -170,16 +170,16 @@ function AuthPage() {
 
         {sent ? (
           <div className="rounded-2xl border border-border bg-card p-5 text-center text-sm">
-            确认邮件已发送到 <span className="font-medium">{email}</span>，点击邮件中的链接即可完成注册。
+            {tz("确认邮件已发送到")} <span className="font-medium">{email}</span>{tz("，点击邮件中的链接即可完成注册。")}
           </div>
         ) : (
           <>
             <div className="flex flex-col gap-2">
               <Button variant="outline" className="h-11 rounded-xl" onClick={() => oauth("apple")}>
-                使用 Apple 继续
+                {tz("使用 Apple 继续")}
               </Button>
               <Button variant="outline" className="h-11 rounded-xl" onClick={() => oauth("google")}>
-                使用 Google 继续
+                {tz("使用 Google 继续")}
               </Button>
             </div>
             <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
@@ -236,7 +236,7 @@ function AuthPage() {
                   <div role="alert" className="border-l-2 border-destructive pl-3 text-sm leading-6 text-foreground">
                     <p>{phoneError}</p>
                     <Button type="button" variant="link" className="h-auto px-0 py-1" disabled={loading} onClick={() => { setMethod("email"); setPhoneError(null); }}>
-                      改用邮箱登录 / 注册
+                      {tz("改用邮箱登录 / 注册")}
                     </Button>
                   </div>
                 )}
@@ -269,7 +269,7 @@ function AuthPage() {
                   )}
                   {resetSent && (
                     <p role="status" className="text-sm leading-6 text-foreground">
-                      重置邮件已发送到 {email}，请点击邮件中的链接设置新密码（也请检查垃圾邮件）。
+                      {tz("重置邮件已发送到 {0}，请点击邮件中的链接设置新密码（也请检查垃圾邮件）。", email)}
                     </p>
                   )}
                   <Button type="submit" disabled={loading} className="h-11 rounded-xl">

@@ -152,7 +152,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           className="flex items-center gap-2 rounded-xl border border-sidebar-border px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent"
         >
-          <PenSquareIcon className="size-4" /> 新建对话
+          <PenSquareIcon className="size-4" /> {tz("新建对话")}
         </Link>
       </div>
       <nav className="mt-4 flex-1 overflow-y-auto px-2 pb-4">
