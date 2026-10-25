@@ -1,3 +1,4 @@
+import { tz } from "@/lib/i18n";
 import type { ChatStatus } from "ai";
 import { DropOverlay } from "./drop-overlay";
 import { useEffect, useRef, useState } from "react";
@@ -60,7 +61,7 @@ export function Composer({
     const t = (msg.text ?? text).trim();
     if ((!t && !msg.files.length) || busy) return;
     const files = await prepareAttachments(msg.files);
-    await onSend(t || "请分析这些附件。", files);
+    await onSend(t || tz("请分析这些附件。"), files);
     setText("");
     ref.current?.focus();
   };
@@ -73,7 +74,7 @@ export function Composer({
       globalDrop
       maxFiles={MAX_ATTACHMENTS}
       maxFileSize={MAX_ATTACHMENT_BYTES}
-      onError={(error) => toast.error(error.code === "max_files" ? "每次最多上传 4 个附件" : error.code === "max_file_size" ? "单个附件不能超过 4 MB" : "请选择图片、PDF、Word 或文本文件")}
+      onError={(error) => toast.error(error.code === "max_files" ? tz("每次最多上传 4 个附件") : error.code === "max_file_size" ? tz("单个附件不能超过 4 MB") : tz("请选择图片、PDF、Word 或文本文件"))}
       className="rounded-3xl border-border bg-card shadow-[0_0_0_1px_var(--border),0_20px_60px_-20px_oklch(0_0_0/0.8)]"
     >
       <DropOverlay />
@@ -100,22 +101,22 @@ export function Composer({
       </div>
       <PromptInputFooter className="px-3 pb-3">
         <PromptInputTools className="flex-wrap">
-          <Button type="button" variant={moreOpen ? "secondary" : "ghost"} size="icon" className="size-8 rounded-full" aria-label={moreOpen ? tr.less : tr.more} aria-expanded={moreOpen} title="上传文件与更多功能" onClick={() => setMoreOpen((v) => !v)}>
+          <Button type="button" variant={moreOpen ? "secondary" : "ghost"} size="icon" className="size-8 rounded-full" aria-label={moreOpen ? tr.less : tr.more} aria-expanded={moreOpen} title={tz("上传文件与更多功能")} onClick={() => setMoreOpen((v) => !v)}>
             <PlusIcon className={`size-4 transition-transform ${moreOpen ? "rotate-45" : ""}`} />
           </Button>
           {moreOpen ? (
             <>
               <AttachmentButton disabled={busy} />
-              <Button asChild type="button" variant="ghost" size="sm" className="gap-1.5 px-2" title="全屏实时语音对讲"><Link to="/voice" aria-label="全屏实时语音"><AudioLinesIcon className="size-4"/><span className="text-xs">{tr.liveVoice}</span></Link></Button>
+              <Button asChild type="button" variant="ghost" size="sm" className="gap-1.5 px-2" title={tz("全屏实时语音对讲")}><Link to="/voice" aria-label={tz("全屏实时语音")}><AudioLinesIcon className="size-4"/><span className="text-xs">{tr.liveVoice}</span></Link></Button>
               <ModeToggle />
               <WebSearchToggle />
-              <Button type="button" variant={deepOn?'secondary':'ghost'} size="sm" aria-label="Deep Think 深度思考" aria-pressed={deepOn} title="深度思考 · 推理摘要与核查" disabled={busy} className="gap-1.5 px-2" onClick={()=>{ if(!requirePro('deep_think'))return; setDeepThink(!deepThink); }}><BrainIcon className="size-4"/><span className="text-xs">Deep Think</span></Button>
+              <Button type="button" variant={deepOn?'secondary':'ghost'} size="sm" aria-label={tz("Deep Think 深度思考")} aria-pressed={deepOn} title={tz("深度思考 · 推理摘要与核查")} disabled={busy} className="gap-1.5 px-2" onClick={()=>{ if(!requirePro('deep_think'))return; setDeepThink(!deepThink); }}><BrainIcon className="size-4"/><span className="text-xs">Deep Think</span></Button>
               <TrendsDrawer compact />
               <WorkflowsDrawer busy={busy} onRun={onSend} />
               <ToolsCenter />
             </>
           ) : deepOn ? (
-            <Button type="button" variant="secondary" size="sm" className="h-7 gap-1 rounded-full px-2.5 text-xs" aria-label="关闭 Deep Think" onClick={() => setDeepThink(false)}>
+            <Button type="button" variant="secondary" size="sm" className="h-7 gap-1 rounded-full px-2.5 text-xs" aria-label={tz("关闭 Deep Think")} onClick={() => setDeepThink(false)}>
               <BrainIcon className="size-3.5" />Deep Think<XIcon className="size-3" />
             </Button>
           ) : null}

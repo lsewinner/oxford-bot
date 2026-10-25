@@ -1,3 +1,4 @@
+import { tz } from "@/lib/i18n";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChatWindow } from "@/components/chat/chat-window";
@@ -6,15 +7,15 @@ import { useBotPresence } from "@/components/chat/bot-presence";
 
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   head: () => ({ meta: [
-    { title: "会话记录 · Oxford Bot" },
-    { name: "description", content: "继续与 Oxford Bot 对话，查看回复与联网搜索来源。" },
-    { property: "og:title", content: "会话记录 · Oxford Bot" },
-    { property: "og:description", content: "继续与 Oxford Bot 对话，查看回复与联网搜索来源。" },
+    { title: tz("会话记录 · Oxford Bot") },
+    { name: "description", content: tz("继续与 Oxford Bot 对话，查看回复与联网搜索来源。") },
+    { property: "og:title", content: tz("会话记录 · Oxford Bot") },
+    { property: "og:description", content: tz("继续与 Oxford Bot 对话，查看回复与联网搜索来源。") },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
   loader: ({ context, params }) => context.queryClient.ensureQueryData(messagesQuery(params.threadId)),
-  pendingComponent: () => <div className="p-6 text-sm text-muted-foreground">加载中…</div>,
+  pendingComponent: () => <div className="p-6 text-sm text-muted-foreground">{tz("加载中…")}</div>,
   component: ThreadPage,
 });
 

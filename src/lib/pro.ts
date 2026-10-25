@@ -1,16 +1,17 @@
+import { tz } from "@/lib/i18n";
 export type ProFeature = "bot" | "persona" | "deep_think" | "tools" | "general";
 export type BillingCycle = "monthly" | "yearly";
 export type PaidPlan = "pro" | "ultra";
 export type PlanPriceId = "pro_monthly" | "pro_yearly" | "ultra_monthly" | "ultra_yearly";
 
 export const PRO_PRICES: Record<BillingCycle, { priceId: "pro_monthly" | "pro_yearly"; amount: number; label: string; note: string }> = {
-  monthly: { priceId: "pro_monthly", amount: 25, label: "$25", note: "/ 月" },
-  yearly: { priceId: "pro_yearly", amount: 240, label: "$240", note: "/ 年 · 折合 $20/月，省 20%" },
+  monthly: { priceId: "pro_monthly", amount: 25, label: "$25", note: tz("/ 月") },
+  yearly: { priceId: "pro_yearly", amount: 240, label: "$240", note: tz("/ 年 · 折合 $20/月，省 20%") },
 };
 
 export const ULTRA_PRICES: Record<BillingCycle, { priceId: PlanPriceId; amount: number; label: string; note: string }> = {
-  monthly: { priceId: "ultra_monthly", amount: 60, label: "$60", note: "/ 月" },
-  yearly: { priceId: "ultra_yearly", amount: 576, label: "$576", note: "/ 年 · 折合 $48/月，省 20%" },
+  monthly: { priceId: "ultra_monthly", amount: 60, label: "$60", note: tz("/ 月") },
+  yearly: { priceId: "ultra_yearly", amount: 576, label: "$576", note: tz("/ 年 · 折合 $48/月，省 20%") },
 };
 export const PLAN_PRICES = { pro: PRO_PRICES, ultra: ULTRA_PRICES };
 
@@ -34,20 +35,20 @@ export function canAddBot(isPro: boolean, extraBotCount: number) {
 }
 
 export const FEATURE_PROMPTS: Record<ProFeature, string> = {
-  bot: "免费版可以在 Oxonian 之外养 1 只专属猫咪 Bot。升级 Pro 即可不限数量地养更多猫咪 Bot。",
-  persona: "自定义专属人设与说话风格是 Pro 权益。",
-  deep_think: "Deep Think 深度思考是 Pro 权益。",
-  tools: "连接 Gmail、Outlook、GitHub 等真实工具是 Pro 权益。",
-  general: "解锁 Oxford Bot 的全部能力。",
+  bot: tz("免费版可以在 Oxonian 之外养 1 只专属猫咪 Bot。升级 Pro 即可不限数量地养更多猫咪 Bot。"),
+  persona: tz("自定义专属人设与说话风格是 Pro 权益。"),
+  deep_think: tz("Deep Think 深度思考是 Pro 权益。"),
+  tools: tz("连接 Gmail、Outlook、GitHub 等真实工具是 Pro 权益。"),
+  general: tz("解锁 Oxford Bot 的全部能力。"),
 };
 
 export const PLAN_ROWS: { label: string; free: string | boolean; pro: string | boolean; ultra: string | boolean }[] = [
-  { label: "每日消息额度（UTC 0 点重置）", free: "30 条", pro: "300 条", ultra: "800 条" },
-  { label: "对话、联网搜索、生图与文件分析", free: true, pro: true, ultra: true },
-  { label: "猫咪 Bot", free: "Oxonian + 1 只自建", pro: "不限数量", ultra: "不限数量" },
-  { label: "自定义专属人设与说话风格", free: false, pro: true, ultra: true },
-  { label: "Deep Think 深度思考", free: false, pro: true, ultra: true },
-  { label: "连接真实工具（邮件、云盘、GitHub、Teams 等）", free: false, pro: true, ultra: true },
+  { label: tz("每日消息额度（UTC 0 点重置）"), free: tz("30 条"), pro: tz("300 条"), ultra: tz("800 条") },
+  { label: tz("对话、联网搜索、生图与文件分析"), free: true, pro: true, ultra: true },
+  { label: tz("猫咪 Bot"), free: tz("Oxonian + 1 只自建"), pro: tz("不限数量"), ultra: tz("不限数量") },
+  { label: tz("自定义专属人设与说话风格"), free: false, pro: true, ultra: true },
+  { label: tz("Deep Think 深度思考"), free: false, pro: true, ultra: true },
+  { label: tz("连接真实工具（邮件、云盘、GitHub、Teams 等）"), free: false, pro: true, ultra: true },
 ];
 
 type SubRow = { status: string; current_period_end: string | null };

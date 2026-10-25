@@ -1,3 +1,4 @@
+import { tz } from "@/lib/i18n";
 import { useEffect, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { Link } from '@tanstack/react-router';
@@ -23,26 +24,26 @@ export function ConversationTools({ messages, threadId, busy }: { messages: UIMe
     void list({ data: { threadId } }).then(setShares).catch(e => toast.error(e.message)).finally(() => setWorking(false));
   }, [open, guest, threadId, list]);
   async function copy(value: string) {
-    try { await navigator.clipboard.writeText(value); toast.success('已复制'); } catch { toast.error('复制失败，请允许剪贴板访问'); }
+    try { await navigator.clipboard.writeText(value); toast.success(tz("已复制")); } catch { toast.error(tz("复制失败，请允许剪贴板访问")); }
   }
   return <>
     <div className="flex items-center justify-end gap-1 border-b border-border px-3 py-1.5">
-      <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon-sm" variant="ghost" disabled={!messages.length} aria-label="导出对话" title="导出对话"><DownloadIcon className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={() => downloadConversation(messages, 'markdown')}><FileTextIcon />导出 Markdown</DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => downloadConversation(messages, 'text')}><FileTextIcon />导出文本</DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => void copy(exportConversation(messages, 'text'))}><CopyIcon />复制对话</DropdownMenuItem>
+      <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon-sm" variant="ghost" disabled={!messages.length} aria-label={tz("导出对话")} title={tz("导出对话")}><DownloadIcon className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={() => downloadConversation(messages, 'markdown')}><FileTextIcon />{tz("导出 Markdown")}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => downloadConversation(messages, 'text')}><FileTextIcon />{tz("导出文本")}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => void copy(exportConversation(messages, 'text'))}><CopyIcon />{tz("复制对话")}</DropdownMenuItem>
       </DropdownMenuContent></DropdownMenu>
-      <Button size="icon-sm" variant="ghost" disabled={!messages.length || busy} aria-label="分享对话" title="分享对话" onClick={() => setOpen(true)}><Share2Icon className="size-4" /></Button>
+      <Button size="icon-sm" variant="ghost" disabled={!messages.length || busy} aria-label={tz("分享对话")} title={tz("分享对话")} onClick={() => setOpen(true)}><Share2Icon className="size-4" /></Button>
     </div>
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-lg"><DialogTitle>公开分享这段对话</DialogTitle><DialogDescription>这会生成当前对话内容的只读副本，持有链接的人能看到这段问答、生成图片和来源，但看不到你的账户、其他对话、资料和工具连接。后续消息不会同步。想分享 Bot 本身（让别人试聊、复制）？请在左侧「我的 Bots」点该 Bot 的设置 → 生成分享链接。</DialogDescription>
-      {guest ? <Button asChild variant="outline"><Link to="/auth">登录后分享云端对话</Link></Button> : <>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-lg"><DialogTitle>{tz("公开分享这段对话")}</DialogTitle><DialogDescription>{tz("这会生成当前对话内容的只读副本，持有链接的人能看到这段问答、生成图片和来源，但看不到你的账户、其他对话、资料和工具连接。后续消息不会同步。想分享 Bot 本身（让别人试聊、复制）？请在左侧「我的 Bots」点该 Bot 的设置 → 生成分享链接。")}</DialogDescription>
+      {guest ? <Button asChild variant="outline"><Link to="/auth">{tz("登录后分享云端对话")}</Link></Button> : <>
         <Button disabled={working || busy} onClick={async () => {
-          setWorking(true); try { const result = await create({ data: { threadId } }); setShares(await list({ data: { threadId } })); await copy(`${window.location.origin}/share/${result.token}`); } catch (e) { toast.error(e instanceof Error ? e.message : '分享失败'); } finally { setWorking(false); }
-        }}>{working ? <LoaderCircleIcon className="size-4 animate-spin" /> : <LinkIcon className="size-4" />}创建分享链接</Button>
+          setWorking(true); try { const result = await create({ data: { threadId } }); setShares(await list({ data: { threadId } })); await copy(`${window.location.origin}/share/${result.token}`); } catch (e) { toast.error(e instanceof Error ? e.message : tz("分享失败")); } finally { setWorking(false); }
+        }}>{working ? <LoaderCircleIcon className="size-4 animate-spin" /> : <LinkIcon className="size-4" />}{tz("创建分享链接")}</Button>
         <div className="max-h-64 space-y-2 overflow-auto">{shares.map(share => <div key={share.token} className="flex min-w-0 items-center gap-2 border-b border-border py-2">
           <a href={`/share/${share.token}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-sm">{`/share/${share.token}`}</a>
-          <Button variant="ghost" size="icon-sm" aria-label="复制分享链接" onClick={() => void copy(`${window.location.origin}/share/${share.token}`)}><CopyIcon className="size-4" /></Button>
-          <Button variant="ghost" size="icon-sm" aria-label="撤销分享链接" title="撤销分享" disabled={working} onClick={async () => { setWorking(true); try { await revoke({ data: { token: share.token } }); setShares(items => items.filter(item => item.token !== share.token)); toast.success('分享链接已撤销'); } catch (e) { toast.error(e instanceof Error ? e.message : '撤销失败'); } finally { setWorking(false); } }}><Trash2Icon className="size-4" /></Button>
+          <Button variant="ghost" size="icon-sm" aria-label={tz("复制分享链接")} onClick={() => void copy(`${window.location.origin}/share/${share.token}`)}><CopyIcon className="size-4" /></Button>
+          <Button variant="ghost" size="icon-sm" aria-label={tz("撤销分享链接")} title={tz("撤销分享")} disabled={working} onClick={async () => { setWorking(true); try { await revoke({ data: { token: share.token } }); setShares(items => items.filter(item => item.token !== share.token)); toast.success(tz("分享链接已撤销")); } catch (e) { toast.error(e instanceof Error ? e.message : tz("撤销失败")); } finally { setWorking(false); } }}><Trash2Icon className="size-4" /></Button>
         </div>)}</div>
       </>}
     </DialogContent></Dialog>

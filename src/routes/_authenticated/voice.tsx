@@ -1,3 +1,4 @@
+import { tz } from "@/lib/i18n";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { recordWav, transcribeFile, playSpeech, type Recorder, type SpeechPlayer } from "@/lib/voice-client";
@@ -10,10 +11,10 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/voice")({
   head: () => ({
     meta: [
-      { title: "实时语音 · Oxford Bot" },
-      { name: "description", content: "与 Oxford Bot 全屏实时语音对讲，可随时打断，并能查阅你的 Smart Brain。" },
-      { property: "og:title", content: "实时语音 · Oxford Bot" },
-      { property: "og:description", content: "全屏沉浸式实时语音对讲。" },
+      { title: tz("实时语音 · Oxford Bot") },
+      { name: "description", content: tz("与 Oxford Bot 全屏实时语音对讲，可随时打断，并能查阅你的 Smart Brain。") },
+      { property: "og:title", content: tz("实时语音 · Oxford Bot") },
+      { property: "og:description", content: tz("全屏沉浸式实时语音对讲。") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -83,7 +84,7 @@ function VoicePage() {
   useEffect(() => {
     if (call.error && /country|region|territory|not supported|不支持/i.test(call.error)) {
       void call.stop(); setCompat(true); localStorage.setItem("oxford-voice-compat", "1");
-      setCompatError("当前网络暂不支持实时对讲，已切换为兼容模式");
+      setCompatError(tz("当前网络暂不支持实时对讲，已切换为兼容模式"));
     }
   }, [call.error]);
   useEffect(() => () => { recorder.current?.cancel(); player.current?.stop(); }, []);
@@ -100,7 +101,7 @@ function VoicePage() {
   const turn = useRef(0);
   const beginRecording = async () => {
     try { recorder.current = await recordWav(); setCompatBusy("recording"); }
-    catch { setCompatError("无法使用麦克风，请在浏览器设置中允许麦克风权限"); setCompatBusy("idle"); }
+    catch { setCompatError(tz("无法使用麦克风，请在浏览器设置中允许麦克风权限")); setCompatBusy("idle"); }
   };
   const compatTap = async () => {
     setCompatError(null);
@@ -120,7 +121,7 @@ function VoicePage() {
     try {
       const said = (await transcribeFile(await rec.stop())).trim();
       if (stale()) return;
-      if (!said) throw new Error("没有听清，请再说一次");
+      if (!said) throw new Error(tz("没有听清，请再说一次"));
       pushLine({ role: "user", text: said });
       const token = (await supabase.auth.getSession()).data.session?.access_token;
       const res = await fetch("/api/voice-reply", {
@@ -130,7 +131,7 @@ function VoicePage() {
       });
       const data = await res.json().catch(() => ({})) as { text?: string; error?: string };
       if (stale()) return;
-      if (!res.ok || !data.text) throw new Error(data.error ?? "回答失败，请再试一次");
+      if (!res.ok || !data.text) throw new Error(data.error ?? tz("回答失败，请再试一次"));
       pushLine({ role: "assistant", text: data.text });
       setCompatBusy("speaking");
       const p = playSpeech(data.text); player.current = p;
@@ -138,7 +139,7 @@ function VoicePage() {
       if (player.current === p) { player.current = null; setCompatBusy("idle"); }
     } catch (error) {
       if (stale()) return;
-      setCompatError(error instanceof Error ? error.message : "出错了，请再试一次");
+      setCompatError(error instanceof Error ? error.message : tz("出错了，请再试一次"));
       setCompatBusy("idle");
     }
   };
@@ -147,27 +148,27 @@ function VoicePage() {
   const liveActive = call.status === "connected";
   const canInterrupt = liveActive && (phase === "speaking" || phase === "thinking");
   const label =
-    call.status === "connecting" ? "正在连接…" :
-    call.status === "stopping" ? "正在结束…" :
-    !live ? "点击开始对讲" :
-    call.muted ? "麦克风已静音" :
-    phase === "thinking" ? "思考中 · 点一下打断" : phase === "speaking" ? "回答中 · 开口或点一下即可打断" : "聆听中…";
+    call.status === "connecting" ? tz("正在连接…") :
+    call.status === "stopping" ? tz("正在结束…") :
+    !live ? tz("点击开始对讲") :
+    call.muted ? tz("麦克风已静音") :
+    phase === "thinking" ? tz("思考中 · 点一下打断") : phase === "speaking" ? tz("回答中 · 开口或点一下即可打断") : tz("聆听中…");
   const recent = lines.slice(-2);
   const shownPhase: Phase = compat ? (compatBusy === "recording" ? "listening" : compatBusy === "idle" ? "idle" : compatBusy) : phase;
-  const compatLabel = compatBusy === "recording" ? "聆听中 · 说完点一下" : compatBusy === "thinking" ? "思考中 · 点一下打断" : compatBusy === "speaking" ? "回答中 · 点一下打断" : "点一下开始说话";
+  const compatLabel = compatBusy === "recording" ? tz("聆听中 · 说完点一下") : compatBusy === "thinking" ? tz("思考中 · 点一下打断") : compatBusy === "speaking" ? tz("回答中 · 点一下打断") : tz("点一下开始说话");
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-background px-6 py-8 text-foreground">
       <div className="flex w-full max-w-3xl items-center justify-between">
-        <span className="font-mono text-xs tracking-widest text-muted-foreground">{compat ? "OXFORD VOICE · 兼容模式" : "OXFORD LIVE"}</span>
-        <Button asChild variant="ghost" size="icon" aria-label="退出实时语音" onClick={() => call.stop()}>
+        <span className="font-mono text-xs tracking-widest text-muted-foreground">{compat ? tz("OXFORD VOICE · 兼容模式") : "OXFORD LIVE"}</span>
+        <Button asChild variant="ghost" size="icon" aria-label={tz("退出实时语音")} onClick={() => call.stop()}>
           <Link to="/chat"><XIcon className="size-5" /></Link>
         </Button>
       </div>
 
       <button
         type="button"
-        aria-label={compat ? compatLabel : canInterrupt ? "打断回答" : live ? "对讲中" : "开始对讲"}
+        aria-label={compat ? compatLabel : canInterrupt ? tz("打断回答") : live ? tz("对讲中") : tz("开始对讲")}
         onClick={() => {
           if (compat) void compatTap();
           else if (canInterrupt) interruptLive();
@@ -191,19 +192,19 @@ function VoicePage() {
             <p key={i} className={cn("text-balance", l.role === "user" ? "text-sm text-muted-foreground" : "text-lg")}>{l.text}</p>
           ))}
         </div>
-        {compat && <p className="text-center text-xs text-muted-foreground">当前网络不支持实时对讲，已切换为按轮次语音：点一下说话，说完再点一下。</p>}
+        {compat && <p className="text-center text-xs text-muted-foreground">{tz("当前网络不支持实时对讲，已切换为按轮次语音：点一下说话，说完再点一下。")}</p>}
         {(compat ? compatError : call.error) && <p className="text-sm text-destructive">{compat ? compatError : call.error}</p>}
         {call.playbackBlocked && (
-          <Button variant="secondary" onClick={() => call.resumePlayback()}><PlayIcon className="size-4" />点击播放声音</Button>
+          <Button variant="secondary" onClick={() => call.resumePlayback()}><PlayIcon className="size-4" />{tz("点击播放声音")}</Button>
         )}
         <div className="flex items-center gap-4">
           {compat ? (
             <Button size="lg" className="rounded-full px-8" onClick={() => void compatTap()}>
-              <MicIcon className="size-4" />{compatBusy === "recording" ? "说完了" : compatBusy === "idle" ? "开始说话" : "打断并说话"}
+              <MicIcon className="size-4" />{compatBusy === "recording" ? tz("说完了") : compatBusy === "idle" ? tz("开始说话") : tz("打断并说话")}
             </Button>
           ) : live ? (
             <>
-              <Button variant="secondary" size="icon" className="size-12 rounded-full" aria-label={call.muted ? "取消静音" : "静音"} onClick={() => call.setMuted(!call.muted)}>
+              <Button variant="secondary" size="icon" className="size-12 rounded-full" aria-label={call.muted ? tz("取消静音") : tz("静音")} onClick={() => call.setMuted(!call.muted)}>
                 {call.muted ? <MicOffIcon /> : <MicIcon />}
               </Button>
               {canInterrupt && (
@@ -211,7 +212,7 @@ function VoicePage() {
                   <HandIcon className="size-4" />打断
                 </Button>
               )}
-              <Button variant="destructive" size="icon" className="size-14 rounded-full" aria-label="挂断" onClick={() => call.stop()}>
+              <Button variant="destructive" size="icon" className="size-14 rounded-full" aria-label={tz("挂断")} onClick={() => call.stop()}>
                 <PhoneOffIcon />
               </Button>
             </>
@@ -222,7 +223,7 @@ function VoicePage() {
           )}
         </div>
         <button type="button" className="text-xs text-muted-foreground underline-offset-4 hover:underline" onClick={() => toggleCompat(!compat)}>
-          {compat ? "尝试实时对讲" : "网络不稳定？切换到兼容模式"}
+          {compat ? tz("尝试实时对讲") : tz("网络不稳定？切换到兼容模式")}
         </button>
         <audio ref={call.audioRef} className="hidden" />
       </div>
