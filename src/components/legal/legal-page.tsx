@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { useLang } from "@/lib/i18n";
 
 export const LEGAL_CONTACT = "info@oxfordintelligence.co.uk";
 export const LEGAL_UPDATED = "2026-10-19";
@@ -57,8 +58,9 @@ export function LegalCompany() {
   );
 }
 
-export function LegalLinks({ onNavigate, lang = "zh" }: { onNavigate?: () => void; lang?: "zh" | "en" }) {
-  const en = lang === "en";
+export function LegalLinks({ onNavigate, lang }: { onNavigate?: () => void; lang?: "zh" | "en" }) {
+  const ctx = useLang().lang;
+  const en = (lang ?? ctx) === "en";
   const cls = "hover:text-foreground underline-offset-4 hover:underline";
   return (
     <nav className="flex flex-wrap justify-center gap-4 pt-2 text-xs text-muted-foreground">

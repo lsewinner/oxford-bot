@@ -1,4 +1,4 @@
-import { tz } from "@/lib/i18n";
+import { tz, dateLocale } from "@/lib/i18n";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { CheckIcon, MinusIcon, SparklesIcon } from "lucide-react";
@@ -16,7 +16,7 @@ import { LegalLinks } from "@/components/legal/legal-page";
 function Cell({ value }: { value: string | boolean }) {
   if (value === true) return <CheckIcon className="mx-auto size-4 text-foreground" aria-label={tz("包含")} />;
   if (value === false) return <MinusIcon className="mx-auto size-4 text-muted-foreground" aria-label={tz("不包含")} />;
-  return <span className="text-xs">{value}</span>;
+  return <span className="text-xs">{tz(value)}</span>;
 }
 
 export function PaymentTestModeBanner() {
@@ -72,12 +72,12 @@ export function UpgradeDialog({ feature, onClose }: { feature: ProFeature | null
           {(["pro", "ultra"] as const).map((p) => <div key={p} className={cn("rounded-lg border p-4", plan === p ? "border-primary" : "border-border")}><p className="text-sm font-medium">{p === "pro" ? "Pro" : "Ultra"}</p><p className="mt-2 text-3xl font-semibold">{PLAN_PRICES[p][cycle].label}</p><p className="text-xs text-muted-foreground">{PLAN_PRICES[p][cycle].note}</p></div>)}
         </div>
         <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-xs text-muted-foreground"><th className="py-2 text-left font-normal">{tz("权益")}</th><th className="min-w-16 font-normal">Free</th><th className="min-w-16 font-normal">Pro</th><th className="min-w-16 font-normal">Ultra</th></tr></thead>
-          <tbody>{PLAN_ROWS.map((r) => <tr key={r.label} className="border-t border-border"><td className="py-2.5 pr-2">{r.label}</td><td className="text-center"><Cell value={r.free} /></td><td className="text-center"><Cell value={r.pro} /></td><td className="text-center"><Cell value={r.ultra} /></td></tr>)}</tbody></table></div>
+          <tbody>{PLAN_ROWS.map((r) => <tr key={r.label} className="border-t border-border"><td className="py-2.5 pr-2">{tz(r.label)}</td><td className="text-center"><Cell value={r.free} /></td><td className="text-center"><Cell value={r.pro} /></td><td className="text-center"><Cell value={r.ultra} /></td></tr>)}</tbody></table></div>
         {paidActive ? <Button className="w-full" disabled={portalBusy} onClick={openPortal}>{portalBusy ? tz("正在打开…") : tz("管理或变更订阅")}</Button>
-          : userId ? <Button className="w-full whitespace-normal" size="lg" disabled={loading || !paymentsConfigured()} onClick={() => setCheckout(true)}>{tz("订阅")} {plan === "ultra" ? "Ultra" : "Pro"} · {prices.label}{prices.note.split(" · ")[0]}</Button>
+          : userId ? <Button className="w-full whitespace-normal" size="lg" disabled={loading || !paymentsConfigured()} onClick={() => setCheckout(true)}>{tz("订阅")} {plan === "ultra" ? "Ultra" : "Pro"} · {prices.label}{tz(prices.note).split(" · ")[0]}</Button>
           : <Button asChild className="w-full" size="lg"><Link to="/auth" onClick={onClose}>{tz("登录后升级会员")}</Link></Button>}
         {!paidActive && subscription && <Button variant="outline" disabled={portalBusy} onClick={openPortal}>{tz("管理历史订阅")}</Button>}
-        {subscription?.cancel_at_period_end && isPro && subscription.current_period_end && <p className="text-center text-xs text-muted-foreground">{tz("订阅将于")} {new Date(subscription.current_period_end).toLocaleDateString("zh-CN")} {tz("结束")}</p>}
+        {subscription?.cancel_at_period_end && isPro && subscription.current_period_end && <p className="text-center text-xs text-muted-foreground">{tz("订阅将于")} {new Date(subscription.current_period_end).toLocaleDateString(dateLocale())} {tz("结束")}</p>}
         <p className="text-center text-xs text-muted-foreground">{tz("订阅即表示同意以下条款，自动续费，可随时取消。")}</p>
         <LegalLinks onNavigate={onClose} />
       </>}
