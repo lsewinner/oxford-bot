@@ -1,4 +1,4 @@
-import { tz } from "@/lib/i18n";
+import { tz, dateLocale } from "@/lib/i18n";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -105,7 +105,7 @@ function BrainPage() {
               {docs.map(d => (
                 <li key={d.id} className="flex items-center gap-3 px-4 py-3">
                   <FileTextIcon className="size-4 shrink-0 text-muted-foreground" />
-                  <div className="min-w-0 flex-1"><p className="truncate text-sm">{d.title}</p><p className="font-mono text-xs text-muted-foreground">{d.chars.toLocaleString()} {tz("字 ·")} {d.chunk_count} {tz("段 ·")} {new Date(d.created_at).toLocaleDateString()}</p></div>
+                  <div className="min-w-0 flex-1"><p className="truncate text-sm">{d.title}</p><p className="font-mono text-xs text-muted-foreground">{d.chars.toLocaleString()} {tz("字 ·")} {d.chunk_count} {tz("段 ·")} {new Date(d.created_at).toLocaleDateString(dateLocale())}</p></div>
                   <Button variant="ghost" size="icon-sm" aria-label={tz("删除 {0}", d.title)} onClick={async () => { if (!window.confirm(tz("删除《{0}》？", d.title))) return; await del({ data: { id: d.id } }); refresh(); }}><Trash2Icon /></Button>
                 </li>
               ))}

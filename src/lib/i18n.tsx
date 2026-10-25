@@ -72,6 +72,7 @@ export function tz(zh: string, ...args: unknown[]): string {
   return args.length ? text.replace(/\{(\d+)\}/g, (_: string, i: string) => String(args[Number(i)] ?? "")) : text;
 }
 export const _setLangForTest = (l: Lang) => { currentLang = l; };
+export const dateLocale = () => (currentLang === "en" ? "en-GB" : "zh-CN");
 
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("zh");

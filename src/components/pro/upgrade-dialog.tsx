@@ -1,4 +1,4 @@
-import { tz } from "@/lib/i18n";
+import { tz, dateLocale } from "@/lib/i18n";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { CheckIcon, MinusIcon, SparklesIcon } from "lucide-react";
@@ -77,7 +77,7 @@ export function UpgradeDialog({ feature, onClose }: { feature: ProFeature | null
           : userId ? <Button className="w-full whitespace-normal" size="lg" disabled={loading || !paymentsConfigured()} onClick={() => setCheckout(true)}>{tz("订阅")} {plan === "ultra" ? "Ultra" : "Pro"} · {prices.label}{prices.note.split(" · ")[0]}</Button>
           : <Button asChild className="w-full" size="lg"><Link to="/auth" onClick={onClose}>{tz("登录后升级会员")}</Link></Button>}
         {!paidActive && subscription && <Button variant="outline" disabled={portalBusy} onClick={openPortal}>{tz("管理历史订阅")}</Button>}
-        {subscription?.cancel_at_period_end && isPro && subscription.current_period_end && <p className="text-center text-xs text-muted-foreground">{tz("订阅将于")} {new Date(subscription.current_period_end).toLocaleDateString("zh-CN")} {tz("结束")}</p>}
+        {subscription?.cancel_at_period_end && isPro && subscription.current_period_end && <p className="text-center text-xs text-muted-foreground">{tz("订阅将于")} {new Date(subscription.current_period_end).toLocaleDateString(dateLocale())} {tz("结束")}</p>}
         <p className="text-center text-xs text-muted-foreground">{tz("订阅即表示同意以下条款，自动续费，可随时取消。")}</p>
         <LegalLinks onNavigate={onClose} />
       </>}

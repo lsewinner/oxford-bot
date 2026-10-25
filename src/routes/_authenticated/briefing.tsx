@@ -1,4 +1,4 @@
-import { tz } from "@/lib/i18n";
+import { tz, dateLocale } from "@/lib/i18n";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -137,7 +137,7 @@ function BriefingPage() {
             </div>
             {s?.last_run_at && (
               <p className={`mt-4 text-xs ${s.last_status === "error" ? "text-destructive" : "text-muted-foreground"}`}>
-                上次推送：{new Date(s.last_run_at).toLocaleString("zh-CN")} · {s.last_status === "error" ? tz("失败：{0}", s.last_error) : tz("已送达")}
+                {tz("上次推送：")}{new Date(s.last_run_at).toLocaleString(dateLocale())} · {s.last_status === "error" ? tz("失败：{0}", s.last_error) : tz("已送达")}
               </p>
             )}
           </>

@@ -1,4 +1,4 @@
-import { tz } from "@/lib/i18n";
+import { tz, dateLocale } from "@/lib/i18n";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -132,7 +132,7 @@ function MeetingsPage() {
           {isLoading ? <LoaderCircleIcon className="mx-auto mt-4 size-4 animate-spin text-muted-foreground" /> : meetings.length === 0 ? <p className="px-1 py-3 text-sm text-muted-foreground">{tz("还没有会议记录")}</p> :
             meetings.map((m) => <button key={m.id} type="button" onClick={() => setSelected(m.id)} className={`rounded-md border px-3 py-2 text-left text-sm transition ${m.id === selected ? "border-primary bg-accent" : "border-border hover:bg-accent/50"}`}>
               <div className="truncate font-medium">{m.title}</div>
-              <div className="text-xs text-muted-foreground">{new Date(m.started_at ?? m.created_at).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}{m.brain_document_id ? tz(" · 已存入 Brain") : ""}</div>
+              <div className="text-xs text-muted-foreground">{new Date(m.started_at ?? m.created_at).toLocaleString(dateLocale(), { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}{m.brain_document_id ? tz(" · 已存入 Brain") : ""}</div>
             </button>)}
         </aside>
         <main className="min-w-0">
@@ -194,7 +194,7 @@ function MeetingDetail({ meeting, onDeleted }: { meeting: MeetingRow; onDeleted:
 
   return <article className="flex flex-col gap-5 rounded-lg border border-border p-5">
     <header className="flex items-start justify-between gap-3">
-      <div className="min-w-0"><h2 className="text-lg font-semibold">{meeting.title}</h2><p className="text-xs text-muted-foreground">{new Date(meeting.started_at ?? meeting.created_at).toLocaleString("zh-CN")}</p></div>
+      <div className="min-w-0"><h2 className="text-lg font-semibold">{meeting.title}</h2><p className="text-xs text-muted-foreground">{new Date(meeting.started_at ?? meeting.created_at).toLocaleString(dateLocale())}</p></div>
       <div className="flex shrink-0 gap-2">
         <Button size="sm" variant="outline" onClick={() => void toBrain()} disabled={Boolean(busy) || Boolean(meeting.brain_document_id)}>{busy === "brain" ? <LoaderCircleIcon className="animate-spin" /> : <BrainCircuitIcon />}{meeting.brain_document_id ? tz("已存入 Brain") : tz("存入 Smart Brain")}</Button>
         <Button size="icon" variant="ghost" aria-label={tz("删除")} onClick={() => void del()}><Trash2Icon /></Button>
