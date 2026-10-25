@@ -69,7 +69,7 @@ function BriefingPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold"><SunriseIcon className="size-6" />主动早报</h1>
-            <p className="mt-2 text-sm text-muted-foreground">每天到点，Oxford 主动读取你的日程、Jira 待办和科技热点，整理成一份早报推送到 Telegram。只读取，不会替你修改任何内容。</p>
+            <p className="mt-2 text-sm text-muted-foreground">每天到点，Oxford Bot 主动读取你的日程、Jira 待办和科技热点，整理成一份早报推送到 Telegram。只读取，不会替你修改任何内容。</p>
           </div>
           <label className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">启用<Switch checked={enabled} onCheckedChange={setEnabled} aria-label="启用主动早报" /></label>
         </div>

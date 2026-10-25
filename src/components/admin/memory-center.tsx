@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 const LABEL: Record<MemoryKind, string> = { identity: "核心身份记忆", knowledge: "产品与公司知识库" };
 const HINT: Record<MemoryKind, string> = {
-  identity: "Oxford 是谁、说话风格、必须坚持的原则。每次对话都会注入。",
+  identity: "Oxford Bot 是谁、说话风格、必须坚持的原则。每次对话都会注入。",
   knowledge: "产品功能、价格、公司信息、常见问题等事实资料。",
 };
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleString("zh-CN", { hour12: false }) : "—");

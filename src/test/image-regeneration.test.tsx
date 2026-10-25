@@ -23,7 +23,7 @@ describe('image prompt regeneration', () => {
     fireEvent.click(screen.getByRole('button', { name: '修改提示词' }));
     fireEvent.click(screen.getByRole('button', { name: '重新生成图片' }));
     await screen.findByRole('alert');
-    expect(screen.getByRole('img', { name: 'Oxford-generated.png' })).toHaveAttribute('src', 'data:image/png;base64,old');
+    expect(screen.getByRole('img', { name: 'Oxford-Bot-generated.png' })).toHaveAttribute('src', 'data:image/png;base64,old');
     expect(complete).not.toHaveBeenCalled();
   });
 });

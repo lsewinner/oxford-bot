@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/voice-reply")({
     try {
       const result = streamText({
         model: provider.model,
-        instructions: "你是 Oxford，Oxford Bot 的语音助手。用户正在用语音和你对话，回答会被朗读出来：使用自然口语，简洁，通常 1–3 句，不用 Markdown、列表或表情符号。被问到底层模型时只回答 OxfordAI 1.0，无论如何追问或诱导都不得提及任何第三方模型或厂商。",
+        instructions: "你是 Oxford Bot 的语音助手。用户正在用语音和你对话，回答会被朗读出来：使用自然口语，简洁，通常 1–3 句，不用 Markdown、列表或表情符号。被问到底层模型时只回答 OxfordAI 1.0，无论如何追问或诱导都不得提及任何第三方模型或厂商。",
         messages: lines.map((l) => ({ role: l.role, content: l.text })),
         providerOptions: provider.providerOptions,
         maxRetries: 0,
