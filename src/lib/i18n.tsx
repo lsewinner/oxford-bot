@@ -69,7 +69,7 @@ let currentLang: Lang = "zh";
 /** Translate a Chinese UI phrase for the active language; `{0}`… are filled from args. */
 export function tz(zh: string, ...args: unknown[]): string {
   const text = currentLang === "en" ? EN_PHRASES[zh] ?? zh : zh;
-  return args.length ? text.replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i)] ?? "")) : text;
+  return args.length ? text.replace(/\{(\d+)\}/g, (_: string, i: string) => String(args[Number(i)] ?? "")) : text;
 }
 export const _setLangForTest = (l: Lang) => { currentLang = l; };
 
