@@ -23,9 +23,13 @@ type Account = NonNullable<Awaited<ReturnType<typeof loadAccount>>>;
 
 /** GET URL verification: returns the decrypted echostr or null when the signature is invalid. */
 export function verifyUrl(acc: Account, url: URL): string | null {
-  const sig = url.searchParams.get('msg_signature') ?? '', ts = url.searchParams.get('timestamp') ?? '', nonce = url.searchParams.get('nonce') ?? '', echo = url.searchParams.get('echostr') ?? '';
+  const q = (k: string) => url.searchParams.get(k) ?? '';
+  const sig = q('msg_signature'), ts = q('timestamp'), nonce = q('nonce');
+  // Base64 '+' may arrive unencoded and be decoded to a space; restore it.
+  const echo = q('echostr').replace(/ /g, '+');
   if (!verifyWecomSignature(sig, acc.token, ts, nonce, echo)) return null;
-  return wecomDecrypt(acc.aesKey, echo, acc.corp_id);
+  // The valid signature already proves the caller; receiveId differs between CorpId and app-bound callbacks.
+  return wecomDecrypt(acc.aesKey, echo);
 }
 
 /** Verifies and decrypts a POST event; returns the sync token, or null when invalid. */
