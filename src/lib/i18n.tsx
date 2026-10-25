@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { EN_PHRASES } from "./i18n-en";
+import { createContext, Fragment, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type Lang = "zh" | "en";
 export const LANG_KEY = "oxford-lang";
@@ -64,12 +65,22 @@ export type Dict = { [K in keyof typeof DICT.zh]: string };
 
 const Ctx = createContext<{ lang: Lang; t: Dict; setLang: (l: Lang) => void }>({ lang: "zh", t: DICT.zh, setLang: () => {} });
 
+let currentLang: Lang = "zh";
+/** Translate a Chinese UI phrase for the active language; `{0}`… are filled from args. */
+export function tz(zh: string, ...args: unknown[]): string {
+  const text = currentLang === "en" ? EN_PHRASES[zh] ?? zh : zh;
+  return args.length ? text.replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i)] ?? "")) : text;
+}
+export const _setLangForTest = (l: Lang) => { currentLang = l; };
+
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("zh");
   useEffect(() => { setLangState(detectLang(localStorage.getItem(LANG_KEY), navigator.language)); }, []);
   useEffect(() => { document.documentElement.lang = lang === "zh" ? "zh-CN" : "en"; }, [lang]);
   const setLang = useCallback((l: Lang) => { setLangState(l); try { localStorage.setItem(LANG_KEY, l); } catch { /* ignore */ } }, []);
-  return <Ctx.Provider value={{ lang, t: DICT[lang], setLang }}>{children}</Ctx.Provider>;
+  currentLang = lang;
+  // Keyed so every tz() caller re-renders when the language changes.
+  return <Ctx.Provider value={{ lang, t: DICT[lang], setLang }}><Fragment key={lang}>{children}</Fragment></Ctx.Provider>;
 }
 
 export const useLang = () => useContext(Ctx);
