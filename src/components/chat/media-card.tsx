@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { streamImage } from "@/lib/stream-image";
 import { Textarea } from "@/components/ui/textarea";
 
-export function MediaCard({ url, filename = "Oxford-image.png" }: { url: string; filename?: string }) {
+export function MediaCard({ url, filename = "Oxford-Bot-image.png" }: { url: string; filename?: string }) {
   const [open, setOpen] = useState(false);
   return <div className="my-3 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-card">
     <Button variant="ghost" className="block h-auto w-full rounded-none p-0" aria-label="放大查看图片" onClick={() => setOpen(true)}>
@@ -62,7 +62,7 @@ export function GeneratedImage({ prompt, image, autoStart, onComplete }: { promp
   }
   useEffect(() => { if (autoStart && !image) void generate(); }, [autoStart, image]);
   return <div className="my-3 w-full max-w-lg">
-    {frame && final && !loading && <div className="image-reveal"><MediaCard url={frame} filename="Oxford-generated.png" /></div>}
+    {frame && final && !loading && <div className="image-reveal"><MediaCard url={frame} filename="Oxford-Bot-generated.png" /></div>}
     {loading ? <div className="image-generating relative aspect-square overflow-hidden rounded-lg border border-border bg-card" aria-label="正在生成图片">
       {frame && <img src={frame} alt="生成中的图片预览" className="h-full w-full object-contain blur-2xl transition-[filter] duration-700" />}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-muted-foreground"><SparklesIcon className="size-7" /><span className="text-sm">正在绘制…</span><div className="image-progress h-1 w-32 overflow-hidden rounded-full bg-secondary"><span className="block h-full w-1/3 bg-primary" /></div></div>

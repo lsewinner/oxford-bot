@@ -26,7 +26,7 @@ function BotSquare() {
       <Link to="/chat" className="text-sm text-muted-foreground hover:text-foreground">返回对话</Link>
     </header>
     <main className="mx-auto max-w-5xl px-6 py-12">
-      <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Oxford · Bot Square</p>
+      <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Oxford Bot · Bot Square</p>
       <h1 className="mt-2 text-3xl font-semibold">Bot 广场</h1>
       <p className="mt-2 text-sm text-muted-foreground">官方精选的专属 Bot。点开试聊，满意再复制到自己的 Bot 列表。</p>
       {bots.length === 0

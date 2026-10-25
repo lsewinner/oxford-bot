@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/brain")({
   head: () => ({
     meta: [
       { title: "Smart Brain · Oxford Bot" },
-      { name: "description", content: "Oxford Smart Brain：上传私人文档，打造只属于你的 RAG 知识大脑。" },
+      { name: "description", content: "Oxford Bot Smart Brain：上传私人文档，打造只属于你的 RAG 知识大脑。" },
       { property: "og:title", content: "Smart Brain · Oxford Bot" },
       { property: "og:description", content: "上传私人文档，Bot 回答时自动检索并标注来源。" },
       { property: "og:type", content: "website" },
@@ -99,7 +99,7 @@ function BrainPage() {
 
         <section className="mt-6">
           <h2 className="mb-3 text-sm font-medium">我的文档</h2>
-          {isLoading ? <LoaderCircleIcon className="size-4 animate-spin text-muted-foreground" /> : docs.length === 0 ? <p className="text-sm text-muted-foreground">还没有文档。上传第一份资料，让 Oxford 记住它。</p> :
+          {isLoading ? <LoaderCircleIcon className="size-4 animate-spin text-muted-foreground" /> : docs.length === 0 ? <p className="text-sm text-muted-foreground">还没有文档。上传第一份资料，让 Oxford Bot 记住它。</p> :
             <ul className="divide-y divide-border rounded-lg border border-border">
               {docs.map(d => (
                 <li key={d.id} className="flex items-center gap-3 px-4 py-3">
