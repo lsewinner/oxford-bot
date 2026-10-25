@@ -72,7 +72,7 @@ export async function runBriefing(row: BriefingRow, now = new Date()) {
   const { date } = localParts(now, row.timezone);
   const blocks = await gather(row.user_id, row.sources as BriefingSource[], row.timezone);
   const body = await summarize(blocks, date);
-  const text = clampTelegram(`☀️ Oxford 早报 · ${date}\n\n${body}`);
+  const text = clampTelegram(`☀️ Oxford Bot 早报 · ${date}\n\n${body}`);
   const { executeOperation } = await import("./connections/execute.server");
   const r = await executeOperation(row.user_id, "telegram", { operation: "send_message", id: row.telegram_chat_id, text, ...(row.telegram_account ? { account: row.telegram_account } : {}) }, true);
   if (r.status !== "completed") throw new Error(r.summary || "Telegram 发送失败");

@@ -33,7 +33,7 @@ function SharedConversation() {
       <div className="mt-8 space-y-8">{share.messages.map((message, index) => <article key={`${message.id}-${index}`} className="min-w-0 border-b border-border pb-6">
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">{message.role === 'user' ? '用户' : 'Oxford Bot'}</h2>
         {message.role === 'user' ? <p className="whitespace-pre-wrap break-words">{message.text}</p> : <MessageResponse>{message.text}</MessageResponse>}
-        {message.images.map((image, i) => <MediaCard key={i} url={image.url} filename={`Oxford-generated-${i + 1}.png`} />)}
+        {message.images.map((image, i) => <MediaCard key={i} url={image.url} filename={`Oxford-Bot-generated-${i + 1}.png`} />)}
         {message.sources.length > 0 && <ul className="mt-3 space-y-1 text-xs text-muted-foreground">{message.sources.map((s, i) => <li key={i}><a href={s.url} target="_blank" rel="noreferrer">{s.title}</a></li>)}</ul>}
       </article>)}</div>
     </main>
