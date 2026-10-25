@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import type { Database } from '@/integrations/supabase/types';
 import { z } from 'zod';
 import { isCatBreed } from './cat-breeds';
+import { SQUARE_CATEGORIES, canSubmitToSquare, type SquareBot, type SubmissionStatus } from './bot-square';
 
 export type SharedBot = { token: string; name: string; kind: string; breed: string | null; systemPrompt: string; intro: string; featured: boolean };
 export type FeaturedBot = { token: string; name: string; kind: string; breed: string | null; intro: string };
@@ -100,3 +101,65 @@ export const setBotFeatured = createServerFn({ method: 'POST' }).middleware([req
     await supabaseAdmin.from('admin_audit_log').insert({ admin_id: context.userId, target_user_id: rows[0]!.user_id, action: data.featured ? 'bot_featured' : 'bot_unfeatured', details: { token: data.token, name: rows[0]!.name } });
     return { ok: true };
   });
+
+const submitInput = tokenInput.extend({ category: z.enum(SQUARE_CATEGORIES), intro: z.string().trim().max(200).optional() });
+
+/** Owner asks for review; only paid members may submit, and approval stays admin-only. */
+export const submitBotToSquare = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator((v) => submitInput.parse(v)).handler(async ({ data, context }) => {
+    const { isProUser } = await import('./pro.server');
+    if (!canSubmitToSquare(await isProUser(context.supabase as never, context.userId))) throw new Error('发布到 Bot 广场为 Pro 会员权益');
+    const meta = (context.claims as { user_metadata?: { nickname?: string } }).user_metadata;
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { data: rows, error } = await supabaseAdmin.from('bot_shares').update({
+      category: data.category, submission_status: 'pending', submitted_at: new Date().toISOString(),
+      creator_name: (meta?.nickname ?? '').slice(0, 40), ...(data.intro ? { intro: data.intro } : {}),
+    }).eq('token', data.token).eq('user_id', context.userId).is('revoked_at', null).eq('featured', false).select('id');
+    if (error || !rows?.length) throw new Error('提交失败：链接不存在或已上架');
+    return { ok: true };
+  });
+
+export const listMySubmissions = createServerFn({ method: 'GET' }).middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.from('bot_shares').select('token,submission_status,featured')
+      .eq('user_id', context.userId).is('revoked_at', null).limit(50);
+    if (error) throw new Error('读取提交状态失败');
+    return (data ?? []).map((r) => ({ token: r.token, status: (r.featured ? 'approved' : r.submission_status) as SubmissionStatus }));
+  });
+
+async function assertAdmin(context: { supabase: { rpc: (...a: never[]) => unknown }; userId: string }) {
+  const { data } = await (context.supabase as never as { rpc: (n: string, a: object) => Promise<{ data: unknown }> }).rpc('has_role', { _user_id: context.userId, _role: 'admin' });
+  if (data !== true) throw new Error('只有管理员可以审核');
+}
+
+export const listBotSubmissions = createServerFn({ method: 'GET' }).middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { data, error } = await supabaseAdmin.from('bot_shares')
+      .select('token,name,kind,breed,intro,category,creator_name,submission_status,submitted_at,featured,user_id')
+      .in('submission_status', ['pending', 'approved', 'rejected']).is('revoked_at', null)
+      .order('submitted_at', { ascending: false }).limit(200);
+    if (error) throw new Error('读取审核列表失败');
+    return data ?? [];
+  });
+
+export const reviewBotSubmission = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator((v) => tokenInput.extend({ approve: z.boolean() }).parse(v)).handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const now = new Date().toISOString();
+    const { data: rows, error } = await supabaseAdmin.from('bot_shares').update({
+      submission_status: data.approve ? 'approved' : 'rejected', reviewed_at: now,
+      featured: data.approve, featured_at: data.approve ? now : null,
+    }).eq('token', data.token).is('revoked_at', null).neq('submission_status', 'none').select('user_id,name');
+    if (error || !rows?.length) throw new Error('审核失败');
+    await supabaseAdmin.from('admin_audit_log').insert({ admin_id: context.userId, target_user_id: rows[0]!.user_id, action: data.approve ? 'bot_approved' : 'bot_rejected', details: { token: data.token, name: rows[0]!.name } });
+    return { ok: true };
+  });
+
+export const listSquareBots = createServerFn({ method: 'GET' }).handler(async (): Promise<SquareBot[]> => {
+  const { data, error } = await publicClient().rpc('list_square_bots');
+  if (error) throw new Error('读取 Bot 广场失败');
+  return (data ?? []).map((r) => ({ token: r.token, name: r.name, kind: r.kind, breed: r.breed, intro: r.intro, category: r.category, creatorName: r.creator_name, official: r.official }));
+});
