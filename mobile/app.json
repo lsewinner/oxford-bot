@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "OXFORD BOT",
+    "slug": "oxford-bot",
+    "owner": "lsewinner",
+    "version": "1.0.0",
+    "scheme": "oxfordbot",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#000000",
+    "ios": {
+      "bundleIdentifier": "com.oxfordintelligence.oxfordbot",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Record a voice message to send to Oxford Bot when you tap the microphone.",
+        "NSCameraUsageDescription": "Take a photo to attach to your Oxford Bot conversation.",
+        "NSPhotoLibraryUsageDescription": "Choose a photo to attach to your Oxford Bot conversation."
+      },
+      "appleTeamId": "A2JY8H9J72",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.oxfordintelligence.oxfordbot",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ],
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "plugins": [
+      "expo-iap",
+      "expo-web-browser",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": [
+              "en",
+              "zh-Hans"
+            ],
+            "android": [
+              "en",
+              "zh"
+            ]
+          }
+        }
+      ],
+      "expo-sharing"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "42f5e6d6-6032-4241-a8a6-8f449cd9c9fd"
+      }
+    }
+  }
+}
+

@@ -1,0 +1,56 @@
+{
+  "cli": {
+    "version": ">=18.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "ios-simulator": {
+      "node": "24.19.0",
+      "distribution": "internal",
+      "ios": {
+        "simulator": true,
+        "image": "latest"
+      }
+    },
+    "android-preview": {
+      "node": "24.19.0",
+      "distribution": "internal",
+      "autoIncrement": true,
+      "environment": "preview",
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "remote",
+        "image": "latest"
+      }
+    },
+    "testflight": {
+      "node": "24.19.0",
+      "distribution": "store",
+      "autoIncrement": true,
+      "environment": "production",
+      "ios": {
+        "credentialsSource": "remote",
+        "image": "latest"
+      }
+    },
+    "google-play": {
+      "node": "24.19.0",
+      "distribution": "store",
+      "autoIncrement": true,
+      "environment": "production",
+      "android": {
+        "buildType": "app-bundle",
+        "credentialsSource": "remote",
+        "image": "latest"
+      }
+    }
+  },
+  "submit": {
+    "testflight": {
+      "ios": {
+        "ascAppId": "6824852336",
+        "appleTeamId": "A2JY8H9J72"
+      }
+    }
+  }
+}
