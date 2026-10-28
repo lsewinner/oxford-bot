@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Oxford Bot",
+    "name": "OXFORD BOT",
     "slug": "oxford-bot",
     "owner": "lsewinner",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "scheme": "oxfordbot",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -55,3 +55,4 @@
     }
   }
 }
+

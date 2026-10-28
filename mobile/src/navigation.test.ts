@@ -19,3 +19,23 @@ test('sources open externally; OAuth and unsupported schemes cannot become app d
     assert.equal(destination(value), 'blocked', value);
   }
 });
+
+test('external web checkout and billing portals stay closed', () => {
+  for (const value of [
+    'https://checkout.stripe.com/c/pay/test',
+    'https://buy.stripe.com/example',
+    'https://billing.stripe.com/p/session/example',
+  ]) assert.equal(destination(value), 'purchase', value);
+});
+
+test('in-app subscriptions, support, account deletion and ordinary sources remain accessible', () => {
+  assert.equal(destination('https://oxford.bot/pricing'), 'app');
+  assert.equal(destination('https://oxford.bot/pricing/?plan=pro'), 'app');
+  assert.equal(destination('https://oxford.bot/%70ricing'), 'app');
+  assert.equal(destination('https://oxford.bot/support'), 'app');
+  assert.equal(destination('https://oxford.bot/account-deletion'), 'app');
+  assert.equal(destination('https://docs.stripe.com'), 'browser');
+  assert.equal(destination('https://example.com/pricing-research'), 'browser');
+  assert.equal(destination('https://oxford.bot/%zz'), 'blocked');
+});
+

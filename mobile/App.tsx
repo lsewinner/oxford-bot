@@ -54,7 +54,7 @@ function OxfordBot() {
     return () => subscription.remove();
   }, [canGoBack]);
 
-  async function openBrowser(url = APP_URL) {
+  async function openBrowser(url: string) {
     if (!['app', 'browser'].includes(destination(url))) return;
     try { await WebBrowser.openBrowserAsync(url); }
     catch { Alert.alert(t.error, t.errorNote); }
@@ -63,8 +63,11 @@ function OxfordBot() {
   function unavailable() {
     Alert.alert(t.unavailable, t.unavailableNote, [
       { text: t.cancel, style: 'cancel' },
-      { text: t.browser, onPress: () => { void openBrowser(); } },
     ]);
+  }
+
+  function purchaseUnavailable() {
+    Alert.alert(t.purchaseUnavailable, t.purchaseUnavailableNote);
   }
 
   async function enableVoice() {
@@ -80,7 +83,7 @@ function OxfordBot() {
     Alert.alert('Oxford Bot', t.note, [
       { text: t.cancel, style: 'cancel' },
       { text: t.voice, onPress: () => { void enableVoice(); } },
-      { text: t.browser, onPress: () => { void openBrowser(); } },
+      { text: t.support, onPress: () => { void openBrowser(`${APP_URL}support`); } },
     ]);
   }
 
@@ -150,7 +153,7 @@ function OxfordBot() {
       {!entered ? (
         <View style={styles.intro}>
           <Image source={require('./assets/icon.png')} style={styles.logo} accessibilityLabel="Oxford Bot" />
-          <Text style={styles.eyebrow}>{t.beta}</Text>
+          <Text style={styles.eyebrow}>{t.eyebrow}</Text>
           <Text style={styles.brand}>OXFORD BOT</Text>
           <Text style={styles.title}>{t.intro}</Text>
           <Text style={styles.note}>{t.note}</Text>
@@ -186,11 +189,14 @@ function OxfordBot() {
                 if (target === 'app') return true;
                 if (target === 'browser') void openBrowser(request.url);
                 else if (target === 'oauth') unavailable();
+                else if (target === 'purchase') purchaseUnavailable();
                 return false;
               }}
               onOpenWindow={event => {
                 const url = event.nativeEvent.targetUrl;
-                if (['browser', 'app'].includes(destination(url))) void openBrowser(url);
+                const target = destination(url);
+                if (['browser', 'app'].includes(target)) void openBrowser(url);
+                else if (target === 'purchase') purchaseUnavailable();
                 else unavailable();
               }}
               onNavigationStateChange={state => {
@@ -274,4 +280,5 @@ const styles = StyleSheet.create({
   loadingText: { color: '#ddd', fontSize: 12 },
   error: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#000', padding: 30, justifyContent: 'center' },
 });
+
 
