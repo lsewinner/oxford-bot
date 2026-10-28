@@ -32,6 +32,17 @@
         "credentialsSource": "remote",
         "image": "latest"
       }
+    },
+    "google-play": {
+      "node": "24.19.0",
+      "distribution": "store",
+      "autoIncrement": true,
+      "environment": "production",
+      "android": {
+        "buildType": "app-bundle",
+        "credentialsSource": "remote",
+        "image": "latest"
+      }
     }
   },
   "submit": {
