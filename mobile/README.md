@@ -8,16 +8,19 @@ Existing server-side account entitlements and quotas remain authoritative.
 The shell keeps the subscription page reachable while blocking external Stripe
 checkout/payment/portal destinations, including popups, and sends Help to support.
 
-Release is blocked until Apple StoreKit and Google Play Billing purchases,
-localized prices, restore/manage subscriptions, authenticated server verification,
+The native `expo-iap` adapter now implements store product discovery, purchases,
+restore/manage subscriptions and an authenticated verification boundary. See
+`BILLING_CONTRACT.md` for the exact web/native/server contract and store IDs.
+Release is blocked until the matching web UI, authenticated server verification,
 renewal/refund notifications and account entitlement synchronization are implemented
-and tested. No native billing implementation is claimed by these navigation changes.
+and tested together. No working end-to-end purchase flow is claimed yet.
 Preserve website Stripe subscriptions and prevent duplicate cross-platform purchases.
 
-Earlier checks passed strict TypeScript, 24 navigation/download/OAuth tests and
-both Hermes exports; they did not test in-app purchases. Re-run checks after the
-subscription integration. Native device acceptance and store submission remain
-outstanding. No live customer account or subscription was deleted for testing.
+Strict TypeScript and 42 tests pass, including rejected receipts, account changes,
+duplicate purchase requests, pending payments and server acknowledgement. These
+use test adapters and do not establish store connectivity or native device acceptance.
+The web/backend implementation run was stopped before edits; no production build,
+live purchase, account deletion or store submission was performed.
 
 After the release blockers pass, build Android with `google-play` (AAB, production,
 EAS-managed signing); build iOS with the existing `testflight` profile. Both use

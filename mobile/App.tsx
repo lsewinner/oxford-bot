@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, BackHandler, Image, PermissionsAndroid,
+  ActivityIndicator, Alert, AppState, BackHandler, Image, PermissionsAndroid,
   Platform, Pressable, StyleSheet, Text, View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +14,8 @@ import { APP_URL, destination, isAppUrl } from './src/navigation';
 import { DOWNLOAD_BRIDGE_SCRIPT, parseDownloadMessage } from './src/bridge';
 import { completeOAuth, oauthReplyScript, parseOAuthRequest } from './src/oauth';
 import { strings } from './src/strings';
+import { BILLING_CAPABILITY_SCRIPT, billingReplyScript, parseBillingRequest } from './src/billing-protocol';
+import { createNativeBilling } from './src/billing';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -37,6 +39,7 @@ function OxfordBot() {
   const sharing = useRef(false);
   const authenticating = useRef(false);
   const pageRevision = useRef(0);
+  const billing = useRef<ReturnType<typeof createNativeBilling> | undefined>(undefined);
   const [entered, setEntered] = useState(false);
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -44,6 +47,15 @@ function OxfordBot() {
   const [generation, setGeneration] = useState(0);
 
   useEffect(() => { void prepareExportDirectory().catch(() => {}); }, []);
+
+  useEffect(() => {
+    const nativeBilling = createNativeBilling();
+    billing.current = nativeBilling;
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') void nativeBilling.controller.resume();
+    });
+    return () => { subscription.remove(); nativeBilling.dispose(); billing.current = undefined; };
+  }, []);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -98,6 +110,19 @@ function OxfordBot() {
 
   async function onMessage(event: WebViewMessageEvent) {
     if (!isAppUrl(currentUrl.current)) return;
+    const billingRequest = parseBillingRequest(event.nativeEvent.data, event.nativeEvent.url);
+    if (billingRequest) {
+      const view = web.current;
+      const revision = pageRevision.current;
+      const pageUrl = event.nativeEvent.url;
+      currentUrl.current = pageUrl;
+      await billing.current?.controller.handle(billingRequest, reply => {
+        if (view && web.current === view && pageRevision.current === revision && currentUrl.current === pageUrl) {
+          view.injectJavaScript(billingReplyScript(reply, pageUrl));
+        }
+      });
+      return;
+    }
     const request = parseOAuthRequest(event.nativeEvent.data, event.nativeEvent.url);
     if (request) {
       // Ignore duplicate taps while the system owns the current auth session.
@@ -205,6 +230,7 @@ function OxfordBot() {
               }}
               onLoadStart={event => {
                 pageRevision.current++;
+                billing.current?.controller.disconnect();
                 currentUrl.current = event.nativeEvent.url;
                 setLoading(true);
                 setFailed(false);
@@ -216,7 +242,9 @@ function OxfordBot() {
               }}
               onContentProcessDidTerminate={() => { setFailed(true); setLoading(false); }}
               onRenderProcessGone={() => { setFailed(true); setLoading(false); }}
-              injectedJavaScript={DOWNLOAD_BRIDGE_SCRIPT}
+              injectedJavaScript={DOWNLOAD_BRIDGE_SCRIPT + BILLING_CAPABILITY_SCRIPT}
+              injectedJavaScriptBeforeContentLoaded={BILLING_CAPABILITY_SCRIPT}
+              injectedJavaScriptBeforeContentLoadedForMainFrameOnly
               injectedJavaScriptForMainFrameOnly
               onMessage={event => { void onMessage(event); }}
               onFileDownload={() => Alert.alert(t.share, t.exportError)}

@@ -30,6 +30,7 @@
       "softwareKeyboardLayoutMode": "resize"
     },
     "plugins": [
+      "expo-iap",
       "expo-web-browser",
       [
         "expo-localization",
