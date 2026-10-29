@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import * as IAP from 'expo-iap';
-import { APP_PACKAGE, SUBSCRIPTIONS, isSubscriptionId, type BillingPlatform } from './billing-protocol';
+import { APP_PACKAGE, SUBSCRIPTIONS, subscriptionId, type BillingPlatform } from './billing-protocol';
 import { BillingController, type BillingBackend, type BillingPort, type StoreProduct, type StorePurchase } from './billing-controller';
 
 const API_ORIGIN = 'https://oxford.bot';
@@ -32,8 +32,9 @@ function normalizePurchase(p: IAP.Purchase): StorePurchase {
 }
 
 function normalizeProduct(p: IAP.ProductOrSubscription, platform: BillingPlatform): StoreProduct | null {
-  if (!isSubscriptionId(p.id) || p.type !== 'subs' || p.platform !== (platform === 'apple' ? 'ios' : 'android')) return null;
-  const expected = SUBSCRIPTIONS[p.id];
+  const canonicalId = subscriptionId(p.id, platform);
+  if (!canonicalId || p.type !== 'subs' || p.platform !== (platform === 'apple' ? 'ios' : 'android')) return null;
+  const expected = SUBSCRIPTIONS[canonicalId];
   let displayPrice = p.displayPrice;
   let currency = p.currency;
   let offerToken: string | undefined;
