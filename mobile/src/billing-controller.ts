@@ -1,9 +1,10 @@
-import { isSubscriptionId, type BillingPlatform, type BillingReply, type BillingRequest, type DisplayProduct } from './billing-protocol.ts';
+import { isStoreSubscriptionId, storeProductId, subscriptionId, type BillingPlatform, type BillingReply, type BillingRequest, type DisplayProduct } from './billing-protocol.ts';
 
 export type BillingSession = {
   ready: boolean; accountToken: string; googleAccountId: string; canPurchase: boolean;
   managementPlatform: BillingPlatform | 'stripe' | null; enabledProductIds: string[];
 };
+// IDs in the native port and backend are actual platform store IDs, not bridge IDs.
 export type StoreProduct = DisplayProduct & { offerToken?: string };
 export type StorePurchase = {
   productId: string; transactionId: string; purchaseToken: string;
@@ -29,14 +30,14 @@ class BillingFailure extends Error {
 }
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export function parseBillingSession(value: unknown): BillingSession {
+export function parseBillingSession(value: unknown, platform: BillingPlatform): BillingSession {
   const v = value as BillingSession | null;
   if (!v || typeof v.ready !== 'boolean' || typeof v.canPurchase !== 'boolean'
     || typeof v.accountToken !== 'string' || !uuid.test(v.accountToken)
     || typeof v.googleAccountId !== 'string' || !/^[A-Za-z0-9_-]{16,64}$/.test(v.googleAccountId)
     || ![null, 'apple', 'google', 'stripe'].includes(v.managementPlatform)
     || !Array.isArray(v.enabledProductIds) || v.enabledProductIds.length > 4
-    || !v.enabledProductIds.every(isSubscriptionId)) throw new BillingFailure('NOT_READY');
+    || !v.enabledProductIds.every(id => isStoreSubscriptionId(id, platform))) throw new BillingFailure('NOT_READY');
   return v;
 }
 
@@ -80,7 +81,7 @@ export class BillingController {
       if (request.action === 'manage') {
         await this.port.manage(); this.reply(fallback, 'managed'); return;
       }
-      const session = parseBillingSession(await this.backend.session(request.accessToken!, this.platform));
+      const session = parseBillingSession(await this.backend.session(request.accessToken!, this.platform), this.platform);
       if (fallback.revision !== this.revision) return;
       const ctx: Context = { ...fallback, session };
       if (this.active && this.active.session.accountToken !== session.accountToken) {
@@ -93,7 +94,7 @@ export class BillingController {
       await this.connect();
       if (ctx.revision !== this.revision) return;
       if (request.action === 'restore') {
-        const purchases = (await this.port.purchases(true)).filter(p => isSubscriptionId(p.productId));
+        const purchases = (await this.port.purchases(true)).filter(p => isStoreSubscriptionId(p.productId, this.platform));
         if (!purchases.length) throw new BillingFailure('NO_PURCHASES');
         let allVerified = true;
         for (const purchase of purchases) allVerified = (await this.process(purchase, ctx)) && allVerified;
@@ -103,14 +104,17 @@ export class BillingController {
       const products = (await this.port.products(session.enabledProductIds)).filter(p => session.enabledProductIds.includes(p.id));
       if (ctx.revision !== this.revision) return;
       if (request.action === 'products') {
-        this.reply(ctx, 'products', { products: products.map(({ offerToken: _, ...p }) => p), canPurchase: session.canPurchase, managementPlatform: session.managementPlatform });
+        this.reply(ctx, 'products', { products: products.map(p => ({
+          id: subscriptionId(p.id, this.platform)!, title: p.title, description: p.description,
+          displayPrice: p.displayPrice, currency: p.currency, period: p.period,
+        })), canPurchase: session.canPurchase, managementPlatform: session.managementPlatform });
         return;
       }
       if (!session.canPurchase || session.managementPlatform !== null) throw new BillingFailure('ALREADY_SUBSCRIBED');
-      const product = products.find(p => p.id === request.productId);
+      const product = products.find(p => p.id === storeProductId(request.productId, this.platform));
       if (!product) throw new BillingFailure('PRODUCT_UNAVAILABLE');
       // Reconcile store-owned purchases before opening a new purchase sheet.
-      const owned = (await this.port.purchases(false)).filter(p => isSubscriptionId(p.productId));
+      const owned = (await this.port.purchases(false)).filter(p => isStoreSubscriptionId(p.productId, this.platform));
       if (owned.length) {
         for (const purchase of owned) await this.process(purchase, ctx);
         throw new BillingFailure('RESTORE_OR_MANAGE');
@@ -129,7 +133,7 @@ export class BillingController {
 
   async onPurchase(purchase: StorePurchase) {
     const ctx = this.pending ?? this.active;
-    if (!ctx || !isSubscriptionId(purchase.productId)) return;
+    if (!ctx || !isStoreSubscriptionId(purchase.productId, this.platform)) return;
     await this.process(purchase, ctx);
   }
 
@@ -144,7 +148,7 @@ export class BillingController {
     if (!ctx?.session.ready) return;
     try {
       await this.connect();
-      for (const p of await this.port.purchases(false)) if (isSubscriptionId(p.productId)) await this.process(p, ctx);
+      for (const p of await this.port.purchases(false)) if (isStoreSubscriptionId(p.productId, this.platform)) await this.process(p, ctx);
     } catch { /* Keep unfinished transactions for the next explicit restore. */ }
   }
 
@@ -152,7 +156,7 @@ export class BillingController {
     if (ctx.revision !== this.revision || !ctx.session.ready) return false;
     if (purchase.state === 'pending') { this.reply(ctx, 'pending'); return false; }
     if (purchase.state !== 'purchased' || purchase.suspended || purchase.platform !== this.platform
-      || !isSubscriptionId(purchase.productId) || !purchase.purchaseToken || purchase.purchaseToken.length > 65_536) {
+      || !isStoreSubscriptionId(purchase.productId, this.platform) || !purchase.purchaseToken || purchase.purchaseToken.length > 65_536) {
       this.reply(ctx, 'error', { errorCode: 'PURCHASE_NOT_VALID' }); return false;
     }
     const account = this.platform === 'apple' ? ctx.session.accountToken : ctx.session.googleAccountId;

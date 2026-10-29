@@ -1,12 +1,15 @@
 import { isAppUrl } from './navigation.ts';
 
 export const APP_PACKAGE = 'com.oxfordintelligence.oxfordbot';
+// These keys are stable WebView product IDs and the existing Apple store IDs.
+// Google Play limits product IDs to 40 characters, so its store IDs are separate.
 export const SUBSCRIPTIONS = {
-  [`${APP_PACKAGE}.pro.monthly`]: { plan: 'pro', period: 'P1M', basePlan: 'monthly' },
-  [`${APP_PACKAGE}.pro.yearly`]: { plan: 'pro', period: 'P1Y', basePlan: 'yearly' },
-  [`${APP_PACKAGE}.ultra.monthly`]: { plan: 'ultra', period: 'P1M', basePlan: 'monthly' },
-  [`${APP_PACKAGE}.ultra.yearly`]: { plan: 'ultra', period: 'P1Y', basePlan: 'yearly' },
+  [`${APP_PACKAGE}.pro.monthly`]: { plan: 'pro', period: 'P1M', basePlan: 'monthly', googleProductId: 'oxfordbot.pro.monthly' },
+  [`${APP_PACKAGE}.pro.yearly`]: { plan: 'pro', period: 'P1Y', basePlan: 'yearly', googleProductId: 'oxfordbot.pro.yearly' },
+  [`${APP_PACKAGE}.ultra.monthly`]: { plan: 'ultra', period: 'P1M', basePlan: 'monthly', googleProductId: 'oxfordbot.ultra.monthly' },
+  [`${APP_PACKAGE}.ultra.yearly`]: { plan: 'ultra', period: 'P1Y', basePlan: 'yearly', googleProductId: 'oxfordbot.ultra.yearly' },
 } as const;
+export type SubscriptionId = keyof typeof SUBSCRIPTIONS;
 export type BillingPlatform = 'apple' | 'google';
 export type BillingAction = 'products' | 'purchase' | 'restore' | 'manage' | 'disconnect';
 export type BillingRequest = {
@@ -24,8 +27,25 @@ export type BillingReply = {
   managementPlatform?: BillingPlatform | 'stripe' | null; errorCode?: string;
 };
 
-export function isSubscriptionId(value: unknown): value is keyof typeof SUBSCRIPTIONS {
+export function isSubscriptionId(value: unknown): value is SubscriptionId {
   return typeof value === 'string' && Object.hasOwn(SUBSCRIPTIONS, value);
+}
+
+/** Web bridge ID -> exact platform store ID. Unknown products never pass through. */
+export function storeProductId(productId: unknown, platform: BillingPlatform): string | null {
+  if (!isSubscriptionId(productId)) return null;
+  return platform === 'apple' ? productId : SUBSCRIPTIONS[productId].googleProductId;
+}
+
+/** Exact platform store ID -> stable Web bridge ID; no cross-platform aliases. */
+export function subscriptionId(productId: unknown, platform: BillingPlatform): SubscriptionId | null {
+  if (typeof productId !== 'string') return null;
+  if (platform === 'apple') return isSubscriptionId(productId) ? productId : null;
+  return Object.keys(SUBSCRIPTIONS).filter(isSubscriptionId).find(id => SUBSCRIPTIONS[id].googleProductId === productId) ?? null;
+}
+
+export function isStoreSubscriptionId(value: unknown, platform: BillingPlatform): value is string {
+  return subscriptionId(value, platform) !== null;
 }
 
 /** The event URL is provided by WebView; never trust a payload-supplied origin. */

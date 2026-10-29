@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import vm from 'node:vm';
 import { BillingController, parseBillingSession, type BillingBackend, type BillingPort, type BillingSession, type StoreProduct, type StorePurchase } from './billing-controller.ts';
-import { SUBSCRIPTIONS, billingReplyScript, parseBillingRequest, type BillingPlatform, type BillingReply, type BillingRequest } from './billing-protocol.ts';
+import { SUBSCRIPTIONS, billingReplyScript, isStoreSubscriptionId, parseBillingRequest, storeProductId, subscriptionId, type BillingPlatform, type BillingReply, type BillingRequest } from './billing-protocol.ts';
 
 const productId = Object.keys(SUBSCRIPTIONS)[0];
 const accountToken = '00000000-0000-4000-8000-000000000001';
@@ -14,22 +14,23 @@ function request(action: BillingRequest['action'], requestId: string = action): 
   return { type: 'OXFORD_IAP', version: 1, requestId, action, ...(['products', 'purchase', 'restore'].includes(action) && { accessToken: token }), ...(action === 'purchase' && { productId }) };
 }
 function fixture(platform: BillingPlatform = 'apple') {
-  const session: BillingSession = { ready: true, accountToken, googleAccountId: 'opaque-account-id-001', canPurchase: true, managementPlatform: null, enabledProductIds: [productId] };
-  const purchase: StorePurchase = { productId, transactionId: '10001', purchaseToken: 'signed-proof', platform, state: 'purchased', accountIdentifier: platform === 'apple' ? accountToken : session.googleAccountId, suspended: false, native: {} };
+  const platformProductId = storeProductId(productId, platform)!;
+  const session: BillingSession = { ready: true, accountToken, googleAccountId: 'opaque-account-id-001', canPurchase: true, managementPlatform: null, enabledProductIds: [platformProductId] };
+  const purchase: StorePurchase = { productId: platformProductId, transactionId: '10001', purchaseToken: 'signed-proof', platform, state: 'purchased', accountIdentifier: platform === 'apple' ? accountToken : session.googleAccountId, suspended: false, native: {} };
   const calls = { connects: 0, purchases: 0, verifies: 0, finishes: 0, sync: 0, management: 0 };
   const replies: BillingReply[] = [];
   const owned: StorePurchase[] = [];
   const port: BillingPort = {
     connect: async () => { calls.connects++; return true; },
-    products: async () => [product],
-    purchase: async (_product, context) => { calls.purchases++; assert.equal(context.accountToken, accountToken); },
+    products: async ids => { assert.deepEqual(ids, session.enabledProductIds); return [{ ...product, id: platformProductId }]; },
+    purchase: async (selected, context) => { calls.purchases++; assert.equal(selected.id, platformProductId); assert.equal(context.accountToken, accountToken); },
     purchases: async sync => { if (sync) calls.sync++; return owned; },
     finish: async () => { calls.finishes++; },
     manage: async () => { calls.management++; },
   };
   const backend: BillingBackend = {
     session: async bearer => { assert.equal(bearer, token); return session; },
-    verify: async bearer => { calls.verifies++; assert.equal(bearer, token); return { verified: true, productId, accountToken, acknowledged: true }; },
+    verify: async (bearer, receipt) => { calls.verifies++; assert.equal(bearer, token); assert.equal(receipt.productId, platformProductId); return { verified: true, productId: platformProductId, accountToken, acknowledged: true }; },
   };
   const controller = new BillingController(platform, port, backend);
   const handle = (r: BillingRequest) => controller.handle(r, reply => replies.push(reply));
@@ -60,7 +61,98 @@ test('billing reply remains data and is delivered only to its originating docume
 
 test('backend session shape cannot enable purchases with unbound accounts or unknown products', () => {
   const { session } = fixture();
-  for (const bad of [{ ...session, ready: 'true' }, { ...session, accountToken: 'email@example.com' }, { ...session, enabledProductIds: ['anything'] }, { ...session, googleAccountId: 'a@b.example' }]) assert.throws(() => parseBillingSession(bad));
+  for (const bad of [{ ...session, ready: 'true' }, { ...session, accountToken: 'email@example.com' }, { ...session, enabledProductIds: ['anything'] }, { ...session, googleAccountId: 'a@b.example' }]) assert.throws(() => parseBillingSession(bad, 'apple'));
+});
+
+test('Google catalog fits Play limits and maps each fixed bridge ID without changing Apple IDs', () => {
+  const pairs = [
+    ['com.oxfordintelligence.oxfordbot.pro.monthly', 'oxfordbot.pro.monthly'],
+    ['com.oxfordintelligence.oxfordbot.pro.yearly', 'oxfordbot.pro.yearly'],
+    ['com.oxfordintelligence.oxfordbot.ultra.monthly', 'oxfordbot.ultra.monthly'],
+    ['com.oxfordintelligence.oxfordbot.ultra.yearly', 'oxfordbot.ultra.yearly'],
+  ];
+  assert.deepEqual(Object.keys(SUBSCRIPTIONS), pairs.map(([canonical]) => canonical));
+  assert.equal(new Set(pairs.map(([canonical]) => storeProductId(canonical, 'google'))).size, 4);
+  for (const [canonical, googleId] of pairs) {
+    assert.equal(storeProductId(canonical, 'apple'), canonical);
+    assert.equal(subscriptionId(canonical, 'apple'), canonical);
+    assert.equal(storeProductId(canonical, 'google'), googleId);
+    assert.equal(subscriptionId(googleId, 'google'), canonical);
+    assert.match(googleId, /^[a-z0-9][a-z0-9._]*$/);
+    assert.ok(googleId.length <= 40);
+    assert.equal(isStoreSubscriptionId(canonical, 'google'), false);
+    assert.equal(isStoreSubscriptionId(googleId, 'apple'), false);
+    assert.equal(parseBillingRequest(JSON.stringify({ ...request('purchase'), productId: googleId }), origin), null);
+  }
+  assert.equal(storeProductId('forged', 'google'), null);
+  assert.equal(subscriptionId('forged', 'google'), null);
+});
+
+test('platform session rejects legacy Google and cross-platform IDs before opening the store', async () => {
+  for (const platform of ['apple', 'google'] as const) {
+    const f = fixture(platform);
+    assert.deepEqual(parseBillingSession(f.session, platform), f.session);
+    f.session.enabledProductIds = [platform === 'google' ? productId : 'oxfordbot.pro.monthly'];
+    await f.handle(request('purchase'));
+    assert.equal(f.replies.at(-1)?.errorCode, 'NOT_READY');
+    assert.equal(f.calls.connects, 0); assert.equal(f.calls.purchases, 0);
+  }
+});
+
+test('Google products and purchases translate only at the WebView boundary', async () => {
+  const f = fixture('google');
+  let fetched: string[] = [];
+  f.port.products = async ids => {
+    fetched = ids;
+    return [{ ...product, id: 'oxfordbot.pro.monthly' }, { ...product, id: productId }, { ...product, id: 'forged' }];
+  };
+  await f.handle(request('products'));
+  assert.deepEqual(fetched, ['oxfordbot.pro.monthly']);
+  assert.deepEqual(f.replies[0].products, [{
+    id: productId, title: product.title, description: product.description,
+    displayPrice: product.displayPrice, currency: product.currency, period: product.period,
+  }]);
+  assert.ok(!JSON.stringify(f.replies).includes('store-offer'));
+  await f.handle(request('purchase'));
+  assert.equal(f.calls.purchases, 1);
+  await f.controller.onPurchase(f.purchase);
+  assert.equal(f.calls.verifies, 1);
+  assert.equal(f.replies.at(-1)?.status, 'verified');
+});
+
+test('Google restore verifies actual owned store IDs even when unavailable for new purchases', async () => {
+  const f = fixture('google'); f.session.enabledProductIds = [];
+  f.owned.push(f.purchase);
+  await f.handle(request('restore'));
+  assert.equal(f.calls.verifies, 1); assert.equal(f.calls.finishes, 0);
+  assert.equal(f.replies.at(-1)?.status, 'restored');
+});
+
+test('Google rejects canonical receipt IDs and mismatched platform before verification', async () => {
+  const f = fixture('google'); await f.handle(request('products'));
+  await f.controller.onPurchase({ ...f.purchase, productId });
+  await f.controller.onPurchase({ ...f.purchase, platform: 'apple' });
+  assert.equal(f.calls.verifies, 0);
+  assert.ok(!f.replies.some(r => r.status === 'verified'));
+});
+
+test('Google verification must echo its actual short store ID, not the canonical bridge ID', async () => {
+  const f = fixture('google'); await f.handle(request('purchase'));
+  f.backend.verify = async (_bearer, receipt) => {
+    assert.equal(receipt.productId, 'oxfordbot.pro.monthly');
+    return { verified: true, accountToken, productId, acknowledged: true };
+  };
+  await f.controller.onPurchase(f.purchase);
+  assert.equal(f.replies.at(-1)?.errorCode, 'VERIFICATION_DELAYED');
+  assert.equal(f.calls.finishes, 0);
+});
+
+test('Google resume reconciles only known actual store IDs', async () => {
+  const f = fixture('google'); await f.handle(request('products'));
+  f.owned.push({ ...f.purchase, productId }, f.purchase);
+  await f.controller.resume();
+  assert.equal(f.calls.verifies, 1);
+  assert.equal(f.replies.at(-1)?.status, 'verified');
 });
 
 test('missing server configuration blocks purchase before opening the store', async () => {
@@ -118,10 +210,10 @@ test('failed or misbound server verification leaves the transaction unfinished',
 
 test('Google success requires backend acknowledgement and never client acknowledgement', async () => {
   const f = fixture('google'); await f.handle(request('purchase'));
-  f.backend.verify = async () => ({ verified: true, accountToken, productId });
+  f.backend.verify = async () => ({ verified: true, accountToken, productId: f.purchase.productId });
   await f.controller.onPurchase(f.purchase);
   assert.equal(f.replies.at(-1)?.errorCode, 'VERIFICATION_DELAYED');
-  f.backend.verify = async () => ({ verified: true, accountToken, productId, acknowledged: true });
+  f.backend.verify = async () => ({ verified: true, accountToken, productId: f.purchase.productId, acknowledged: true });
   await f.controller.onPurchase(f.purchase);
   assert.equal(f.replies.at(-1)?.status, 'verified'); assert.equal(f.calls.finishes, 0);
 });
